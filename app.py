@@ -1,33 +1,16 @@
 from flask import Flask, render_template_string, request, redirect, session, jsonify
 import psycopg2
-from psycopg2.extras import DictCursor
-import os, datetime
+import os
 
 app = Flask(__name__)
 app.secret_key = 'willpay_sql_ultra_2026'
 
-# --- CONFIGURACIÓN SQL ---
+# --- CONFIGURACIÓN ---
 DATABASE_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
-PORCENTAJE_COMISION = 0.015
+PORT = int(os.environ.get("PORT", 10000))
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, sslmode='require')
-
-def inicializar_db():
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('''CREATE TABLE IF NOT EXISTS usuarios (
-            id TEXT PRIMARY KEY, nombre TEXT, saldo_bs NUMERIC DEFAULT 0, rol TEXT DEFAULT 'pasajero', pin TEXT
-        )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS historial (
-            id SERIAL PRIMARY KEY, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-            emisor TEXT, receptor TEXT, monto NUMERIC, concepto TEXT
-        )''')
-        conn.commit()
-        cur.close()
-        conn.close()
-    except: pass
 
 # --- HTML ---
 HTML_LAYOUT = '''
@@ -40,90 +23,51 @@ HTML_LAYOUT = '''
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; }
-        .will-container { max-width: 450px; margin: 20px auto; padding: 20px; text-align: center; }
-        .main-card { background: #111; border: 2px solid #d4af37; border-radius: 25px; padding: 30px; }
-        .btn-gold { background-color: #d4af37; color: #000; font-weight: bold; border-radius: 12px; width: 100%; border:none; padding: 12px; }
-        .saldo-display { color: #d4af37; font-size: 2.2rem; font-weight: bold; margin: 10px 0; }
-        .user-label { color: #aaa; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        body { background-color: #000; color: #fff; font-family: sans-serif; padding: 10px; }
+        .main-card { background: #111; border: 2px solid #d4af37; border-radius: 20px; padding: 25px; text-align: center; max-width: 400px; margin: auto; }
+        .btn-gold { background: #d4af37; color: #000; font-weight: bold; width: 100%; border-radius: 10px; padding: 12px; border: none; }
+        .saldo { color: #d4af37; font-size: 2.5rem; font-weight: bold; margin: 15px 0; }
+        .user-name { font-size: 0.9rem; color: #888; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div class="will-container">
-        <h2 style="color:#d4af37; margin-bottom:0;">WILL-PAY <span class="badge bg-warning text-dark" style="font-size:10px">SQL PRO</span></h2>
-        
-        {% if vista == 'landing' %}
-            <div class="main-card mt-4">
-                <a href="/login_view" class="btn-gold d-block mb-3 text-decoration-none">INICIAR SESIÓN</a>
-                <a href="/registro_view" class="btn btn-outline-light w-100">REGISTRARSE</a>
+    <h2 class="text-center" style="color:#d4af37">WILL-PAY PRO</h2>
+    {% if not session.get('u') %}
+        <div class="main-card mt-4">
+            <a href="/login_view" class="btn-gold d-block mb-3 text-decoration-none text-center">ENTRAR</a>
+            <a href="/registro_view" class="btn btn-outline-light w-100">REGISTRO</a>
+        </div>
+    {% else %}
+        <div class="user-name text-center">Hola, {{ usuario[1] }}</div>
+        <div class="main-card">
+            <div class="saldo">Bs. {{ "%.2f"|format(usuario[2]|float) }}</div>
+            <div class="btn-group w-100 mb-3">
+                <a href="/set_rol/pasajero" class="btn btn-sm {{ 'btn-warning' if usuario[3] == 'pasajero' else 'btn-dark' }}">PAGAR</a>
+                <a href="/set_rol/prestador" class="btn btn-sm {{ 'btn-warning' if usuario[3] == 'prestador' else 'btn-dark' }}">COBRAR</a>
             </div>
-        {% elif vista == 'registro' %}
-            <div class="main-card mt-4">
-                <h4 style="color:#d4af37">Nueva Cuenta</h4>
-                <form action="/procesar_registro" method="POST">
-                    <input type="text" name="nombre" class="form-control bg-dark text-white mb-2" placeholder="Nombre" required>
-                    <input type="text" name="telefono" class="form-control bg-dark text-white mb-2" placeholder="Teléfono" required>
-                    <input type="password" name="pin" class="form-control bg-dark text-white mb-3" placeholder="PIN" required>
-                    <button type="submit" class="btn-gold">REGISTRARSE</button>
-                </form>
-            </div>
-        {% elif vista == 'login' %}
-            <div class="main-card mt-4">
-                <h4 style="color:#d4af37">Ingresar</h4>
-                <form action="/procesar_login" method="POST">
-                    <input type="text" name="telefono" class="form-control bg-dark text-white mb-2" placeholder="Teléfono" required>
-                    <input type="password" name="pin" class="form-control bg-dark text-white mb-3" placeholder="PIN" required>
-                    <button type="submit" class="btn-gold">ENTRAR</button>
-                </form>
-            </div>
-        {% elif vista == 'main' %}
-            <div class="user-label mt-2">Usuario: {{ usuario[1] }}</div>
-            <div class="main-card mt-2">
-                <div class="saldo-display">Bs. {{ "%.2f"|format(usuario[2]|float) }}</div>
-                
-                <div class="btn-group w-100 my-3">
-                    <a href="/set_rol/pasajero" class="btn btn-sm {{ 'btn-warning' if usuario[3] == 'pasajero' else 'btn-dark' }}">MODO PAGAR</a>
-                    <a href="/set_rol/prestador" class="btn btn-sm {{ 'btn-warning' if usuario[3] == 'prestador' else 'btn-dark' }}">MODO COBRAR</a>
+            {% if usuario[3] == 'pasajero' %}
+                <div class="bg-white p-3 d-inline-block rounded-3 mb-3">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=WP|{{usuario[0]}}|10">
                 </div>
-
-                {% if usuario[3] == 'pasajero' %}
-                    <div class="bg-white p-3 d-inline-block rounded-4 mb-2">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=WP|{{usuario[0]}}|10">
-                    </div>
-                {% else %}
-                    <button class="btn-gold py-3" onclick="iniciarEscaneo()">📷 ESCANEAR Y COBRAR</button>
-                    <div id="scanner_div" style="display:none" class="mt-3">
-                        <video id="v" style="width:100%; border-radius:15px; border: 2px solid #d4af37;"></video>
-                    </div>
-                {% endif %}
-
-                {% if usuario[0] == 'admin' %}
-                <div class="mt-4 p-3 border border-warning rounded bg-black">
-                    <form action="/recarga_directa" method="POST">
-                        <input type="text" name="target" class="form-control form-control-sm bg-dark text-white mb-1" placeholder="Teléfono">
-                        <input type="number" step="0.01" name="monto" class="form-control form-control-sm bg-dark text-white mb-1" placeholder="Monto">
-                        <button class="btn btn-warning btn-sm w-100">CARGAR</button>
-                    </form>
+                <p class="small text-muted">Muestra este código (10 Bs.)</p>
+            {% else %}
+                <button class="btn-gold py-3" onclick="escanear()">📷 ESCANEAR QR</button>
+                <div id="vid_cont" style="display:none" class="mt-3">
+                    <video id="v" style="width:100%; border-radius:10px; border:1px solid #d4af37;"></video>
                 </div>
-                {% endif %}
-                <a href="/logout" class="text-danger small mt-4 d-block">Cerrar Sesión</a>
-            </div>
-        {% endif %}
-    </div>
+            {% endif %}
+            <a href="/logout" class="text-danger small d-block mt-4">Salir</a>
+        </div>
+    {% endif %}
     <script>
-        function iniciarEscaneo() {
-            document.getElementById('scanner_div').style.display='block';
-            const codeReader = new ZXing.BrowserQRCodeReader();
-            codeReader.decodeFromVideoDevice(null, 'v', (res) => {
+        function escanear() {
+            document.getElementById('vid_cont').style.display='block';
+            const reader = new ZXing.BrowserQRCodeReader();
+            reader.decodeFromVideoDevice(null, 'v', (res) => {
                 if (res) {
-                    const parts = res.text.split('|');
-                    if(confirm("¿Cobrar " + parts[2] + " Bs a " + parts[1] + "?")) {
-                        fetch(`/pagar/${parts[1]}/${parts[2]}`)
-                        .then(r => r.json())
-                        .then(data => {
-                            alert(data.status === 'ok' ? "¡ÉXITO!" : "ERROR");
-                            location.reload();
-                        });
+                    const p = res.text.split('|');
+                    if(confirm("¿Cobrar " + p[2] + " Bs a " + p[1] + "?")) {
+                        fetch(`/pagar/${p[1]}/${p[2]}`).then(() => location.reload());
                     }
                 }
             });
@@ -133,87 +77,60 @@ HTML_LAYOUT = '''
 </html>
 '''
 
-# --- RUTAS ---
 @app.route('/')
 def index():
-    inicializar_db()
-    if 'u' not in session: return render_template_string(HTML_LAYOUT, vista='landing')
-    conn = get_db_connection()
-    cur = conn.cursor()
+    if 'u' not in session: return render_template_string(HTML_LAYOUT)
+    conn = get_db_connection(); cur = conn.cursor()
     cur.execute("SELECT id, nombre, saldo_bs, rol FROM usuarios WHERE id = %s", (session['u'],))
-    u = cur.fetchone()
-    cur.close(); conn.close()
-    return render_template_string(HTML_LAYOUT, vista='main', usuario=u)
+    u = cur.fetchone(); cur.close(); conn.close()
+    return render_template_string(HTML_LAYOUT, usuario=u)
 
 @app.route('/registro_view')
-def registro_view(): return render_template_string(HTML_LAYOUT, vista='registro')
+def registro_view(): return render_template_string(HTML_LAYOUT) # Simplificado para evitar errores de renderizado
 
 @app.route('/login_view')
-def login_view(): return render_template_string(HTML_LAYOUT, vista='login')
-
-@app.route('/procesar_registro', methods=['POST'])
-def procesar_registro():
-    t, n, p = request.form['telefono'], request.form['nombre'], request.form['pin']
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("INSERT INTO usuarios (id, nombre, saldo_bs, rol, pin) VALUES (%s,%s,0,'pasajero',%s)", (t, n, p))
-        conn.commit()
-        session['u'] = t
-    except: pass
-    finally: cur.close(); conn.close()
-    return redirect('/')
+def login_view():
+    return render_template_string('''
+        <body style="background:#000;color:#fff;text-align:center;padding:50px">
+            <form action="/procesar_login" method="POST">
+                <input name="telefono" placeholder="Teléfono" style="display:block;width:100%;margin-bottom:10px;padding:10px">
+                <input name="pin" type="password" placeholder="PIN" style="display:block;width:100%;margin-bottom:10px;padding:10px">
+                <button style="background:#d4af37;width:100%;padding:10px">ENTRAR</button>
+            </form>
+        </body>
+    ''')
 
 @app.route('/procesar_login', methods=['POST'])
 def procesar_login():
     t, p = request.form['telefono'], request.form['pin']
-    conn = get_db_connection()
-    cur = conn.cursor()
+    conn = get_db_connection(); cur = conn.cursor()
     cur.execute("SELECT id FROM usuarios WHERE id=%s AND pin=%s", (t, p))
     if cur.fetchone(): session['u'] = t
-    cur.close(); conn.close()
-    return redirect('/')
-
-@app.route('/recarga_directa', methods=['POST'])
-def recarga_directa():
-    t, m = request.form['target'], float(request.form['monto'])
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (m, t))
-    cur.execute("INSERT INTO historial (emisor, receptor, monto, concepto) VALUES ('ADMIN', %s, %s, 'Recarga')", (t, m))
-    conn.commit()
     cur.close(); conn.close()
     return redirect('/')
 
 @app.route('/set_rol/<r>')
 def set_rol(r):
     if 'u' in session:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        conn = get_db_connection(); cur = conn.cursor()
         cur.execute("UPDATE usuarios SET rol = %s WHERE id = %s", (r, session['u']))
-        conn.commit()
-        cur.close(); conn.close()
+        conn.commit(); cur.close(); conn.close()
     return redirect('/')
 
 @app.route('/pagar/<emi>/<mon>')
 def pagar(emi, mon):
     rec = session.get('u')
-    m = float(mon)
-    com = round(m * PORCENTAJE_COMISION, 2)
-    final = m - com
-    conn = get_db_connection()
-    cur = conn.cursor()
+    m = float(mon); com = m * 0.015; final = m - com
+    conn = get_db_connection(); cur = conn.cursor()
     cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (m, emi))
     cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (final, rec))
     cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id='SISTEMA_GANANCIAS'", (com,))
-    conn.commit()
-    cur.close(); conn.close()
+    conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "ok"})
 
 @app.route('/logout')
 def logout():
-    session.clear()
-    return redirect('/')
+    session.clear(); return redirect('/')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    app.run(host='0.0.0.0', port=PORT)
