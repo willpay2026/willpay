@@ -1,4 +1,4 @@
-﻿from flask import Flask, render_template_string, request, redirect, url_for, session, jsonify, send_from_directory
+from flask import Flask, render_template_string, request, redirect, url_for, session, jsonify, send_from_directory
 import csv, os, datetime
 
 app = Flask(__name__)
@@ -34,7 +34,7 @@ def logo():
         return send_from_directory(os.getcwd(), 'logo will-pay.jpg')
     return "Logo"
 
-# --- TU INTERFAZ COMPLETA (EL CHORIZO DORADO) ---
+# --- TU INTERFAZ COMPLETA (DORADA) ---
 HTML_APP = '''
 <!DOCTYPE html>
 <html lang="es">
@@ -61,7 +61,7 @@ HTML_APP = '''
         <div class="will-container">
             <h4 class="gold-text mb-4">INICIAR SESIÓN</h4>
             <form action="/login" method="POST">
-                <input type="text" name="id" class="form-control text-center" placeholder="Teléfono" required>
+                <input type="text" name="id" class="form-control text-center" placeholder="Usuario / Teléfono" required>
                 <input type="password" name="pin" class="form-control text-center" placeholder="PIN" required>
                 <button class="btn btn-will w-100">ENTRAR</button>
             </form>
@@ -128,7 +128,7 @@ HTML_APP = '''
                             document.getElementById('snd_cash').play();
                             alert("PAGO EXITOSO");
                             location.reload();
-                        } else { alert("ERROR DE PAGO"); location.reload(); }
+                        } else { alert("ERROR DE PAGO: " + j.message); location.reload(); }
                     });
                 }
             });
@@ -144,14 +144,24 @@ def index():
     if 'u' not in session: return render_template_string(HTML_APP, vista='login', usuario=None)
     users = obtener_usuarios()
     u = users.get(session['u'])
+    if not u and session['u'] == 'admin':
+        u = {"ID": "admin", "Nombre": "Admin", "Saldo_Bs": "3110.00", "Rol": "admin", "Tipo_Servicio": "SISTEMA"}
     if not u: return redirect('/logout')
     return render_template_string(HTML_APP, vista='main', usuario=u)
 
 @app.route('/login', methods=['POST'])
 def login():
-    uid, pin = request.form.get('id'), request.form.get('pin')
+    uid = request.form.get('id')
+    pin = request.form.get('pin')
+    
+    # SEGURO PARA ENTRAR SIEMPRE COMO ADMIN
+    if uid == 'admin' and pin == '1234':
+        session['u'] = 'admin'
+        return redirect('/')
+    
     users = obtener_usuarios()
-    if uid in users and users[uid]['PIN'] == pin: session['u'] = uid
+    if uid in users and users[uid]['PIN'] == pin: 
+        session['u'] = uid
     return redirect('/')
 
 @app.route('/reportar', methods=['POST'])
@@ -166,27 +176,21 @@ def pago(emi, mon, rec, pin):
     users = obtener_usuarios()
     try:
         m = float(mon)
-        if emi in users and users[emi]['PIN'] == pin and float(users[emi]['Saldo_Bs']) >= m:
+        if emi == 'admin': # El admin tiene saldo infinito para pruebas
+            users[rec]['Saldo_Bs'] = f"{float(users[rec].get('Saldo_Bs', 0)) + m:.2f}"
+        elif emi in users and users[emi]['PIN'] == pin and float(users[emi]['Saldo_Bs']) >= m:
             users[emi]['Saldo_Bs'] = f"{float(users[emi]['Saldo_Bs']) - m:.2f}"
-            users[rec]['Saldo_Bs'] = f"{float(users[rec]['Saldo_Bs']) + m:.2f}"
-            with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=["ID", "Nombre", "Cedula", "Saldo_Bs", "Rol", "PIN", "Status_KYC", "Tipo_Servicio"])
-                writer.writeheader()
-                for u in users.values(): writer.writerow(u)
-            return jsonify({"status": "ok"})
-    except: pass
-    return jsonify({"status": "error"})
-
-@app.route('/panel_control')
-def panel_control():
-    if session.get('u') != 'admin': return redirect('/')
-    users = obtener_usuarios()
-    recs = []
-    if os.path.exists(DB_RECARGAS):
-        with open(DB_RECARGAS, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader: recs.append(row)
-    return render_template_string('''<body style="background:#000;color:#D4AF37;padding:20px;"><h2>Panel</h2><p>{{recs}}</p><a href="/">Volver</a></body>''', recs=recs)
+            users[rec]['Saldo_Bs'] = f"{float(users[rec].get('Saldo_Bs', 0)) + m:.2f}"
+        else:
+            return jsonify({"status": "error", "message": "Saldo insuficiente o PIN incorrecto"})
+            
+        with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=["ID", "Nombre", "Cedula", "Saldo_Bs", "Rol", "PIN", "Status_KYC", "Tipo_Servicio"])
+            writer.writeheader()
+            for u in users.values(): writer.writerow(u)
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/set_rol/<r>')
 def set_rol(r):
@@ -205,5 +209,4 @@ def logout():
 
 if __name__ == '__main__':
     inicializar_db()
-    # ESTO ES LO MÁS IMPORTANTE PARA LA NUBE:
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
