@@ -38,22 +38,46 @@ HTML_APP = '''
         body { background: #000; color: white; text-align: center; font-family: sans-serif; }
         .will-container { border: 2px solid #D4AF37; border-radius: 30px; padding: 25px; margin: 20px auto; max-width: 400px; background: #0a0a0a; box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
         .gold { color: #D4AF37; font-weight: bold; }
-        .btn-will { background: #D4AF37; color: #000; font-weight: bold; border-radius: 12px; border: none; padding: 12px; width: 100%; text-decoration: none; display: inline-block; }
+        .btn-will { background: #D4AF37; color: #000; font-weight: bold; border-radius: 12px; border: none; padding: 12px; width: 100%; text-decoration: none; display: inline-block; margin-top: 10px; }
+        .btn-outline-will { background: transparent; color: #D4AF37; font-weight: bold; border-radius: 12px; border: 2px solid #D4AF37; padding: 12px; width: 100%; text-decoration: none; display: inline-block; margin-top: 10px; }
         .form-control { background: #111; border: 1px solid #333; color: white; margin-bottom: 15px; border-radius: 10px; }
     </style>
 </head>
 <body>
     <div class="container py-5">
         <img src="/logo" style="width: 140px; margin-bottom: 20px;">
-        {% if vista == 'login' %}
+        
+        {% if vista == 'inicio' %}
         <div class="will-container">
-            <h4 class="gold mb-4">INICIAR SESIÓN</h4>
-            <form action="/login" method="POST">
-                <input type="text" name="id" class="form-control text-center" placeholder="Usuario" required>
-                <input type="password" name="pin" class="form-control text-center" placeholder="PIN" required>
-                <button class="btn-will">ENTRAR</button>
-            </form>
+            <h3 class="gold mb-4">BIENVENIDO</h3>
+            <p class="small mb-4 text-secondary">La nueva forma de pagar tu transporte</p>
+            <a href="/vista_login" class="btn-will">INICIAR SESIÓN</a>
+            <a href="/vista_registro" class="btn-outline-will">CREAR CUENTA NUEVA</a>
         </div>
+
+        {% elif vista == 'login' %}
+        <div class="will-container">
+            <h4 class="gold mb-4">ENTRAR</h4>
+            <form action="/login" method="POST">
+                <input type="text" name="id" class="form-control text-center" placeholder="Teléfono" required>
+                <input type="password" name="pin" class="form-control text-center" placeholder="PIN" required>
+                <button class="btn-will">INGRESAR</button>
+            </form>
+            <a href="/" class="text-white small d-block mt-3">Volver</a>
+        </div>
+
+        {% elif vista == 'registro' %}
+        <div class="will-container">
+            <h4 class="gold mb-4">REGISTRO</h4>
+            <form action="/crear_auto" method="POST">
+                <input type="text" name="new_id" class="form-control" placeholder="Teléfono" required>
+                <input type="text" name="new_nom" class="form-control" placeholder="Nombre Completo" required>
+                <input type="password" name="new_pin" class="form-control" placeholder="Crea tu PIN (4 dígitos)" required>
+                <button class="btn-will">CONFIRMAR REGISTRO</button>
+            </form>
+            <a href="/" class="text-white small d-block mt-3">Ya tengo cuenta</a>
+        </div>
+
         {% elif vista == 'main' %}
         <div class="will-container">
             <span class="badge border border-warning text-warning mb-2">{{ usuario.Tipo_Servicio }}</span>
@@ -61,21 +85,12 @@ HTML_APP = '''
             <h2 class="gold" style="font-size: 2.5rem;">Bs. {{ usuario.Saldo_Bs }}</h2>
             <div class="my-4">
                 {% if usuario.ID == 'admin' %}
-                <a href="/panel_control" class="btn-will">ADMINISTRAR</a>
+                <a href="/panel_control" class="btn-will">ADMINISTRAR SISTEMA</a>
+                {% else %}
+                <p class="small text-secondary">Escanea el QR del transporte para pagar</p>
                 {% endif %}
             </div>
             <a href="/logout" class="text-danger small text-decoration-none">Cerrar Sesión</a>
-        </div>
-        {% elif vista == 'admin' %}
-        <div class="will-container">
-            <h4 class="gold mb-4">NUEVO USUARIO</h4>
-            <form action="/crear" method="POST">
-                <input type="text" name="new_id" class="form-control" placeholder="Teléfono / ID" required>
-                <input type="text" name="new_nom" class="form-control" placeholder="Nombre Completo" required>
-                <input type="password" name="new_pin" class="form-control" placeholder="PIN de 4 dígitos" required>
-                <button class="btn-will">GUARDAR USUARIO</button>
-            </form>
-            <a href="/" class="text-white small d-block mt-3">Volver</a>
         </div>
         {% endif %}
     </div>
@@ -85,34 +100,41 @@ HTML_APP = '''
 
 @app.route('/')
 def index():
-    if 'u' not in session: return render_template_string(HTML_APP, vista='login', usuario=None)
-    users = obtener_usuarios()
-    u = users.get(session['u'])
-    if not u and session['u'] == 'admin':
-        u = {"ID":"admin", "Nombre":"Admin", "Saldo_Bs":"3110.00", "Tipo_Servicio":"SISTEMA"}
-    return render_template_string(HTML_APP, vista='main', usuario=u) if u else redirect('/logout')
+    if 'u' in session:
+        users = obtener_usuarios()
+        u = users.get(session['u'])
+        if u: return render_template_string(HTML_APP, vista='main', usuario=u)
+    return render_template_string(HTML_APP, vista='inicio')
+
+@app.route('/vista_login')
+def vista_login(): return render_template_string(HTML_APP, vista='login')
+
+@app.route('/vista_registro')
+def vista_registro(): return render_template_string(HTML_APP, vista='registro')
 
 @app.route('/login', methods=['POST'])
 def login():
     uid, pin = request.form.get('id'), request.form.get('pin')
-    if uid == 'admin' and pin == '1234': session['u'] = 'admin'
-    else:
-        users = obtener_usuarios()
-        if uid in users and users[uid]['PIN'] == pin: session['u'] = uid
+    users = obtener_usuarios()
+    if uid in users and users[uid]['PIN'] == pin:
+        session['u'] = uid
+        return redirect('/')
+    return redirect('/vista_login')
+
+@app.route('/crear_auto', methods=['POST'])
+def crear_auto():
+    uid, nom, pin = request.form.get('new_id'), request.form.get('new_nom'), request.form.get('new_pin')
+    users = obtener_usuarios()
+    if uid not in users:
+        with open(DB_USUARIOS, 'a', newline='', encoding='utf-8') as f:
+            csv.writer(f).writerow([uid, nom, "0", "0.00", "pasajero", pin, "ACTIVO", "CLIENTE"])
+        session['u'] = uid # Loguear automáticamente al registrarse
     return redirect('/')
 
 @app.route('/panel_control')
 def panel_control():
     if session.get('u') != 'admin': return redirect('/')
-    return render_template_string(HTML_APP, vista='admin', usuario={"ID":"admin"})
-
-@app.route('/crear', methods=['POST'])
-def crear():
-    if session.get('u') == 'admin':
-        uid, nom, pin = request.form.get('new_id'), request.form.get('new_nom'), request.form.get('new_pin')
-        with open(DB_USUARIOS, 'a', newline='', encoding='utf-8') as f:
-            csv.writer(f).writerow([uid, nom, "0", "0.00", "pasajero", pin, "ACTIVO", "CLIENTE"])
-    return redirect('/')
+    return render_template_string(HTML_APP, vista='registro', usuario={"ID":"admin"})
 
 @app.route('/logout')
 def logout():
@@ -120,4 +142,5 @@ def logout():
 
 if __name__ == '__main__':
     inicializar_db()
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
