@@ -2,13 +2,11 @@ from flask import Flask, render_template_string, request, redirect, session, jso
 import csv, os
 
 app = Flask(__name__)
-app.secret_key = 'willpay_ultra_fix_2026'
+app.secret_key = 'willpay_final_fix'
 
-# CAMBIAMOS EL NOMBRE AQUÍ PARA QUE EL SISTEMA CREE UNA BASE DE DATOS LIMPIA
 DB_USUARIOS = 'db_usuarios_final.csv' 
 
 def inicializar_db():
-    # Si el archivo no existe, lo crea con los títulos correctos
     if not os.path.exists(DB_USUARIOS):
         with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
@@ -17,16 +15,13 @@ def inicializar_db():
 
 def obtener_usuarios():
     data = {}
-    if not os.path.exists(DB_USUARIOS):
-        inicializar_db()
+    if not os.path.exists(DB_USUARIOS): inicializar_db()
     try:
         with open(DB_USUARIOS, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if row.get('ID'): # Solo si existe la columna ID
-                    data[row['ID']] = row
-    except Exception as e:
-        print(f"Error leyendo DB: {e}")
+                if row.get('ID'): data[row['ID']] = row
+    except: pass
     return data
 
 @app.route('/logo')
@@ -66,7 +61,7 @@ HTML_APP = '''
             <h2 class="gold" style="font-size: 2.5rem;">Bs. {{ usuario.Saldo_Bs }}</h2>
             <div class="my-4">
                 {% if usuario.ID == 'admin' %}
-                <a href="/panel" class="btn-will">REGISTRAR USUARIO</a>
+                <a href="/panel" class="btn-will">ADMINISTRAR</a>
                 {% endif %}
             </div>
             <a href="/logout" class="text-danger small text-decoration-none">Cerrar Sesión</a>
@@ -100,13 +95,13 @@ def index():
 @app.route('/login', methods=['POST'])
 def login():
     uid, pin = request.form.get('id'), request.form.get('pin')
-    if uid == 'admin' and pin == '1234':
-        session['u'] = 'admin'
+    if uid == 'admin' and pin == '1234': session['u'] = 'admin'
     else:
         users = obtener_usuarios()
         if uid in users and users[uid]['PIN'] == pin: session['u'] = uid
     return redirect('/')
 
+# AQUÍ ESTÁ LA RUTA QUE BUSCA EL BOTÓN
 @app.route('/panel')
 def panel():
     if session.get('u') != 'admin': return redirect('/')
@@ -117,8 +112,7 @@ def crear():
     if session.get('u') == 'admin':
         uid, nom, pin = request.form.get('new_id'), request.form.get('new_nom'), request.form.get('new_pin')
         with open(DB_USUARIOS, 'a', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow([uid, nom, "0", "0.00", "pasajero", pin, "ACTIVO", "CLIENTE"])
+            csv.writer(f).writerow([uid, nom, "0", "0.00", "pasajero", pin, "ACTIVO", "CLIENTE"])
     return redirect('/')
 
 @app.route('/logout')
