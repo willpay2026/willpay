@@ -150,3 +150,159 @@ HTML_LAYOUT = '''
                     <div class="d-flex justify-content-between small">
                         <span>{{ item.Concepto }}</span>
                         <b class="{{ 'text-success' if item.Receptor == usuario.ID else 'text-danger' }}">Bs. {{ item.Monto }}</b>
+                        </div>
+                {% endfor %}
+            </div>
+            <a href="/logout" class="text-danger small d-block mt-4">Cerrar Sesión</a>
+        </div>
+
+        {% elif vista == 'admin' %}
+        <div class="main-card">
+            <h6 class="text-start mb-3">Pagos por Aprobar</h6>
+            {% for r in recargas %}
+            <div class="bg-dark p-2 mb-2 rounded d-flex justify-content-between align-items-center">
+                <small>{{ r.ID_User }} - {{ r.Monto_Bs }}</small>
+                <a href="/aprobar/{{r.ID_User}}/{{r.Monto_Bs}}/{{r.Referencia}}" class="btn btn-success btn-sm">OK</a>
+            </div>
+            {% endfor %}
+            <a href="/" class="btn btn-outline-light w-100 mt-3">Volver</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function actualizarQR(val) {
+            document.getElementById('val_monto').innerText = parseFloat(val).toFixed(2);
+            document.getElementById('img_qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=WILLPAY|{{usuario.ID if usuario else ''}}|${val}`;
+        }
+        function iniciarEscaneo() {
+            const codeReader = new ZXing.BrowserQRCodeReader();
+            document.getElementById('scanner_container').style.display = 'block';
+            document.getElementById('btn_scan').style.display = 'none';
+            codeReader.decodeFromVideoDevice(null, 'webcam_video', (result) => {
+                if (result) {
+                    const datos = result.text.split('|');
+                    let pin = prompt("Ingrese PIN del pasajero:");
+                    if (pin) {
+                        fetch(`/procesar_pago/${datos[1]}/${datos[2]}/{{usuario.ID if usuario else ''}}/${pin}`)
+                        .then(res => res.json()).then(data => {
+                            alert(data.status === 'ok' ? "PAGO EXITOSO" : "ERROR");
+                            location.reload();
+                        });
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+'''
+
+# --- RUTAS ---
+@app.route('/')
+def index():
+    if 'user_id' not in session:
+        return render_template_string(HTML_LAYOUT, vista='landing', usuario=None)
+    
+    usuarios = obtener_usuarios()
+    u = usuarios.get(session['user_id'])
+    if not u: return redirect('/logout')
+
+    hist = []
+    if os.path.exists(DB_HISTORIAL):
+        with open(DB_HISTORIAL, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['Emisor'] == u['ID'] or row['Receptor'] == u['ID']: hist.append(row)
+    
+    return render_template_string(HTML_LAYOUT, vista='main', usuario=u, historial=hist[::-1])
+
+@app.route('/login_view')
+def login_view(): return render_template_string(HTML_LAYOUT, vista='login')
+
+@app.route('/registro_view')
+def registro_view(): return render_template_string(HTML_LAYOUT, vista='registro')
+
+@app.route('/procesar_registro', methods=['POST'])
+def procesar_registro():
+    t, n, p = request.form.get('telefono'), request.form.get('nombre'), request.form.get('pin')
+    u = obtener_usuarios()
+    if t not in u:
+        with open(DB_USUARIOS, 'a', newline='', encoding='utf-8') as f:
+            csv.writer(f).writerow([t, n, "V-000", "0.0", "pasajero", p])
+    session['user_id'] = t
+    return redirect('/')
+
+@app.route('/procesar_login', methods=['POST'])
+def procesar_login():
+    t, p = request.form.get('telefono'), request.form.get('pin')
+    u = obtener_usuarios()
+    if t in u and u[t]['PIN'] == p:
+        session['user_id'] = t
+        return redirect('/')
+    return "Credenciales incorrectas. <a href='/login_view'>Reintentar</a>"
+
+@app.route('/pantalla_admin')
+def pantalla_admin():
+    if session.get('user_id') != 'admin': return "No autorizado"
+    recs = []
+    if os.path.exists(DB_RECARGAS):
+        with open(DB_RECARGAS, 'r') as f:
+            for r in csv.DictReader(f):
+                if r['Status'] == 'PENDIENTE': recs.append(r)
+    return render_template_string(HTML_LAYOUT, vista='admin', recargas=recs, usuario={'ID':'admin'})
+
+@app.route('/aprobar/<uid>/<monto>/<ref>')
+def aprobar(uid, monto, ref):
+    if session.get('user_id') != 'admin': return "No"
+    users = obtener_usuarios()
+    if uid in users:
+        users[uid]['Saldo_Bs'] = str(float(users[uid]['Saldo_Bs']) + float(monto))
+        with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
+            w = csv.DictWriter(f, fieldnames=["ID", "Nombre", "Cedula", "Saldo_Bs", "Rol", "PIN"])
+            w.writeheader()
+            for row in users.values(): w.writerow(row)
+        registrar_movimiento("SISTEMA", uid, monto, "Recarga Aprobada")
+    return redirect('/pantalla_admin')
+
+@app.route('/procesar_pago/<emisor>/<monto>/<receptor>/<pin>')
+def procesar_pago(emisor, monto, receptor, pin):
+    u = obtener_usuarios()
+    m = float(monto)
+    if emisor in u and u[emisor]['PIN'] == pin and float(u[emisor]['Saldo_Bs']) >= m:
+        u[emisor]['Saldo_Bs'] = str(float(u[emisor]['Saldo_Bs']) - m)
+        u[receptor]['Saldo_Bs'] = str(float(u[receptor]['Saldo_Bs']) + m)
+        with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
+            w = csv.DictWriter(f, fieldnames=["ID", "Nombre", "Cedula", "Saldo_Bs", "Rol", "PIN"])
+            w.writeheader()
+            for row in u.values(): w.writerow(row)
+        registrar_movimiento(emisor, receptor, monto, "Pago Pasaje")
+        return jsonify({"status": "ok"})
+    return jsonify({"status": "error"})
+
+@app.route('/reportar_pago', methods=['POST'])
+def reportar_pago():
+    with open(DB_RECARGAS, 'a', newline='', encoding='utf-8') as f:
+        csv.writer(f).writerow([session['user_id'], request.form.get('ref'), request.form.get('monto'), "PENDIENTE"])
+    return redirect('/')
+
+@app.route('/set_rol/<r>')
+def set_rol(r):
+    u = obtener_usuarios()
+    if session.get('user_id') in u:
+        u[session['user_id']]['Rol'] = r
+        with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
+            w = csv.DictWriter(f, fieldnames=["ID", "Nombre", "Cedula", "Saldo_Bs", "Rol", "PIN"])
+            w.writeheader()
+            for row in u.values(): w.writerow(row)
+    return redirect('/')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+if __name__ == '__main__':
+    inicializar_db()
+    app.run(host='0.0.0.0', port=8000)
+
