@@ -3,21 +3,18 @@ import csv, os, datetime
 
 # --- CONFIGURACIÓN ---
 app = Flask(__name__)
-app.secret_key = 'willpay_2026_modular_v3'
+app.secret_key = 'willpay_2026_modular_v4'
 
 DB_USUARIOS = 'usuarios_v1.csv'
 DB_RECARGAS = 'recargas_v1.csv'
 DB_HISTORIAL = 'historial_v1.csv'
-
-# CONFIGURACIÓN DE COMISIÓN (2% por defecto)
-PORCENTAJE_COMISION = 0.02 
+PORCENTAJE_COMISION = 0.015  # 1.5%
 
 def inicializar_db():
     if not os.path.exists(DB_USUARIOS) or os.stat(DB_USUARIOS).st_size == 0:
         with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(["ID", "Nombre", "Cedula", "Saldo_Bs", "Rol", "PIN"])
-            # Creamos el admin y una cuenta para las ganancias del sistema
             writer.writerow(["admin", "Admin Will-Pay", "V-000", "0.0", "prestador", "1234"])
             writer.writerow(["SISTEMA_GANANCIAS", "Pote de Comisiones", "999", "0.0", "admin", "9999"])
     
@@ -54,10 +51,11 @@ HTML_LAYOUT = '''
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; }
         .will-container { max-width: 450px; margin: 20px auto; padding: 20px; text-align: center; }
-        .main-card { background: #111; border: 2px solid #d4af37; border-radius: 25px; padding: 30px; }
+        .main-card { background: #111; border: 2px solid #d4af37; border-radius: 25px; padding: 30px; box-shadow: 0 0 15px rgba(212,175,55,0.2); }
         .btn-gold { background-color: #d4af37; color: #000; font-weight: bold; border-radius: 12px; width: 100%; border:none; padding: 12px; }
         .saldo-display { color: #d4af37; font-size: 2.5rem; font-weight: bold; }
         .historial-item { background: #1a1a1a; border-left: 4px solid #d4af37; padding: 8px; margin-bottom: 5px; text-align: left; border-radius: 8px; }
+        .modulo-admin { border: 1px solid #444; padding: 15px; border-radius: 15px; margin-top: 15px; background: #0a0a0a; }
     </style>
 </head>
 <body>
@@ -66,7 +64,7 @@ HTML_LAYOUT = '''
         
         {% if vista == 'landing' %}
         <div class="main-card">
-            <h2 style="color: #d4af37;">WILL-PAY</h2>
+            <h2 style="color: #d4af37; font-weight: bold;">WILL-PAY</h2>
             <div class="mt-4">
                 <a href="/login_view" class="btn-gold d-block mb-3 text-decoration-none">INICIAR SESIÓN</a>
                 <a href="/registro_view" class="btn btn-outline-light w-100">REGISTRARSE</a>
@@ -75,33 +73,46 @@ HTML_LAYOUT = '''
 
         {% elif vista == 'login' %}
         <div class="main-card">
-            <h4>Ingresar</h4>
+            <h4 style="color: #d4af37;">Ingresar</h4>
             <form action="/procesar_login" method="POST">
-                <input type="text" name="telefono" class="form-control bg-dark text-white mb-3" placeholder="Teléfono" required>
-                <input type="password" name="pin" class="form-control bg-dark text-white mb-4" placeholder="PIN" required>
+                <input type="text" name="telefono" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Teléfono" required>
+                <input type="password" name="pin" class="form-control bg-dark text-white border-secondary mb-4" placeholder="PIN" required>
                 <button type="submit" class="btn-gold">ENTRAR</button>
             </form>
         </div>
 
         {% elif vista == 'main' %}
         <div class="main-card">
-            {% if usuario.ID == 'admin' %}<div class="badge bg-danger mb-2">ADMIN</div>{% endif %}
+            {% if usuario.ID == 'admin' %}<div class="badge bg-danger mb-2">MODO ADMINISTRADOR</div>{% endif %}
             <div class="saldo-display">Bs. {{ "%.2f"|format(usuario.Saldo_Bs|float) }}</div>
             
             <div class="d-flex gap-2 my-3">
-                <button class="btn btn-sm btn-outline-warning w-100" onclick="document.getElementById('div_recarga').style.display='block'">RECARGAR</button>
+                <button class="btn btn-sm btn-outline-warning w-100" onclick="document.getElementById('div_recarga_user').style.display='block'">RECARGAR</button>
                 {% if usuario.ID == 'admin' %}<a href="/pantalla_admin" class="btn btn-sm btn-danger w-100">REPORTES</a>{% endif %}
             </div>
 
-            <div id="div_recarga" style="display:none;" class="bg-dark p-3 rounded border border-warning mb-3">
+            <div id="div_recarga_user" style="display:none;" class="bg-dark p-3 rounded border border-warning mb-3">
+                <small class="text-warning d-block mb-2">Reportar Pago Móvil al Admin</small>
                 <form action="/reportar_pago" method="POST">
-                    <input type="text" name="ref" class="form-control form-control-sm mb-2" placeholder="Referencia" required>
-                    <input type="number" name="monto" class="form-control form-control-sm mb-2" placeholder="Monto" required>
-                    <button class="btn btn-success btn-sm w-100">Enviar</button>
+                    <input type="text" name="ref" class="form-control form-control-sm mb-2 bg-dark text-white" placeholder="Nro de Referencia" required>
+                    <input type="number" name="monto" class="form-control form-control-sm mb-2 bg-dark text-white" placeholder="Monto Bs." required>
+                    <button class="btn btn-success btn-sm w-100">Enviar Reporte</button>
                 </form>
             </div>
 
-            <div class="btn-group w-100 mb-4">
+            {% if usuario.ID == 'admin' %}
+            <div class="modulo-admin">
+                <h6 class="text-warning small mb-3">CENTRO DE CARGA DIRECTA</h6>
+                <form action="/recarga_directa_admin" method="POST">
+                    <input type="text" name="target_user" class="form-control form-control-sm mb-2 bg-dark text-white border-warning" placeholder="Teléfono del Usuario" required>
+                    <input type="number" step="0.01" name="monto" class="form-control form-control-sm mb-2 bg-dark text-white border-warning" placeholder="Monto a Cargar Bs." required>
+                    <input type="text" name="ref" class="form-control form-control-sm mb-3 bg-dark text-white border-warning" placeholder="Referencia Interna" required>
+                    <button class="btn btn-warning btn-sm w-100" style="font-weight:bold;">EJECUTAR RECARGA</button>
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="btn-group w-100 my-4">
                 <a href="/set_rol/pasajero" class="btn btn-sm {{ 'btn-warning' if usuario.Rol == 'pasajero' else 'btn-dark' }}">PAGAR</a>
                 <a href="/set_rol/prestador" class="btn btn-sm {{ 'btn-warning' if usuario.Rol == 'prestador' else 'btn-dark' }}">COBRAR</a>
             </div>
@@ -110,7 +121,7 @@ HTML_LAYOUT = '''
                 <div class="bg-white p-3 d-inline-block rounded-4">
                     <img id="img_qr" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=WILLPAY|{{usuario.ID}}|10">
                 </div>
-                <p class="mt-2">Monto fijo: 10.00 Bs.</p>
+                <p class="mt-2 small text-secondary">Escanea para pagar 10.00 Bs.</p>
             {% else %}
                 <div id="scanner_container" style="display:none;"><video id="webcam_video" style="width: 100%; border-radius: 15px; border: 2px solid #d4af37;"></video></div>
                 <button id="btn_scan" class="btn-gold py-3" onclick="iniciarEscaneo()">📷 COBRAR PASAJE</button>
@@ -119,23 +130,30 @@ HTML_LAYOUT = '''
             <div class="mt-4" style="max-height: 150px; overflow-y: auto;">
                 {% for item in historial %}
                 <div class="historial-item small">
-                    <b>{{ item.Concepto }}</b>: <span class="{{ 'text-success' if item.Receptor == usuario.ID else 'text-danger' }}">{{ '+' if item.Receptor == usuario.ID else '-' }}{{ item.Monto }} Bs.</span>
+                    <div class="d-flex justify-content-between">
+                        <span>{{ item.Concepto }}</span>
+                        <b class="{{ 'text-success' if item.Receptor == usuario.ID else 'text-danger' }}">
+                            {{ '+' if item.Receptor == usuario.ID else '-' }}{{ item.Monto }} Bs.
+                        </b>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
-            <a href="/logout" class="text-danger small d-block mt-3">Cerrar Sesión</a>
+            <a href="/logout" class="text-danger small d-block mt-3 text-decoration-none">Cerrar Sesión</a>
         </div>
 
         {% elif vista == 'admin' %}
         <div class="main-card">
-            <h6>Pendientes de Aprobación</h6>
+            <h6 class="text-warning mb-3">Solicitudes Pendientes</h6>
             {% for r in recargas %}
-            <div class="bg-dark p-2 mb-2 rounded d-flex justify-content-between align-items-center border">
-                <small>{{ r.ID_User }} ({{ r.Monto_Bs }} Bs.)</small>
-                <a href="/aprobar/{{r.ID_User}}/{{r.Monto_Bs}}/{{r.Referencia}}" class="btn btn-success btn-sm">OK</a>
+            <div class="bg-dark p-2 mb-2 rounded d-flex justify-content-between align-items-center border border-secondary">
+                <div class="text-start small">
+                    <b>{{ r.ID_User }}</b><br>Bs. {{ r.Monto_Bs }}
+                </div>
+                <a href="/aprobar/{{r.ID_User}}/{{r.Monto_Bs}}/{{r.Referencia}}" class="btn btn-success btn-sm">APROBAR</a>
             </div>
             {% endfor %}
-            <a href="/" class="btn btn-outline-light w-100 mt-3">Volver</a>
+            <a href="/" class="btn btn-outline-light w-100 mt-3">Volver al Panel</a>
         </div>
         {% endif %}
     </div>
@@ -150,14 +168,14 @@ HTML_LAYOUT = '''
             codeReader.decodeFromVideoDevice(null, 'webcam_video', (result) => {
                 if (result) {
                     const datos = result.text.split('|');
-                    let pin = prompt(`Cobrar a ${datos[1]}\\nIngrese PIN:`);
+                    let pin = prompt(`Cobrar a ${datos[1]}\\nIngrese PIN del Pasajero:`);
                     if (pin) {
                         fetch(`/procesar_pago/${datos[1]}/${datos[2]}/{{usuario.ID if usuario else ''}}/${pin}`)
                         .then(res => res.json()).then(data => {
                             if(data.status === 'ok') {
                                 document.getElementById('audio_pago').play();
                                 setTimeout(() => { alert("¡PAGO EXITOSO!"); location.reload(); }, 500);
-                            } else { alert("ERROR"); location.reload(); }
+                            } else { alert("ERROR: Saldo o PIN incorrecto"); location.reload(); }
                         });
                     }
                 }
@@ -168,11 +186,38 @@ HTML_LAYOUT = '''
 </html>
 '''
 
-# --- RUTAS MODULARES ---
+# --- MÓDULO NUEVO: RECARGA DIRECTA ADMIN (INDEPENDIENTE) ---
+@app.route('/recarga_directa_admin', methods=['POST'])
+def recarga_directa_admin():
+    if session.get('user_id') != 'admin': return "No autorizado"
+    
+    target = request.form.get('target_user')
+    monto = request.form.get('monto')
+    referencia = request.form.get('ref')
+    
+    u = obtener_usuarios()
+    if target in u:
+        # Sumar saldo al usuario destino
+        u[target]['Saldo_Bs'] = str(round(float(u[target]['Saldo_Bs']) + float(monto), 2))
+        
+        # Guardar en CSV de usuarios
+        with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
+            w = csv.DictWriter(f, fieldnames=["ID", "Nombre", "Cedula", "Saldo_Bs", "Rol", "PIN"])
+            w.writeheader()
+            for row in u.values(): w.writerow(row)
+        
+        # Registrar en el historial
+        registrar_movimiento("ADMIN", target, monto, f"Recarga Directa (Ref: {referencia})")
+        return redirect('/')
+    else:
+        return "El usuario no existe. <a href='/'>Volver</a>"
+
+# --- RESTO DE RUTAS (SE MANTIENEN IGUAL) ---
 @app.route('/')
 def index():
     if 'user_id' not in session: return render_template_string(HTML_LAYOUT, vista='landing', usuario=None)
-    u = obtener_usuarios().get(session['user_id'])
+    usuarios = obtener_usuarios()
+    u = usuarios.get(session['user_id'])
     if not u: return redirect('/logout')
     hist = []
     if os.path.exists(DB_HISTORIAL):
@@ -187,24 +232,17 @@ def procesar_pago(emisor, monto, receptor, pin):
     u = obtener_usuarios()
     m = float(monto)
     if emisor in u and u[emisor]['PIN'] == pin and float(u[emisor]['Saldo_Bs']) >= m:
-        # CÁLCULO DE COMISIÓN MODULAR
-        comision = m * PORCENTAJE_COMISION
-        monto_final_prestador = m - comision
-        
-        # Actualizar saldos
+        comision = round(m * PORCENTAJE_COMISION, 2)
+        monto_final = round(m - comision, 2)
         u[emisor]['Saldo_Bs'] = str(round(float(u[emisor]['Saldo_Bs']) - m, 2))
-        u[receptor]['Saldo_Bs'] = str(round(float(u[receptor]['Saldo_Bs']) + monto_final_prestador, 2))
+        u[receptor]['Saldo_Bs'] = str(round(float(u[receptor]['Saldo_Bs']) + monto_final, 2))
         u['SISTEMA_GANANCIAS']['Saldo_Bs'] = str(round(float(u['SISTEMA_GANANCIAS']['Saldo_Bs']) + comision, 2))
-        
-        # Guardar cambios
         with open(DB_USUARIOS, 'w', newline='', encoding='utf-8') as f:
             w = csv.DictWriter(f, fieldnames=["ID", "Nombre", "Cedula", "Saldo_Bs", "Rol", "PIN"])
             w.writeheader()
             for row in u.values(): w.writerow(row)
-        
-        registrar_movimiento(emisor, receptor, monto_final_prestador, "Pago Pasaje")
-        registrar_movimiento(emisor, "SISTEMA", comision, "Comisión Will-Pay")
-        
+        registrar_movimiento(emisor, receptor, monto_final, "Pago Pasaje")
+        registrar_movimiento(emisor, "SISTEMA", comision, "Comisión Will-Pay (1.5%)")
         return jsonify({"status": "ok"})
     return jsonify({"status": "error"})
 
