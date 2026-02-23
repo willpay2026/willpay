@@ -1,8 +1,8 @@
-from flask import Flask, render_template_string, request, redirect, session, jsonify, send_from_directory
+from flask import Flask, render_template_string, request, redirect, session, send_from_directory
 import csv, os
 
 app = Flask(__name__)
-app.secret_key = 'willpay_final_fix'
+app.secret_key = 'willpay_power_2026'
 
 DB_USUARIOS = 'db_usuarios_final.csv' 
 
@@ -61,7 +61,7 @@ HTML_APP = '''
             <h2 class="gold" style="font-size: 2.5rem;">Bs. {{ usuario.Saldo_Bs }}</h2>
             <div class="my-4">
                 {% if usuario.ID == 'admin' %}
-                <a href="/panel" class="btn-will">ADMINISTRAR</a>
+                <a href="/panel_control" class="btn-will">ADMINISTRAR</a>
                 {% endif %}
             </div>
             <a href="/logout" class="text-danger small text-decoration-none">Cerrar Sesión</a>
@@ -101,9 +101,8 @@ def login():
         if uid in users and users[uid]['PIN'] == pin: session['u'] = uid
     return redirect('/')
 
-# AQUÍ ESTÁ LA RUTA QUE BUSCA EL BOTÓN
-@app.route('/panel')
-def panel():
+@app.route('/panel_control')
+def panel_control():
     if session.get('u') != 'admin': return redirect('/')
     return render_template_string(HTML_APP, vista='admin', usuario={"ID":"admin"})
 
