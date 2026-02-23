@@ -11,39 +11,44 @@ DATABASE_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dp
 PORCENTAJE_COMISION = 0.015
 
 def get_db_connection():
-    # Conexión segura a PostgreSQL
+    # Conexión segura a PostgreSQL con auto-reintento
     return psycopg2.connect(DATABASE_URL, sslmode='require')
 
 def inicializar_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    # Tabla Usuarios (Persistente)
-    cur.execute('''CREATE TABLE IF NOT EXISTS usuarios (
-        id TEXT PRIMARY KEY, 
-        nombre TEXT, 
-        saldo_bs NUMERIC DEFAULT 0, 
-        rol TEXT DEFAULT 'pasajero', 
-        pin TEXT
-    )''')
-    # Tabla Historial
-    cur.execute('''CREATE TABLE IF NOT EXISTS historial (
-        id SERIAL PRIMARY KEY, 
-        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        emisor TEXT, 
-        receptor TEXT, 
-        monto NUMERIC, 
-        concepto TEXT
-    )''')
-    # Crear cuentas maestras si no existen
-    cur.execute("SELECT id FROM usuarios WHERE id = 'admin'")
-    if not cur.fetchone():
-        cur.execute("INSERT INTO usuarios (id, nombre, saldo_bs, rol, pin) VALUES (%s,%s,%s,%s,%s)",
-                    ('admin', 'Admin Will-Pay', 0, 'prestador', '1234'))
-        cur.execute("INSERT INTO usuarios (id, nombre, saldo_bs, rol, pin) VALUES (%s,%s,%s,%s,%s)",
-                    ('SISTEMA_GANANCIAS', 'Pote Comisiones', 0, 'admin', '9999'))
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Tabla Usuarios (Persistente)
+        cur.execute('''CREATE TABLE IF NOT EXISTS usuarios (
+            id TEXT PRIMARY KEY, 
+            nombre TEXT, 
+            saldo_bs NUMERIC DEFAULT 0, 
+            rol TEXT DEFAULT 'pasajero', 
+            pin TEXT
+        )''')
+        # Tabla Historial
+        cur.execute('''CREATE TABLE IF NOT EXISTS historial (
+            id SERIAL PRIMARY KEY, 
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+            emisor TEXT, 
+            receptor TEXT, 
+            monto NUMERIC, 
+            concepto TEXT
+        )''')
+        # Crear cuentas maestras si no existen
+        cur.execute("SELECT id FROM usuarios WHERE id = 'admin'")
+        if not cur.fetchone():
+            cur.execute("INSERT INTO usuarios (id, nombre, saldo_bs, rol, pin) VALUES (%s,%s,%s,%s,%s)",
+                        ('admin', 'Admin Will-Pay', 0, 'prestador', '1234'))
+            cur.execute("INSERT INTO usuarios (id, nombre, saldo_bs, rol, pin) VALUES (%s,%s,%s,%s,%s)",
+                        ('SISTEMA_GANANCIAS', 'Pote Comisiones', 0, 'admin', '9999'))
+        conn.commit()
+    except Exception as e:
+        print(f"Error en DB: {e}")
+    finally:
+        if 'conn' in locals():
+            cur.close()
+            conn.close()
 
 # --- INTERFAZ HTML ---
 HTML_LAYOUT = '''
@@ -175,16 +180,22 @@ HTML_LAYOUT = '''
 # --- RUTAS DE CONTROL ---
 @app.route('/')
 def index():
+    inicializar_db() # Asegura tablas al entrar
     if 'u' not in session: return render_template_string(HTML_LAYOUT, vista='landing')
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, nombre, saldo_bs, rol FROM usuarios WHERE id = %s", (session['u'],))
-    u = cur.fetchone()
-    cur.execute("SELECT * FROM historial WHERE emisor = %s OR receptor = %s ORDER BY fecha DESC LIMIT 10", (u[0], u[0]))
-    h = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template_string(HTML_LAYOUT, vista='main', usuario=u, historial=h)
+    try:
+        cur.execute("SELECT id, nombre, saldo_bs, rol FROM usuarios WHERE id = %s", (session['u'],))
+        u = cur.fetchone()
+        cur.execute("SELECT * FROM historial WHERE emisor = %s OR receptor = %s ORDER BY fecha DESC LIMIT 10", (u[0], u[0]))
+        h = cur.fetchall()
+        return render_template_string(HTML_LAYOUT, vista='main', usuario=u, historial=h)
+    except:
+        session.clear()
+        return redirect('/')
+    finally:
+        cur.close()
+        conn.close()
 
 @app.route('/registro_view')
 def registro_view(): return render_template_string(HTML_LAYOUT, vista='registro')
@@ -194,6 +205,7 @@ def login_view(): return render_template_string(HTML_LAYOUT, vista='login')
 
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
+    inicializar_db()
     t, n, p = request.form['telefono'], request.form['nombre'], request.form['pin']
     conn = get_db_connection()
     cur = conn.cursor()
@@ -201,20 +213,25 @@ def procesar_registro():
         cur.execute("INSERT INTO usuarios (id, nombre, saldo_bs, rol, pin) VALUES (%s,%s,0,'pasajero',%s)", (t, n, p))
         conn.commit()
         session['u'] = t
-    except: pass
-    cur.close()
-    conn.close()
+    except: 
+        conn.rollback()
+    finally:
+        cur.close()
+        conn.close()
     return redirect('/')
 
 @app.route('/procesar_login', methods=['POST'])
 def procesar_login():
+    inicializar_db()
     t, p = request.form['telefono'], request.form['pin']
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id FROM usuarios WHERE id=%s AND pin=%s", (t, p))
-    if cur.fetchone(): session['u'] = t
-    cur.close()
-    conn.close()
+    try:
+        cur.execute("SELECT id FROM usuarios WHERE id=%s AND pin=%s", (t, p))
+        if cur.fetchone(): session['u'] = t
+    finally:
+        cur.close()
+        conn.close()
     return redirect('/')
 
 @app.route('/recarga_directa', methods=['POST'])
@@ -223,11 +240,13 @@ def recarga_directa():
     t, m = request.form['target'], float(request.form['monto'])
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (m, t))
-    cur.execute("INSERT INTO historial (emisor, receptor, monto, concepto) VALUES (%s,%s,%s,%s)", ('ADMIN', t, m, 'Recarga Directa'))
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (m, t))
+        cur.execute("INSERT INTO historial (emisor, receptor, monto, concepto) VALUES (%s,%s,%s,%s)", ('ADMIN', t, m, 'Recarga Directa'))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
     return redirect('/')
 
 @app.route('/set_rol/<r>')
@@ -235,10 +254,12 @@ def set_rol(r):
     if 'u' in session:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE usuarios SET rol = %s WHERE id = %s", (r, session['u']))
-        conn.commit()
-        cur.close()
-        conn.close()
+        try:
+            cur.execute("UPDATE usuarios SET rol = %s WHERE id = %s", (r, session['u']))
+            conn.commit()
+        finally:
+            cur.close()
+            conn.close()
     return redirect('/')
 
 @app.route('/pagar/<emi>/<mon>/<pin>')
@@ -249,20 +270,24 @@ def pagar(emi, mon, pin):
     final = m - com
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT saldo_bs FROM usuarios WHERE id=%s AND pin=%s", (emi, pin))
-    res = cur.fetchone()
-    if res and float(res[0]) >= m:
-        # Transacción SQL Atómica
-        cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (m, emi))
-        cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (final, rec))
-        cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (com, 'SISTEMA_GANANCIAS'))
-        cur.execute("INSERT INTO historial (emisor, receptor, monto, concepto) VALUES (%s,%s,%s,%s)", (emi, rec, final, 'Pago Pasaje'))
-        cur.execute("INSERT INTO historial (emisor, receptor, monto, concepto) VALUES (%s,%s,%s,%s)", (emi, 'SISTEMA', com, 'Comisión 1.5%'))
-        conn.commit()
-        status = "ok"
-    else: status = "error"
-    cur.close()
-    conn.close()
+    try:
+        cur.execute("SELECT saldo_bs FROM usuarios WHERE id=%s AND pin=%s", (emi, pin))
+        res = cur.fetchone()
+        if res and float(res[0]) >= m:
+            cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (m, emi))
+            cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (final, rec))
+            cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (com, 'SISTEMA_GANANCIAS'))
+            cur.execute("INSERT INTO historial (emisor, receptor, monto, concepto) VALUES (%s,%s,%s,%s)", (emi, rec, final, 'Pago Pasaje'))
+            cur.execute("INSERT INTO historial (emisor, receptor, monto, concepto) VALUES (%s,%s,%s,%s)", (emi, 'SISTEMA', com, 'Comisión 1.5%'))
+            conn.commit()
+            status = "ok"
+        else: status = "error"
+    except:
+        conn.rollback()
+        status = "error"
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({"status": status})
 
 @app.route('/logout')
