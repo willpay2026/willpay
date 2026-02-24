@@ -1,12 +1,12 @@
-from flask import Flask, render_template_string, request, redirect, session, jsonify
+from flask import Flask, render_template_string, request, redirect, session
 import psycopg2, os
 from psycopg2.extras import DictCursor
 
-# ESTA LÍNEA ES LA QUE BUSCA EL COMANDO GUNICORN APP:APP
+# CONFIGURACIÓN DEL MOTOR
 app = Flask(__name__)
-app.secret_key = 'willpay_legado_final_2026'
+app.secret_key = 'willpay_legado_wilyanny_2026'
 
-# CONEXIÓN A TU BASE DE DATOS
+# CONEXIÓN A LA BASE DE DATOS
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
 def query_db(query, args=(), one=False, commit=False):
@@ -17,11 +17,24 @@ def query_db(query, args=(), one=False, commit=False):
     if commit:
         conn.commit()
     else:
-        rv = cur.fetchone() if one else cur.fetchall()
+        try:
+            rv = cur.fetchone() if one else cur.fetchall()
+        except:
+            rv = None
     cur.close()
     conn.close()
     return rv
 
+# CREACIÓN AUTOMÁTICA DEL ADMINISTRADOR (WILFREDO)
+@app.before_request
+def inicializar_sistema():
+    query_db("""
+        INSERT INTO usuarios (id, nombre, pin, saldo_bs, rol) 
+        VALUES (%s, %s, %s, %s, %s) 
+        ON CONFLICT (id) DO NOTHING
+    """, ('admin', 'Wilfredo Donquiz', '1234', 100.00, 'prestador'), commit=True)
+
+# --- VISTA PRINCIPAL (DISEÑO Y PRESENTACIÓN) ---
 @app.route('/')
 def index():
     u = None
@@ -33,77 +46,124 @@ def index():
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Emporio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Will-Pay | Revolución de Pagos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; }
-        #splash { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: 0.8s; }
-        .oro { color: #D4AF37; }
-        .card-w { background: #111; border: 2px solid #D4AF37; border-radius: 25px; padding: 30px; margin: 20px auto; max-width: 400px; box-shadow: 0 0 20px rgba(212,175,55,0.2); }
-        .btn-oro { background: #D4AF37; color: #000; font-weight: bold; border: none; border-radius: 12px; padding: 15px; width: 100%; font-size: 1.1rem; }
-        input.form-control { background: #1a1a1a !important; color: white !important; border: 1px solid #333 !important; padding: 12px; }
+        body { background: #000; color: #fff; font-family: 'Trebuchet MS', sans-serif; margin: 0; overflow: hidden; }
+        
+        /* PANTALLA DE PRESENTACIÓN (SPLASH) */
+        #splash { 
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: #000; z-index: 10000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 1.2s ease-in-out;
+        }
+        .logo-grande { 
+            width: 220px; height: 220px; 
+            border-radius: 50%; border: 4px solid #D4AF37;
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.6);
+            animation: latido 2.5s infinite;
+        }
+        @keyframes latido { 
+            0% { transform: scale(1); opacity: 0.8; } 
+            50% { transform: scale(1.05); opacity: 1; } 
+            100% { transform: scale(1); opacity: 0.8; } 
+        }
+        
+        .oro { color: #D4AF37; font-weight: bold; letter-spacing: 6px; margin-top: 25px; text-transform: uppercase; }
+        .subtitulo { color: #888; font-size: 0.9rem; margin-top: 5px; }
+
+        /* CONTENIDO PRINCIPAL */
+        #main-content { opacity: 0; transition: opacity 1.5s; padding-top: 60px; }
+        .card-w { 
+            background: #111; border: 1px solid #D4AF37; border-radius: 25px; 
+            padding: 35px; max-width: 420px; margin: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .btn-oro { 
+            background: linear-gradient(145deg, #D4AF37, #B8860B); 
+            color: #000; font-weight: bold; border-radius: 12px; 
+            padding: 15px; width: 100%; border: none; font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+        input.form-control { 
+            background: #1a1a1a !important; color: white !important; 
+            border: 1px solid #333 !important; padding: 15px; margin-bottom: 15px;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
+
     <div id="splash">
-        <h1 class="oro" style="letter-spacing:10px; font-weight:bold;">WILL-PAY</h1>
-        <p class="text-secondary">Tecnología con corazón</p>
+        <img src="/static/logo%20will-pay.jpg" class="logo-grande" alt="Escudo Will-Pay">
+        <h1 class="oro">WILL-PAY</h1>
+        <p class="subtitulo">Tecnología con corazón, pensada para Venezuela</p>
     </div>
 
-    <div class="container mt-5 pt-5">
-        <h2 class="oro" style="font-weight:bold;">WILL-PAY</h2>
+    <div id="main-content" class="container">
+        <h2 class="oro text-center mb-4" style="font-size: 1.5rem;">WILL-PAY</h2>
+        
         {% if not u %}
             <div class="card-w">
-                <h4 class="mb-4">INICIAR SESIÓN</h4>
+                <h4 class="text-center mb-4" style="color: #eee;">BIENVENIDO</h4>
                 <form action="/login" method="POST">
-                    <input name="t" placeholder="Teléfono / Usuario" class="form-control mb-2 shadow-none" required>
-                    <input name="p" type="password" placeholder="PIN" class="form-control mb-4 shadow-none" required>
+                    <input name="t" placeholder="Usuario / Teléfono" class="form-control shadow-none" required>
+                    <input name="p" type="password" placeholder="PIN de Seguridad" class="form-control shadow-none" required>
                     <button class="btn-oro">ENTRAR AL SISTEMA</button>
                 </form>
             </div>
         {% else %}
-            <div class="card-w">
-                <p class="small text-secondary mb-1">Saldo Disponible</p>
+            <div class="card-w text-center">
+                <p class="small text-secondary mb-1">Panel de Control</p>
+                <h4 class="mb-4">{{ u.nombre }}</h4>
+                <p class="text-secondary small mb-0">Saldo Disponible</p>
                 <h1 class="oro" style="font-size: 3rem;">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h1>
-                <hr class="border-secondary my-4">
-                <div class="btn-group w-100">
-                    <a href="/rol/pasajero" class="btn btn-dark border-warning py-3">PAGAR</a>
-                    <a href="/rol/prestador" class="btn btn-dark border-warning py-3">COBRAR</a>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-outline-warning btn-lg py-3" style="border-radius:15px;">PAGAR</button>
+                    <button class="btn btn-dark border-warning btn-lg py-3" style="border-radius:15px;">COBRAR</button>
                 </div>
+                
                 <div class="mt-4">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="alert('BANESCO\\n04126602555\\n13.496.133')">Ver datos de recarga</button>
+                    <a href="/logout" class="btn btn-link text-danger text-decoration-none">Cerrar Sesión Segura</a>
                 </div>
-                <a href="/logout" class="btn btn-link btn-sm text-danger mt-4" style="text-decoration:none;">Cerrar Sesión</a>
             </div>
         {% endif %}
     </div>
 
     <script>
-        setTimeout(() => { 
-            const s = document.getElementById('splash');
-            s.style.opacity = '0';
-            setTimeout(() => { s.style.display='none'; }, 800);
-        }, 2500);
+        window.onload = function() {
+            setTimeout(() => {
+                const splash = document.getElementById('splash');
+                const content = document.getElementById('main-content');
+                splash.style.opacity = '0';
+                content.style.opacity = '1';
+                document.body.style.overflow = 'auto';
+                setTimeout(() => { splash.style.display = 'none'; }, 1200);
+            }, 3500); 
+        };
     </script>
 </body>
 </html>
 ''', u=u)
 
+# --- RUTAS DE CONTROL ---
 @app.route('/login', methods=['POST'])
 def login():
-    res = query_db("SELECT id FROM usuarios WHERE id=%s AND pin=%s", (request.form['t'], request.form['p']), one=True)
-    if res: session['u'] = res['id']
-    return redirect('/')
-
-@app.route('/rol/<r>')
-def rol(r):
-    query_db("UPDATE usuarios SET rol=%s WHERE id=%s", (r, session['u']), commit=True)
+    usuario_id = request.form['t']
+    pin = request.form['p']
+    res = query_db("SELECT id FROM usuarios WHERE id=%s AND pin=%s", (usuario_id, pin), one=True)
+    if res:
+        session['u'] = res['id']
     return redirect('/')
 
 @app.route('/logout')
 def logout():
-    session.clear(); return redirect('/')
+    session.clear()
+    return redirect('/')
 
 if __name__ == '__main__':
+    # Esto es para pruebas locales, Render usa gunicorn
     app.run()
