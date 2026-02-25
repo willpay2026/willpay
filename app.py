@@ -44,15 +44,16 @@ LAYOUT = '''
         #ticket { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; padding:20px; overflow-y: auto; }
         .recibo-papel { background: white; color: black; padding: 25px; border-radius: 5px; font-family: monospace; text-align: left; max-width: 400px; margin: auto; border-top: 8px solid var(--oro); }
         .logo-container { margin-bottom: 15px; }
-        .logo-img { width: 120px; height: auto; margin-bottom: 10px; filter: drop-shadow(0px 0px 8px #D4AF37); }
+        .logo-img { width: 150px; height: auto; margin-bottom: 10px; filter: drop-shadow(0px 0px 8px #D4AF37); border-radius: 15px; }
+        .vision-text { font-size: 0.85rem; color: #aaa; max-width: 300px; margin: 10px auto; line-height: 1.2; font-style: italic; }
     </style>
 </head>
 <body>
     <div class="container text-center py-4">
         <div class="logo-container">
-            <img src="https://cdn-icons-png.flaticon.com/512/11104/11104192.png" alt="Will-Pay Logo" class="logo-img">
+            <img src="https://raw.githubusercontent.com/willpay2026/willpay/main/logo%20will-pay.jpg" alt="Will-Pay Logo" class="logo-img">
             <h2 class="oro-text mb-0">WILL-PAY</h2>
-            <p class="small text-secondary">Tecnología con corazón para Venezuela</p>
+            <p class="vision-text">"Una idea simple, un código honesto y un corazón para mi región. El legado de un padre para Wilyanny y para toda Venezuela."</p>
         </div>
 
         {% if not session.get('u') %}
@@ -282,7 +283,6 @@ def logout():
 def actualizar_db():
     if session.get('u') != '04126602555': return "No autorizado"
     try:
-        # CREACIÓN DE TABLAS DESDE CERO
         query_db("""
             CREATE TABLE IF NOT EXISTS recargas (
                 id SERIAL PRIMARY KEY,
