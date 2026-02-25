@@ -1,3 +1,10 @@
+from flask import Flask, render_template_string, request, redirect, session, jsonify
+import psycopg2, os, datetime
+from psycopg2.extras import DictCursor
+
+app = Flask(__name__)
+app.secret_key = 'willpay_emporio_final_2026_legado_wilyanny'
+
 # CONFIGURACIÓN DE BASE DE DATOS
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
@@ -43,7 +50,7 @@ LAYOUT = '''
 <body>
     <div class="container text-center py-4">
         <div class="logo-container">
-            <img src="TU_URL_DE_LOGO_AQUI" alt="Will-Pay Logo" class="logo-img" onerror="this.style.display='none'">
+            <img src="https://i.ibb.co/VWVf0X9/willpay-logo.png" alt="Will-Pay Logo" class="logo-img" onerror="this.style.display='none'">
             <h2 class="oro-text mb-0">WILL-PAY</h2>
             <p class="small text-secondary">Tecnología con corazón para Venezuela</p>
         </div>
@@ -60,44 +67,26 @@ LAYOUT = '''
             </div>
 
             <div class="card-will" id="reg_form" style="display:none;">
-                <h4 class="oro-text mb-4">CREAR CUENTA COMERCIAL</h4>
+                <h4 class="oro-text mb-4">NUEVA CUENTA COMERCIAL</h4>
                 <form action="/registro" method="POST">
-                    <input name="n" placeholder="Nombre Completo o Razón Social" class="form-control input-will" required>
-                    <input name="t" placeholder="Teléfono (Será su ID)" class="form-control input-will" required>
-                    <input name="p" type="password" placeholder="PIN Secreto" class="form-control input-will" required>
-                    
+                    <input name="n" placeholder="Nombre Completo" class="form-control input-will" required>
+                    <input name="t" placeholder="Teléfono" class="form-control input-will" required>
+                    <input name="p" type="password" placeholder="PIN" class="form-control input-will" required>
                     <select name="servicio" class="form-control input-will" required>
-                        <option value="" disabled selected>Seleccione su Actividad</option>
-                        <option value="PASAJERO">Pasajero / Cliente General</option>
-                        <option value="CONDUCTOR INDEPENDIENTE">Conductor Independiente</option>
-                        <option value="CARRITO PIRATA">Carrito Pirata</option>
+                        <option value="PASAJERO">Pasajero / Cliente</option>
                         <option value="TAXISTA">Taxista</option>
                         <option value="REPOSTERO">Repostero</option>
                         <option value="COMIDA RAPIDA">Comida Rápida</option>
-                        <option value="ECONOMÍA INFORMAL">Economía Informal</option>
                         <option value="DELIVERY">Delivery</option>
-                        <option value="LINEA URBANA">Línea Urbana</option>
-                        <option value="LINEA EXTRA URBANA">Línea Extra Urbana</option>
-                        <option value="VIAJES LARGOS">Viajes Largos</option>
-                        <option value="EXPRESOS">Expresos</option>
-                        <option value="ENCOMIENDAS">Encomiendas</option>
-                        <option value="REPARACIONES DOMICILIO">Reparaciones a Domicilio</option>
-                        <option value="ALBAÑIL">Albañil</option>
-                        <option value="CLASES DIRIGIDAS">Clases Dirigidas</option>
-                        <option value="COLEGIO PUBLICO">Colegio Público</option>
-                        <option value="COLEGIO PRIVADO">Colegio Privado</option>
-                        <option value="PANADERIA">Panadería</option>
-                        <option value="FERRETERIA">Ferretería</option>
                         <option value="OTROS">Otros Servicios</option>
                     </select>
-
-                    <button class="btn-will">REGISTRAR EN EL EMPORIO</button>
+                    <button class="btn-will">CREAR CUENTA</button>
                 </form>
-                <button class="btn btn-link text-secondary mt-3" onclick="showLogin()">Volver al Inicio</button>
+                <button class="btn btn-link text-secondary mt-3" onclick="showLogin()">Volver</button>
             </div>
         {% else %}
             <div class="card-will">
-                <p class="mb-0 text-secondary small">Bienvenido | {{ u.servicio }}</p>
+                <p class="mb-0 text-secondary small">Bienvenido | {{ u.servicio if u.servicio else 'USUARIO' }}</p>
                 <h4 class="oro-text">{{ u.nombre }}</h4>
                 <div class="saldo-display">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
                 
@@ -112,7 +101,7 @@ LAYOUT = '''
                 </div>
 
                 {% if u.rol == 'pasajero' %}
-                    <label class="small text-secondary">Monto a transferir:</label>
+                    <label class="small text-secondary">Monto a pagar:</label>
                     <input type="number" id="val_pago" class="form-control text-center bg-transparent border-0 oro-text mb-3" style="font-size:2.5rem;" placeholder="0.00" oninput="genQR()">
                     <div class="bg-white p-2 d-inline-block rounded"><img id="q_img" src="" style="width:180px;"></div>
                 {% else %}
@@ -133,7 +122,7 @@ LAYOUT = '''
                     <p class="mb-1"><b>Cédula:</b> V-13496133</p>
                 </div>
                 <form action="/reportar" method="POST">
-                    <input name="ref" placeholder="Referencia Bancaria" class="form-control input-will" required>
+                    <input name="ref" placeholder="Referencia" class="form-control input-will" required>
                     <input name="monto" type="number" step="0.01" placeholder="Monto Bs." class="form-control input-will" required>
                     <button class="btn-will">REPORTAR PAGO</button>
                     <button type="button" class="btn btn-link text-secondary w-100" onclick="hideRecarga()">Cancelar</button>
@@ -144,24 +133,18 @@ LAYOUT = '''
 
     <div id="ticket">
         <div class="recibo-papel mt-4">
-            <div class="text-center">
-                <img src="TU_URL_DE_LOGO_AQUI" style="width:50px; filter: grayscale(1);">
-                <h5 class="mb-0">WILL-PAY</h5>
-                <p class="small">Comprobante de Servicio</p>
-            </div>
+            <h5 class="text-center">WILL-PAY</h5>
             <hr>
-            <p id="t_correlativo" style="font-weight:bold;"></p>
+            <p id="t_correlativo"></p>
             <p id="t_fecha"></p>
             <hr>
-            <p><strong>DE (Pagador):</strong><br><span id="t_emisor"></span></p>
-            <p><strong>A (Beneficiario):</strong><br><span id="t_receptor"></span></p>
-            <p><strong>SERVICIO:</strong><br><span id="t_servicio_detalle" style="color:#D4AF37; font-weight:bold;"></span></p>
+            <p><strong>PAGADOR:</strong> <span id="t_emisor"></span></p>
+            <p><strong>RECEPTOR:</strong> <span id="t_receptor"></span></p>
+            <p><strong>SERVICIO:</strong> <span id="t_servicio_detalle"></span></p>
             <hr>
             <h3 class="text-center" id="t_monto_total"></h3>
-            <p class="text-center small">Ref. Digital: <span id="t_ref_banc"></span></p>
-            <hr>
-            <p class="text-center small" style="font-size:0.6rem;">Este recibo es un registro digital de la transacción para fines de auditoría interna en el sistema Will-Pay.</p>
-            <button class="btn btn-dark w-100 mt-3" onclick="location.reload()">FINALIZAR</button>
+            <p class="text-center small">Ref: <span id="t_ref_banc"></span></p>
+            <button class="btn btn-dark w-100 mt-3" onclick="location.reload()">CERRAR</button>
         </div>
     </div>
 
@@ -188,9 +171,9 @@ LAYOUT = '''
                             if(j.status == 'ok') {
                                 snd.play();
                                 document.getElementById('t_correlativo').innerText = j.correlativo;
-                                document.getElementById('t_fecha').innerText = "FECHA: " + j.fecha_hora;
-                                document.getElementById('t_emisor').innerText = j.emisor_nom + " (" + j.emisor_id + ")";
-                                document.getElementById('t_receptor').innerText = j.receptor_nom + " (" + j.receptor_id + ")";
+                                document.getElementById('t_fecha').innerText = j.fecha_hora;
+                                document.getElementById('t_emisor').innerText = j.emisor_nom;
+                                document.getElementById('t_receptor').innerText = j.receptor_nom;
                                 document.getElementById('t_servicio_detalle').innerText = j.receptor_servicio;
                                 document.getElementById('t_monto_total').innerText = j.monto + " Bs.";
                                 document.getElementById('t_ref_banc').innerText = j.ref;
@@ -222,7 +205,6 @@ def login():
 
 @app.route('/registro', methods=['POST'])
 def registro():
-    # Registro con campo Servicio
     query_db("INSERT INTO usuarios (id, pin, nombre, saldo_bs, rol, servicio) VALUES (%s, %s, %s, 0, 'pasajero', %s)", 
              (request.form['t'], request.form['p'], request.form['n'], request.form['servicio']), commit=True)
     session['u'] = request.form['t']
@@ -234,43 +216,38 @@ def do_pago(emi, mon):
         m = float(mon)
         pas = query_db("SELECT nombre, saldo_bs FROM usuarios WHERE id=%s", (emi,), one=True)
         rec = query_db("SELECT nombre, servicio FROM usuarios WHERE id=%s", (session['u'],), one=True)
-        
         if pas and float(pas['saldo_bs']) >= m:
             com = m * 0.015
             neto = m - com
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (m, emi), commit=True)
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (neto, session['u']), commit=True)
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id='SISTEMA_GANANCIAS'", (com,), commit=True)
-            
             ahora = datetime.datetime.now()
-            query_db("INSERT INTO pagos (emisor_id, receptor_id, monto, fecha) VALUES (%s, %s, %s, %s)", 
-                     (emi, session['u'], m, ahora), commit=True)
-            
+            query_db("INSERT INTO pagos (emisor_id, receptor_id, monto, fecha) VALUES (%s, %s, %s, %s)", (emi, session['u'], m, ahora), commit=True)
             last = query_db("SELECT id FROM pagos ORDER BY id DESC LIMIT 1", one=True)
-            
             return jsonify({
                 "status": "ok", "monto": m, 
-                "correlativo": f"RECIBO N° WP-{last['id']:06d}",
-                "fecha_hora": ahora.strftime("%d/%m/%Y %H:%M:%S"),
-                "emisor_nom": pas['nombre'], "emisor_id": emi,
-                "receptor_nom": rec['nombre'], "receptor_id": session['u'],
+                "correlativo": f"WP-{last['id']:06d}",
+                "fecha_hora": ahora.strftime("%d/%m/%Y %H:%M"),
+                "emisor_nom": pas['nombre'],
+                "receptor_nom": rec['nombre'],
                 "receptor_servicio": rec['servicio'],
                 "ref": ahora.strftime("%H%M%S")
             })
         return jsonify({"status": "error", "msg": "Saldo Insuficiente"})
-    except: return jsonify({"status": "error", "msg": "Error en proceso"})
+    except Exception as e: return jsonify({"status": "error", "msg": str(e)})
 
 @app.route('/reportar', methods=['POST'])
 def reportar():
     query_db("INSERT INTO recargas (usuario_id, monto, referencia, estado) VALUES (%s, %s, %s, 'pendiente')",
              (session['u'], request.form['monto'], request.form['ref']), commit=True)
-    return "<h1>REPORTE ENVIADO</h1><p>Wilfredo validará tu pago pronto.</p><a href='/'>Volver</a>"
+    return "<h1>REPORTE ENVIADO</h1><a href='/'>Volver</a>"
 
 @app.route('/admin_panel')
 def admin_panel():
     if session.get('u') != '04126602555': return "No autorizado"
     pendientes = query_db("SELECT * FROM recargas WHERE estado='pendiente'")
-    return f"<h2>Panel Admin Will-Pay</h2>" + "".join([f"Ref: {r['referencia']} - {r['monto']} Bs <a href='/aprobar/{r['id']}'>APROBAR</a><br>" for r in pendientes])
+    return f"<h2>Admin</h2>" + "".join([f"{r['monto']} Bs <a href='/aprobar/{r['id']}'>APROBAR</a><br>" for r in pendientes])
 
 @app.route('/aprobar/<rid>')
 def aprobar(rid):
@@ -289,6 +266,14 @@ def rol(r):
 def logout():
     session.clear(); return redirect('/')
 
+# LLAVE MAESTRA DE DESBLOQUEO
+@app.route('/actualizar_db_secreta')
+def actualizar_db():
+    if session.get('u') != '04126602555': return "No autorizado"
+    try:
+        query_db("ALTER TABLE usuarios ADD COLUMN servicio TEXT DEFAULT 'PASAJERO';", commit=True)
+        return "<h1>BASE DE DATOS DESBLOQUEADA</h1><a href='/'>Ir a la App</a>"
+    except Exception as e: return f"Error: {e}"
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
-
