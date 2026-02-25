@@ -44,13 +44,13 @@ LAYOUT = '''
         #ticket { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; padding:20px; overflow-y: auto; }
         .recibo-papel { background: white; color: black; padding: 25px; border-radius: 5px; font-family: monospace; text-align: left; max-width: 400px; margin: auto; border-top: 8px solid var(--oro); }
         .logo-container { margin-bottom: 15px; }
-        .logo-img { width: 80px; height: auto; border-radius: 10px; }
+        .logo-img { width: 120px; height: auto; margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <div class="container text-center py-4">
         <div class="logo-container">
-            <img src="https://i.ibb.co/VWVf0X9/willpay-logo.png" alt="Will-Pay Logo" class="logo-img" onerror="this.style.display='none'">
+            <img src="https://i.postimg.cc/8cM69M8B/willpay-gold-logo.png" alt="Will-Pay Logo" class="logo-img">
             <h2 class="oro-text mb-0">WILL-PAY</h2>
             <p class="small text-secondary">Tecnología con corazón para Venezuela</p>
         </div>
@@ -221,7 +221,10 @@ def do_pago(emi, mon):
             neto = m - com
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (m, emi), commit=True)
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (neto, session['u']), commit=True)
+            # Aseguramos que el usuario SISTEMA_GANANCIAS exista para evitar errores
+            query_db("INSERT INTO usuarios (id, pin, nombre, saldo_bs, rol) VALUES ('SISTEMA_GANANCIAS', '0000', 'Bolsa WillPay', 0, 'admin') ON CONFLICT DO NOTHING", commit=True)
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id='SISTEMA_GANANCIAS'", (com,), commit=True)
+            
             ahora = datetime.datetime.now()
             query_db("INSERT INTO pagos (emisor_id, receptor_id, monto, fecha) VALUES (%s, %s, %s, %s)", (emi, session['u'], m, ahora), commit=True)
             last = query_db("SELECT id FROM pagos ORDER BY id DESC LIMIT 1", one=True)
@@ -247,14 +250,20 @@ def reportar():
 def admin_panel():
     if session.get('u') != '04126602555': return "No autorizado"
     pendientes = query_db("SELECT * FROM recargas WHERE estado='pendiente'")
-    return f"<h2>Admin</h2>" + "".join([f"{r['monto']} Bs <a href='/aprobar/{r['id']}'>APROBAR</a><br>" for r in pendientes])
+    html = "<h2>Panel de Control Will-Pay</h2><h3>Recargas por Aprobar:</h3>"
+    if not pendientes: html += "<p>No hay pagos pendientes.</p>"
+    for r in pendientes:
+        html += f"<div style='border:1px solid gold; padding:10px; margin:5px;'>ID Usuario: {r['usuario_id']} | Monto: {r['monto']} Bs | Ref: {r['referencia']} <a href='/aprobar/{r['id']}'>[APROBAR RECARGA]</a></div>"
+    html += "<br><a href='/'>Volver a la App</a>"
+    return html
 
 @app.route('/aprobar/<rid>')
 def aprobar(rid):
     if session.get('u') != '04126602555': return "Error"
     r = query_db("SELECT * FROM recargas WHERE id=%s", (rid,), one=True)
-    query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (r['monto'], r['usuario_id']), commit=True)
-    query_db("UPDATE recargas SET estado='aprobado' WHERE id=%s", (rid,), commit=True)
+    if r:
+        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (r['monto'], r['usuario_id']), commit=True)
+        query_db("UPDATE recargas SET estado='aprobado' WHERE id=%s", (rid,), commit=True)
     return redirect('/admin_panel')
 
 @app.route('/rol/<r>')
@@ -266,13 +275,19 @@ def rol(r):
 def logout():
     session.clear(); return redirect('/')
 
-# LLAVE MAESTRA DE DESBLOQUEO
+# LLAVE MAESTRA REFORZADA - EJECUTAR UNA VEZ DESPUÉS DE SUBIR EL CÓDIGO
 @app.route('/actualizar_db_secreta')
 def actualizar_db():
     if session.get('u') != '04126602555': return "No autorizado"
     try:
-        query_db("ALTER TABLE usuarios ADD COLUMN servicio TEXT DEFAULT 'PASAJERO';", commit=True)
-        return "<h1>BASE DE DATOS DESBLOQUEADA</h1><a href='/'>Ir a la App</a>"
+        # Arreglo de tablas para evitar errores de servidor sobrecargado
+        try: query_db("ALTER TABLE usuarios ADD COLUMN servicio TEXT DEFAULT 'PASAJERO';", commit=True)
+        except: pass
+        try: query_db("ALTER TABLE recargas ADD COLUMN estado TEXT DEFAULT 'pendiente';", commit=True)
+        except: pass
+        try: query_db("ALTER TABLE recargas ADD COLUMN fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP;", commit=True)
+        except: pass
+        return "<h1>EMPORIO TOTALMENTE ACTIVADO</h1><a href='/'>Ir a la App</a>"
     except Exception as e: return f"Error: {e}"
 
 if __name__ == '__main__':
