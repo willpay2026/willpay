@@ -222,6 +222,8 @@ def do_pago(emi, mon):
             neto = m - com
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (m, emi), commit=True)
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (neto, session['u']), commit=True)
+            
+            # GANANCIA DEL SISTEMA
             query_db("INSERT INTO usuarios (id, pin, nombre, saldo_bs, rol) VALUES ('SISTEMA_GANANCIAS', '0000', 'Bolsa WillPay', 0, 'admin') ON CONFLICT DO NOTHING", commit=True)
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id='SISTEMA_GANANCIAS'", (com,), commit=True)
             
@@ -250,13 +252,24 @@ def reportar():
 def admin_panel():
     if session.get('u') != '04126602555': return "No autorizado"
     try:
+        # AQUÍ ESTÁ EL CAMBIO: CONSULTA DE COMISIONES ACUMULADAS
+        ganancias = query_db("SELECT saldo_bs FROM usuarios WHERE id='SISTEMA_GANANCIAS'", one=True)
+        bolsa = ganancias['saldo_bs'] if ganancias else 0
+        
         pendientes = query_db("SELECT * FROM recargas WHERE estado='pendiente'")
-        html = "<div style='background:black; color:white; padding:20px; font-family:sans-serif;'><h2>Panel Administrativo</h2>"
+        html = f"<div style='background:black; color:white; padding:20px; font-family:sans-serif;'>"
+        html += f"<div style='border:2px solid gold; padding:15px; border-radius:15px; margin-bottom:20px; text-align:center;'>"
+        html += f"<h4 style='color:gold; margin-bottom:5px;'>COMISIONES ACUMULADAS (1.5%)</h4>"
+        html += f"<h2 style='font-size:2.5rem;'>Bs. {bolsa:,.2f}</h2>"
+        html += f"</div>"
+        
+        html += "<h3>Recargas por Aprobar</h3>"
         if not pendientes: html += "<p>No hay recargas pendientes.</p>"
         else:
             for r in pendientes:
-                html += f"<div style='border:1px solid gold; padding:15px; margin-bottom:10px; border-radius:10px;'><b>ID Usuario:</b> {r['usuario_id']} <br> <b>Monto:</b> {r['monto']} Bs <br> <b>Ref:</b> {r['referencia']} <br><br> <a href='/aprobar/{r['id']}' style='background:lime; color:black; padding:5px; text-decoration:none; border-radius:5px;'>[APROBAR RECARGA]</a></div>"
-        html += "<br><a href='/' style='color:gold;'>Volver a la App</a></div>"
+                html += f"<div style='border:1px solid gold; padding:15px; margin-bottom:10px; border-radius:10px;'><b>ID Usuario:</b> {r['usuario_id']} <br> <b>Monto:</b> {r['monto']} Bs <br> <b>Ref:</b> {r['referencia']} <br><br> <a href='/aprobar/{r['id']}' style='background:lime; color:black; padding:10px; text-decoration:none; border-radius:5px; font-weight:bold;'>[APROBAR RECARGA]</a></div>"
+        
+        html += "<br><a href='/' style='color:gold; font-weight:bold; text-decoration:none;'>← Volver a la App Principal</a></div>"
         return html
     except Exception as e:
         return f"Error en el panel: {e}. Entra primero a /actualizar_db_secreta"
