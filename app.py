@@ -44,13 +44,13 @@ LAYOUT = '''
         #ticket { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; padding:20px; overflow-y: auto; }
         .recibo-papel { background: white; color: black; padding: 25px; border-radius: 5px; font-family: monospace; text-align: left; max-width: 400px; margin: auto; border-top: 8px solid var(--oro); }
         .logo-container { margin-bottom: 15px; }
-        .logo-img { width: 120px; height: auto; margin-bottom: 10px; }
+        .logo-img { width: 120px; height: auto; margin-bottom: 10px; filter: drop-shadow(0px 0px 5px #D4AF37); }
     </style>
 </head>
 <body>
     <div class="container text-center py-4">
         <div class="logo-container">
-            <img src="https://i.postimg.cc/8cM69M8B/willpay-gold-logo.png" alt="Will-Pay Logo" class="logo-img">
+            <img src="https://cdn-icons-png.flaticon.com/512/11104/11104192.png" alt="Will-Pay Logo" class="logo-img">
             <h2 class="oro-text mb-0">WILL-PAY</h2>
             <p class="small text-secondary">Tecnología con corazón para Venezuela</p>
         </div>
@@ -221,7 +221,6 @@ def do_pago(emi, mon):
             neto = m - com
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (m, emi), commit=True)
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (neto, session['u']), commit=True)
-            # Aseguramos que el usuario SISTEMA_GANANCIAS exista para evitar errores
             query_db("INSERT INTO usuarios (id, pin, nombre, saldo_bs, rol) VALUES ('SISTEMA_GANANCIAS', '0000', 'Bolsa WillPay', 0, 'admin') ON CONFLICT DO NOTHING", commit=True)
             query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id='SISTEMA_GANANCIAS'", (com,), commit=True)
             
@@ -249,13 +248,16 @@ def reportar():
 @app.route('/admin_panel')
 def admin_panel():
     if session.get('u') != '04126602555': return "No autorizado"
-    pendientes = query_db("SELECT * FROM recargas WHERE estado='pendiente'")
-    html = "<h2>Panel de Control Will-Pay</h2><h3>Recargas por Aprobar:</h3>"
-    if not pendientes: html += "<p>No hay pagos pendientes.</p>"
-    for r in pendientes:
-        html += f"<div style='border:1px solid gold; padding:10px; margin:5px;'>ID Usuario: {r['usuario_id']} | Monto: {r['monto']} Bs | Ref: {r['referencia']} <a href='/aprobar/{r['id']}'>[APROBAR RECARGA]</a></div>"
-    html += "<br><a href='/'>Volver a la App</a>"
-    return html
+    try:
+        pendientes = query_db("SELECT * FROM recargas WHERE estado='pendiente'")
+        html = "<div style='background:black; color:white; padding:20px;'><h2>Panel Administrativo</h2>"
+        if not pendientes: html += "<p>No hay recargas pendientes.</p>"
+        for r in pendientes:
+            html += f"<div style='border:1px solid gold; padding:10px; margin:5px;'>ID: {r['usuario_id']} | Monto: {r['monto']} Bs | Ref: {r['referencia']} <a href='/aprobar/{r['id']}' style='color:lime;'>[APROBAR]</a></div>"
+        html += "<br><a href='/' style='color:gold;'>Volver a la App</a></div>"
+        return html
+    except Exception as e:
+        return f"Error en el panel: {e}. Intenta entrar a /actualizar_db_secreta"
 
 @app.route('/aprobar/<rid>')
 def aprobar(rid):
@@ -275,12 +277,11 @@ def rol(r):
 def logout():
     session.clear(); return redirect('/')
 
-# LLAVE MAESTRA REFORZADA - EJECUTAR UNA VEZ DESPUÉS DE SUBIR EL CÓDIGO
 @app.route('/actualizar_db_secreta')
 def actualizar_db():
     if session.get('u') != '04126602555': return "No autorizado"
     try:
-        # Arreglo de tablas para evitar errores de servidor sobrecargado
+        # Forzamos la creación de columnas necesarias
         try: query_db("ALTER TABLE usuarios ADD COLUMN servicio TEXT DEFAULT 'PASAJERO';", commit=True)
         except: pass
         try: query_db("ALTER TABLE recargas ADD COLUMN estado TEXT DEFAULT 'pendiente';", commit=True)
