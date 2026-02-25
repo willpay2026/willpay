@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, request, redirect, session, jsonify, url_for
+from flask import Flask, render_template_string, request, redirect, session, jsonify, url_for, send_from_directory
 import psycopg2, os, datetime, base64
 from psycopg2.extras import DictCursor
 
@@ -23,7 +23,6 @@ def query_db(query, args=(), one=False, commit=False):
         conn.close()
     return rv
 
-# --- INTERFAZ PREMIUM CON LOGO GRANDE Y SLOGAN ---
 LAYOUT = '''
 <!DOCTYPE html>
 <html lang="es">
@@ -35,131 +34,159 @@ LAYOUT = '''
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --oro: #D4AF37; --negro: #000; }
-        body { background: var(--negro); color: white; font-family: 'Segoe UI', sans-serif; }
-        .card-will { background: #111; border: 2px solid var(--oro); border-radius: 25px; padding: 25px; margin-top: 20px; }
+        body { background: var(--negro); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; }
+        .card-will { background: #111; border: 2px solid var(--oro); border-radius: 25px; padding: 25px; margin: 20px auto; max-width: 450px; }
         .oro-text { color: var(--oro); font-weight: bold; }
         .btn-will { background: var(--oro); color: black; font-weight: bold; border-radius: 12px; border: none; padding: 15px; width: 100%; }
-        .logo-img { width: 320px; height: auto; margin-bottom: 5px; filter: drop-shadow(0px 0px 15px #D4AF37); border-radius: 20px; }
-        .vision-text { font-size: 1.1rem; color: var(--oro); font-weight: bold; text-transform: uppercase; }
-        .input-will { background: #222 !important; color: white !important; border: 1px solid #444 !important; margin-bottom: 10px; }
+        .logo-img { width: 250px; border-radius: 15px; margin: 15px 0; }
+        .input-will { background: #222 !important; color: white !important; border: 1px solid #444 !important; margin-bottom: 10px; text-align: center; }
+        
+        /* DISEÑO DEL RECIBO */
+        #pantalla_recibo { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; padding-top:40px; }
+        .recibo-digital { background: white; color: black; padding: 25px; border-radius: 15px; max-width: 340px; margin: auto; font-family: monospace; box-shadow: 0 0 20px var(--oro); }
     </style>
 </head>
 <body>
-    <div class="container text-center py-4">
-        <div class="logo-container">
-            <img src="https://raw.githubusercontent.com/willpay2026/willpay/main/logo%20will-pay.jpg" class="logo-img">
-            <h2 class="oro-text mb-0">WILL-PAY</h2>
-            <p class="vision-text">UNA MANERA MÁS SENCILLA DE PAGAR</p>
-        </div>
-
-        {% if not session.get('u') %}
+    <div class="container py-3">
+        <img src="/logonuevo.png" class="logo-img">
+        
+        {% if session.get('u') %}
             <div class="card-will">
-                <h4 class="oro-text mb-4">INICIAR SESIÓN</h4>
-                <form action="/auth_login" method="POST">
-                    <input name="t" placeholder="Teléfono" class="form-control input-will" required>
-                    <input name="p" type="password" placeholder="PIN" class="form-control input-will" required>
-                    <button class="btn-will">ENTRAR</button>
-                </form>
-            </div>
-        {% else %}
-            <div class="card-will">
-                <p class="mb-0 text-secondary small">Bienvenido | {{ u.servicio }}</p>
-                <h4 class="oro-text">{{ u.nombre }}</h4>
-                <div style="font-size: 2.5rem; color: var(--oro); font-weight: bold;">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
+                <p class="small text-secondary">Bienvenido, {{ u.nombre }}</p>
+                <h2 class="oro-text">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h2>
                 
-                <div class="d-flex gap-2 my-4">
-                    <button class="btn btn-outline-warning w-100" onclick="document.getElementById('m_recarga').style.display='block'">RECARGAR</button>
-                    <a href="/logout" class="btn btn-outline-danger btn-sm">Salir</a>
+                <div class="btn-group w-100 my-3">
+                    <a href="/cambiar_rol/pasajero" class="btn {{ 'btn-warning' if u.rol == 'pasajero' else 'btn-dark' }}">PAGAR</a>
+                    <a href="/cambiar_rol/prestador" class="btn {{ 'btn-warning' if u.rol == 'prestador' else 'btn-dark' }}">COBRAR</a>
                 </div>
 
-                {% if session['u'] == '04126602555' %}
-                    <hr><a href="/admin_panel" class="btn btn-sm btn-info w-100">AUDITORÍA Y COMISIONES</a>
+                {% if u.rol == 'pasajero' %}
+                    <label class="oro-text small">Indique monto a pagar:</label>
+                    <input type="number" id="val_pago" class="form-control input-will border-0 oro-text" style="font-size:2.5rem;" placeholder="0.00" oninput="genQR()">
+                    <div class="bg-white p-2 d-inline-block rounded mt-2">
+                        <img id="q_img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=WP|{{session.u}}|0" style="width:180px;">
+                    </div>
+                    <p class="small text-secondary mt-2">Muestra este código al prestador</p>
+                {% else %}
+                    <button class="btn-will py-3" onclick="scan()">📷 ESCANEAR QR PARA COBRAR</button>
+                    <video id="video_camara" style="width:100%; display:none; border-radius:15px; margin-top:15px; border: 2px solid var(--oro);"></video>
                 {% endif %}
-            </div>
-
-            <div id="m_recarga" style="display:none;" class="card-will text-start mt-3">
-                <h5 class="oro-text text-center">REPORTAR PAGO MÓVIL</h5>
-                <form action="/reportar" method="POST" enctype="multipart/form-data">
-                    <input name="ref" placeholder="Referencia" class="form-control input-will" required>
-                    <input name="monto" type="number" step="0.01" placeholder="Monto Bs." class="form-control input-will" required>
-                    <label class="small oro-text">Subir Captura (PNG/JPG):</label>
-                    <input type="file" name="foto" class="form-control input-will" accept="image/*" required>
-                    <button class="btn-will mt-2">ENVIAR A REVISIÓN</button>
-                    <button type="button" class="btn btn-link text-secondary w-100" onclick="this.parentElement.parentElement.style.display='none'">Cancelar</button>
-                </form>
+                
+                <hr>
+                <a href="/logout" class="text-danger small text-decoration-none">Cerrar Sesión</a>
             </div>
         {% endif %}
     </div>
+
+    <div id="pantalla_recibo">
+        <div class="recibo-digital">
+            <h4 style="color: #28a745; font-weight: bold;">✔ PAGO EXITOSO</h4>
+            <hr style="border-top: 2px dashed #bbb;">
+            <div style="text-align: left; line-height: 1.6;">
+                <p><b>REF:</b> <span id="r_ref"></span></p>
+                <p><b>FECHA:</b> <span id="r_fec"></span></p>
+                <p><b>MONTO:</b> <span style="font-size: 1.3rem; color: #d4af37;">Bs. <span id="r_mon"></span></span></p>
+                <p><b>DE (Pagador):</b> <br><span id="r_emi" class="text-secondary"></span></p>
+                <p><b>PARA (Cobrador):</b> <br><span id="r_rec" class="text-secondary"></span></p>
+            </div>
+            <hr style="border-top: 2px dashed #bbb;">
+            <button class="btn btn-dark w-100 mt-2" onclick="location.href='/'">LISTO / FINALIZAR</button>
+        </div>
+    </div>
+
+    <audio id="audio_exito" src="https://www.myinstants.com/media/sounds/cash-register-purchase.mp3"></audio>
+
+    <script>
+        function genQR() {
+            const m = document.getElementById('val_pago').value || 0;
+            document.getElementById('q_img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=WP|{{session.u}}|${m}`;
+        }
+
+        async function scan() {
+            const codeReader = new ZXing.BrowserQRCodeReader();
+            const video = document.getElementById('video_camara');
+            video.style.display = 'block';
+
+            try {
+                const result = await codeReader.decodeFromVideoDevice(null, 'video_camara');
+                if (result) {
+                    codeReader.reset();
+                    video.style.display = 'none';
+                    
+                    // PROCESAR PAGO EN SERVIDOR
+                    const response = await fetch('/procesar_pago/' + result.text);
+                    const data = await response.json();
+                    
+                    if(data.status === 'ok') {
+                        document.getElementById('audio_exito').play();
+                        document.getElementById('r_ref').innerText = data.ref;
+                        document.getElementById('r_fec').innerText = data.fecha;
+                        document.getElementById('r_mon').innerText = data.monto;
+                        document.getElementById('r_emi').innerText = data.emisor;
+                        document.getElementById('r_rec').innerText = data.receptor;
+                        document.getElementById('pantalla_recibo').style.display = 'block';
+                    } else {
+                        alert("ERROR: " + data.msg);
+                        location.reload();
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
 </body>
 </html>
 '''
 
-# --- RUTAS DE REDIRECCIÓN Y LÓGICA ---
-
 @app.route('/')
 def index():
-    if 'u' not in session: return render_template_string(LAYOUT, u=None)
+    if 'u' not in session: return redirect('/login_page')
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
     return render_template_string(LAYOUT, u=u)
 
-# PARCHE DE ELEGANCIA: Si entran a /login, los manda al inicio
-@app.route('/login')
-def login_redirect():
-    return redirect(url_for('index'))
+@app.route('/procesar_pago/<datos_qr>')
+def procesar_pago(datos_qr):
+    try:
+        p = datos_qr.split('|')
+        emisor_id = p[1]
+        monto = float(p[2])
+        receptor_id = session.get('u')
 
-@app.route('/auth_login', methods=['POST'])
-def auth_login():
-    res = query_db("SELECT id FROM usuarios WHERE id=%s AND pin=%s", (request.form['t'], request.form['p']), one=True)
-    if res: session['u'] = res['id']
-    return redirect(url_for('index'))
+        emisor = query_db("SELECT saldo_bs, nombre FROM usuarios WHERE id=%s", (emisor_id,), one=True)
+        if not emisor or emisor['saldo_bs'] < monto:
+            return jsonify({'status': 'error', 'msg': 'Saldo insuficiente o usuario no existe'})
 
-@app.route('/reportar', methods=['POST'])
-def reportar():
-    foto = request.files['foto']
-    foto_cod = base64.b64encode(foto.read()).decode('utf-8')
-    # Evitar referencias repetidas (Anti-fraude)
-    existe = query_db("SELECT id FROM recargas WHERE referencia=%s", (request.form['ref'],), one=True)
-    if existe: return "<h1>Error: Referencia ya usada</h1><a href='/'>Volver</a>"
-    
-    query_db("INSERT INTO recargas (usuario_id, monto, referencia, estado, captura_base64) VALUES (%s, %s, %s, 'pendiente', %s)",
-             (session['u'], request.form['monto'], request.form['ref'], foto_cod), commit=True)
-    return "<h1>Recarga en proceso de auditoría</h1><a href='/'>Volver</a>"
+        # TRANSACCIÓN SEGURA
+        query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (monto, emisor_id), commit=True)
+        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (monto, receptor_id), commit=True)
 
-@app.route('/admin_panel')
-def admin_panel():
-    if session.get('u') != '04126602555': return "Acceso Denegado"
-    ganancias = query_db("SELECT saldo_bs FROM usuarios WHERE id='SISTEMA_GANANCIAS'", one=True)
-    bolsa = ganancias['saldo_bs'] if ganancias else 0
-    pendientes = query_db("SELECT * FROM recargas WHERE estado='pendiente'")
-    
-    html = f"<div style='background:black; color:white; padding:20px; min-height:100vh;'>"
-    html += f"<h2 style='color:gold;'>Panel de Auditoría de Capturas</h2>"
-    html += f"<p>Comisiones: <b>Bs. {bolsa:,.2f}</b></p><hr>"
-    
-    for r in pendientes:
-        html += f"""
-        <div style='border:2px solid gold; padding:15px; margin-bottom:15px; border-radius:15px;'>
-            <b>Usuario:</b> {r['usuario_id']} | <b>Monto:</b> {r['monto']} Bs | <b>Ref:</b> {r['referencia']} <br><br>
-            <img src="data:image/png;base64,{r['captura_base64']}" style="width:100%; max-width:350px; border-radius:10px;">
-            <br><br>
-            <a href='/aprobar/{r['id']}' style='background:lime; color:black; padding:12px; text-decoration:none; border-radius:8px; font-weight:bold;'>APROBAR PAGO</a>
-        </div>
-        """
-    return html + "<br><a href='/' style='color:gold;'>← Regresar</a></div>"
+        receptor = query_db("SELECT nombre FROM usuarios WHERE id=%s", (receptor_id,), one=True)
+        ref = datetime.datetime.now().strftime("%Y%m%d%H%M%S") # Correlativo basado en tiempo
 
-@app.route('/aprobar/<rid>')
-def aprobar(rid):
-    if session.get('u') != '04126602555': return "Error"
-    r = query_db("SELECT * FROM recargas WHERE id=%s", (rid,), one=True)
-    if r:
-        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (r['monto'], r['usuario_id']), commit=True)
-        query_db("UPDATE recargas SET estado='aprobado' WHERE id=%s", (rid,), commit=True)
-    return redirect('/admin_panel')
+        return jsonify({
+            'status': 'ok',
+            'ref': ref,
+            'fecha': datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
+            'monto': f"{monto:.2f}",
+            'emisor': emisor['nombre'],
+            'receptor': receptor['nombre']
+        })
+    except:
+        return jsonify({'status': 'error', 'msg': 'QR Inválido'})
+
+@app.route('/cambiar_rol/<r>')
+def cambiar_rol(r):
+    query_db("UPDATE usuarios SET rol=%s WHERE id=%s", (r, session['u']), commit=True)
+    return redirect('/')
+
+@app.route('/logonuevo.png')
+def logo(): return send_from_directory(os.getcwd(), 'logonuevo.png')
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('index'))
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
