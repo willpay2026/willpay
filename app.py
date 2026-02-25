@@ -23,7 +23,7 @@ def query_db(query, args=(), one=False, commit=False):
         conn.close()
     return rv
 
-# --- INTERFAZ PREMIUM ---
+# --- INTERFAZ PREMIUM ACTUALIZADA ---
 LAYOUT = '''
 <!DOCTYPE html>
 <html lang="es">
@@ -43,9 +43,10 @@ LAYOUT = '''
         .input-will { background: #222 !important; color: white !important; border: 1px solid #444 !important; margin-bottom: 10px; }
         #ticket { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; padding:20px; overflow-y: auto; }
         .recibo-papel { background: white; color: black; padding: 25px; border-radius: 5px; font-family: monospace; text-align: left; max-width: 400px; margin: auto; border-top: 8px solid var(--oro); }
-        .logo-container { margin-bottom: 15px; }
-        .logo-img { width: 150px; height: auto; margin-bottom: 10px; filter: drop-shadow(0px 0px 8px #D4AF37); border-radius: 15px; }
-        .vision-text { font-size: 0.85rem; color: #aaa; max-width: 300px; margin: 10px auto; line-height: 1.2; font-style: italic; }
+        .logo-container { margin-bottom: 20px; }
+        /* LOGO MAXIMIZADO E IMPACTANTE */
+        .logo-img { width: 320px; height: auto; margin-bottom: 5px; filter: drop-shadow(0px 0px 15px #D4AF37); border-radius: 20px; }
+        .vision-text { font-size: 1.2rem; color: var(--oro); max-width: 450px; margin: 10px auto; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -53,7 +54,7 @@ LAYOUT = '''
         <div class="logo-container">
             <img src="https://raw.githubusercontent.com/willpay2026/willpay/main/logo%20will-pay.jpg" alt="Will-Pay Logo" class="logo-img">
             <h2 class="oro-text mb-0">WILL-PAY</h2>
-            <p class="vision-text">"Una idea simple, un código honesto y un corazón para mi región. El legado de un padre para Wilyanny y para toda Venezuela."</p>
+            <p class="vision-text">UNA MANERA MÁS SENCILLA DE PAGAR</p>
         </div>
 
         {% if not session.get('u') %}
@@ -252,22 +253,22 @@ def reportar():
 def admin_panel():
     if session.get('u') != '04126602555': return "No autorizado"
     try:
-        # AQUÍ ESTÁ EL CAMBIO: CONSULTA DE COMISIONES ACUMULADAS
         ganancias = query_db("SELECT saldo_bs FROM usuarios WHERE id='SISTEMA_GANANCIAS'", one=True)
         bolsa = ganancias['saldo_bs'] if ganancias else 0
         
         pendientes = query_db("SELECT * FROM recargas WHERE estado='pendiente'")
-        html = f"<div style='background:black; color:white; padding:20px; font-family:sans-serif;'>"
-        html += f"<div style='border:2px solid gold; padding:15px; border-radius:15px; margin-bottom:20px; text-align:center;'>"
-        html += f"<h4 style='color:gold; margin-bottom:5px;'>COMISIONES ACUMULADAS (1.5%)</h4>"
-        html += f"<h2 style='font-size:2.5rem;'>Bs. {bolsa:,.2f}</h2>"
+        html = f"<div style='background:black; color:white; padding:20px; font-family:sans-serif; min-height:100vh;'>"
+        html += f"<div style='border:2px solid gold; padding:20px; border-radius:15px; margin-bottom:20px; text-align:center; background:#111;'>"
+        html += f"<h4 style='color:gold; margin-bottom:5px; text-transform:uppercase;'>Comisiones Will-Pay Acumuladas</h4>"
+        html += f"<h2 style='font-size:3rem; color:white;'>Bs. {bolsa:,.2f}</h2>"
+        html += f"<p style='color:gold; font-size:0.9rem;'>UNA MANERA MÁS SENCILLA DE PAGAR</p>"
         html += f"</div>"
         
         html += "<h3>Recargas por Aprobar</h3>"
         if not pendientes: html += "<p>No hay recargas pendientes.</p>"
         else:
             for r in pendientes:
-                html += f"<div style='border:1px solid gold; padding:15px; margin-bottom:10px; border-radius:10px;'><b>ID Usuario:</b> {r['usuario_id']} <br> <b>Monto:</b> {r['monto']} Bs <br> <b>Ref:</b> {r['referencia']} <br><br> <a href='/aprobar/{r['id']}' style='background:lime; color:black; padding:10px; text-decoration:none; border-radius:5px; font-weight:bold;'>[APROBAR RECARGA]</a></div>"
+                html += f"<div style='border:1px solid gold; padding:15px; margin-bottom:10px; border-radius:10px; background:#222;'><b>Usuario:</b> {r['usuario_id']} <br> <b>Monto:</b> {r['monto']} Bs <br> <b>Ref:</b> {r['referencia']} <br><br> <a href='/aprobar/{r['id']}' style='background:lime; color:black; padding:10px; text-decoration:none; border-radius:5px; font-weight:bold;'>[APROBAR RECARGA]</a></div>"
         
         html += "<br><a href='/' style='color:gold; font-weight:bold; text-decoration:none;'>← Volver a la App Principal</a></div>"
         return html
@@ -320,7 +321,7 @@ def actualizar_db():
         try: query_db("ALTER TABLE usuarios ADD COLUMN servicio TEXT DEFAULT 'PASAJERO';", commit=True)
         except: pass
         
-        return "<h1>¡ESTRUCTURA CREADA!</h1><p>Tablas de Recargas y Pagos activadas.</p><a href='/'>Ir a la App</a>"
+        return "<h1>BASE DE DATOS DESBLOQUEADA</h1><a href='/'>Ir a la App</a>"
     except Exception as e:
         return f"<h1>Error en actualización:</h1><p>{e}</p>"
 
