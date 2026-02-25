@@ -44,7 +44,7 @@ LAYOUT = '''
         #ticket { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; padding:20px; overflow-y: auto; }
         .recibo-papel { background: white; color: black; padding: 25px; border-radius: 5px; font-family: monospace; text-align: left; max-width: 400px; margin: auto; border-top: 8px solid var(--oro); }
         .logo-container { margin-bottom: 15px; }
-        .logo-img { width: 120px; height: auto; margin-bottom: 10px; filter: drop-shadow(0px 0px 5px #D4AF37); }
+        .logo-img { width: 120px; height: auto; margin-bottom: 10px; filter: drop-shadow(0px 0px 8px #D4AF37); }
     </style>
 </head>
 <body>
@@ -250,14 +250,15 @@ def admin_panel():
     if session.get('u') != '04126602555': return "No autorizado"
     try:
         pendientes = query_db("SELECT * FROM recargas WHERE estado='pendiente'")
-        html = "<div style='background:black; color:white; padding:20px;'><h2>Panel Administrativo</h2>"
+        html = "<div style='background:black; color:white; padding:20px; font-family:sans-serif;'><h2>Panel Administrativo</h2>"
         if not pendientes: html += "<p>No hay recargas pendientes.</p>"
-        for r in pendientes:
-            html += f"<div style='border:1px solid gold; padding:10px; margin:5px;'>ID: {r['usuario_id']} | Monto: {r['monto']} Bs | Ref: {r['referencia']} <a href='/aprobar/{r['id']}' style='color:lime;'>[APROBAR]</a></div>"
+        else:
+            for r in pendientes:
+                html += f"<div style='border:1px solid gold; padding:15px; margin-bottom:10px; border-radius:10px;'><b>ID Usuario:</b> {r['usuario_id']} <br> <b>Monto:</b> {r['monto']} Bs <br> <b>Ref:</b> {r['referencia']} <br><br> <a href='/aprobar/{r['id']}' style='background:lime; color:black; padding:5px; text-decoration:none; border-radius:5px;'>[APROBAR RECARGA]</a></div>"
         html += "<br><a href='/' style='color:gold;'>Volver a la App</a></div>"
         return html
     except Exception as e:
-        return f"Error en el panel: {e}. Intenta entrar a /actualizar_db_secreta"
+        return f"Error en el panel: {e}. Entra primero a /actualizar_db_secreta"
 
 @app.route('/aprobar/<rid>')
 def aprobar(rid):
@@ -281,15 +282,34 @@ def logout():
 def actualizar_db():
     if session.get('u') != '04126602555': return "No autorizado"
     try:
-        # Forzamos la creación de columnas necesarias
+        # CREACIÓN DE TABLAS DESDE CERO
+        query_db("""
+            CREATE TABLE IF NOT EXISTS recargas (
+                id SERIAL PRIMARY KEY,
+                usuario_id TEXT,
+                monto DECIMAL,
+                referencia TEXT,
+                estado TEXT DEFAULT 'pendiente',
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """, commit=True)
+        
+        query_db("""
+            CREATE TABLE IF NOT EXISTS pagos (
+                id SERIAL PRIMARY KEY,
+                emisor_id TEXT,
+                receptor_id TEXT,
+                monto DECIMAL,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """, commit=True)
+
         try: query_db("ALTER TABLE usuarios ADD COLUMN servicio TEXT DEFAULT 'PASAJERO';", commit=True)
         except: pass
-        try: query_db("ALTER TABLE recargas ADD COLUMN estado TEXT DEFAULT 'pendiente';", commit=True)
-        except: pass
-        try: query_db("ALTER TABLE recargas ADD COLUMN fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP;", commit=True)
-        except: pass
-        return "<h1>EMPORIO TOTALMENTE ACTIVADO</h1><a href='/'>Ir a la App</a>"
-    except Exception as e: return f"Error: {e}"
+        
+        return "<h1>¡ESTRUCTURA CREADA!</h1><p>Tablas de Recargas y Pagos activadas.</p><a href='/'>Ir a la App</a>"
+    except Exception as e:
+        return f"<h1>Error en actualización:</h1><p>{e}</p>"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
