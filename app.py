@@ -191,4 +191,7 @@ def rol(r):
     return redirect('/')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    # Esto corrige el error 502 al dejar que Render asigne el puerto
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
+
