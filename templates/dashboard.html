@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Will-Pay</title>
+    <title>Bóveda Will-Pay</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background: #000; color: white; font-family: 'sans-serif'; }
@@ -11,33 +11,12 @@
         .gold-text { color: #D4AF37; }
         .card-wallet { 
             background: linear-gradient(145deg, #111, #222);
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 20px;
-            border: 1px solid #333;
+            border-radius: 15px; padding: 25px; margin-top: 20px; border: 1px solid #333;
         }
-        .btn-action {
-            background: #1a1a1a;
-            color: white;
-            border: 1px solid #D4AF37;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            text-decoration: none;
-            display: block;
-            margin-bottom: 10px;
-            transition: 0.3s;
-        }
-        .btn-action:hover { background: #D4AF37; color: black; }
-        
-        /* PANEL EXCLUSIVO CEO */
-        .admin-panel {
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px dashed #D4AF37;
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 30px;
-        }
+        .btn-gold { background: #D4AF37; color: black; font-weight: bold; border: none; }
+        .btn-outline-gold { border: 1px solid #D4AF37; color: #D4AF37; background: transparent; }
+        .modal-content { background: #111; color: white; border: 1px solid #D4AF37; }
+        .admin-section { background: rgba(212, 175, 55, 0.05); border: 1px dashed #D4AF37; border-radius: 15px; padding: 20px; margin-top: 30px; }
     </style>
 </head>
 <body class="p-3">
@@ -45,66 +24,104 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <p class="mb-0 text-secondary">Bienvenido,</p>
-                <h4 class="gold-text fw-bold">{{ user.nombre }}</h4>
-                <span class="badge bg-dark gold-border">{{ user.id }}</span>
+                <h4 class="gold-text fw-bold mb-0">{{ user.nombre }}</h4>
+                <small class="text-secondary">{{ user.id }}</small>
             </div>
-            <img src="/static/logonuevo.png" width="50" alt="Logo">
+            <div class="badge bg-success">ACTIVO</div>
         </div>
 
-        <div class="card-wallet text-center">
+        <div class="card-wallet text-center mb-4">
             <p class="text-secondary small mb-1">SALDO DISPONIBLE</p>
-            <h1 class="fw-bold">Bs. {{ user.saldo_bs }}</h1>
-            <div class="d-flex justify-content-around mt-3">
-                <small class="text-success">● Cuenta Activa</small>
-                <small class="gold-text">● Nivel: {{ user.actividad }}</small>
+            <h1 class="fw-bold display-4">Bs. {{ user.saldo_bs }}</h1>
+            <div class="d-flex justify-content-center gap-2 mt-3">
+                <button class="btn btn-gold btn-sm" data-bs-toggle="modal" data-bs-target="#modalRecarga">+ RECARGAR</button>
+                <button class="btn btn-outline-gold btn-sm" data-bs-toggle="modal" data-bs-target="#modalRetiro">- RETIRAR</button>
             </div>
         </div>
 
-        <div class="mt-4">
-            <p class="fw-bold">OPERACIONES</p>
-            <a href="#" class="btn-action">💸 ENVIAR PAGO</a>
-            <a href="#" class="btn-action">📥 RECIBIR PAGO (QR)</a>
-            <a href="#" class="btn-action">📊 MOVIMIENTOS</a>
+        <div class="row g-2 mb-4 text-center">
+            <div class="col-6"><div class="p-3 border border-secondary rounded small">💸 ENVIAR</div></div>
+            <div class="col-6"><div class="p-3 border border-secondary rounded small">📥 RECIBIR</div></div>
         </div>
 
         {% if es_ceo %}
-        <div class="admin-panel">
-            <h5 class="gold-text fw-bold">🛠️ PANEL DE CONTROL MASTER</h5>
-            <p class="small text-secondary">Control total de la plataforma Will-Pay</p>
-            
-            <div class="row g-2">
-                <div class="col-6">
-                    <div class="bg-dark p-3 border border-secondary rounded">
-                        <small class="text-secondary d-block">TAJADA ACTUAL</small>
-                        <span class="h4 gold-text">{{ tajada }}%</span>
-                    </div>
+        <div class="admin-section">
+            <h5 class="gold-text fw-bold mb-3">🛠️ SOLICITUDES PENDIENTES</h5>
+            {% if pendientes %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-sm small">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Ref/Obs</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in pendientes %}
+                            <tr>
+                                <td class="gold-text">{{ p.tipo }}</td>
+                                <td>{{ p.monto }}</td>
+                                <td class="text-truncate" style="max-width: 100px;">{{ p.referencia or p.observacion }}</td>
+                                <td><button class="btn btn-success btn-xs p-1" style="font-size: 0.6rem;">APROBAR</button></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <div class="col-6">
-                    <div class="bg-dark p-3 border border-secondary rounded">
-                        <small class="text-secondary d-block">ESTATUS</small>
-                        <span class="text-success small">SISTEMA ONLINE</span>
-                    </div>
+            {% else %}
+                <p class="text-center text-secondary small">No hay pagos pendientes por revisar.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div class="modal fade" id="modalRecarga" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title gold-text">Solicitar Recarga</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
+                <form action="/solicitar_recarga" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="small text-secondary">Instrucciones: Envíe Pago Móvil al 0412-1234567 (RIF: V-0000) y reporte aquí:</label>
+                        </div>
+                        <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Monto en Bs." required>
+                        <input type="text" name="referencia" class="form-control bg-dark text-white border-secondary" placeholder="Últimos 4 o 6 dígitos de referencia" required>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" class="btn btn-gold w-100">INFORMAR PAGO</button>
+                    </div>
+                </form>
             </div>
-
-            <button class="btn btn-outline-warning w-100 mt-3 fw-bold">MODIFICAR COMISIONES</button>
-            <button class="btn btn-outline-warning w-100 mt-2 fw-bold">AUDITAR EXPEDIENTES</button>
-        </div>
-        {% endif %}
-
-        {% if es_socio %}
-        <div class="admin-panel border-info">
-            <h5 class="text-info fw-bold">💼 PANEL DE SOCIO</h5>
-            <p class="small text-secondary">Métricas de crecimiento y volumen</p>
-            <button class="btn btn-outline-info w-100 mt-2 fw-bold">VER VOLUMEN DE RED</button>
-        </div>
-        {% endif %}
-
-        <div class="text-center mt-5">
-            <a href="/acceso" class="text-danger text-decoration-none small">Cerrar Sesión Segura</a>
         </div>
     </div>
 
+    <div class="modal fade" id="modalRetiro" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title gold-text">Retirar a mi Banco</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="/solicitar_retiro" method="POST">
+                    <div class="modal-body">
+                        <p class="small text-secondary">Se aplicará una comisión de salida del 3.0% por gastos administrativos.</p>
+                        <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-3" placeholder="¿Cuánto desea retirar?" required>
+                        <textarea class="form-control bg-dark text-white border-secondary" placeholder="Datos bancarios (Banco, Tipo, Número, Cédula)"></textarea>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" class="btn btn-gold w-100">SOLICITAR CAMBIO</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
