@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, send_from_directory
 import psycopg2, os, datetime
 from psycopg2.extras import DictCursor
 
-app = Flask(__name__)
+# Configuramos Flask para que busque bien las carpetas
+app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = 'willpay_emporio_final_2026_legado_wilyanny'
 
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
@@ -41,22 +42,14 @@ def procesar_registro():
     actividad = request.form.get('actividad')
     nombre_linea = request.form.get('nombre_linea') or "N/A"
     
-    # LÓGICA DE INICIALES PARA EL CORRELATIVO
-    prefijos = {
-        'usuario': 'US', 'chofer_ind': 'TR', 'linea_transporte': 'TR', 
-        'moto_taxi': 'TR', 'taxi': 'TR', 'buhonero': 'CM', 'delivery': 'SR'
-    }
+    prefijos = {'usuario': 'US', 'chofer_ind': 'TR', 'linea_transporte': 'TR', 'buhonero': 'CM'}
     prefijo = prefijos.get(actividad, 'SR')
     
-    # GENERAR CORRELATIVO ÚNICO (Fecha + Hora + Prefijo)
     ahora = datetime.datetime.now()
-    correlativo = f"{prefijo}-{ahora.year}{ahora.month:02d}-{ahora.strftime('%H%M%S')}"
+    correlativo = f"{prefijo}-{ahora.strftime('%Y%m%d-%H%M%S')}"
     
-    # GUARDAR EN BASE DE DATOS
-    query_db("""
-        INSERT INTO usuarios (id, nombre, cedula, actividad, nombre_linea, saldo_bs) 
-        VALUES (%s, %s, %s, %s, %s, 0.00)
-    """, (correlativo, nombre, cedula, actividad, nombre_linea), commit=True)
+    query_db("INSERT INTO usuarios (id, nombre, cedula, actividad, nombre_linea, saldo_bs) VALUES (%s, %s, %s, %s, %s, 0.00)", 
+             (correlativo, nombre, cedula, actividad, nombre_linea), commit=True)
     
     session['u'] = correlativo
     return redirect('/dashboard')
@@ -65,10 +58,12 @@ def procesar_registro():
 def dashboard():
     if 'u' not in session: return redirect('/acceso')
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
-    
-    # Aquí es donde el QR se genera visualmente usando el correlativo
-    qr_data = f"https://will-pay.render.com/pagar/{u['id']}"
-    return render_template('dashboard.html', user=u, qr_data=qr_data)
+    return render_template('dashboard.html', user=u)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/acceso')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
