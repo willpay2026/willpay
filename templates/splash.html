@@ -3,57 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenidos | Will-Pay</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Will-Pay | Bienvenidos</title>
     <style>
-        /* Estilos para el fondo y el centrado total */
+        /* FONTO NEGRO PURO SIN DISTRACCIONES */
         body { 
-            background: #000; /* Fondo negro profundo */
-            display: flex; 
-            align-items: center; /* Centrado vertical */
-            justify-content: center; /* Centrado horizontal */
-            height: 100vh; /* Ocupa toda la altura de la pantalla */
+            background: #000; 
             margin: 0; 
-            overflow: hidden; /* Evita barras de desplazamiento */
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            width: 100vw;
+            overflow: hidden;
         }
-        
-        /* Contenedor centralizado para el logo */
+
         .splash-container {
             text-align: center;
-            max-width: 80%; /* Evita que el logo sea demasiado grande en pantallas pequeñas */
-            margin: auto; /* Refuerza el centrado */
+            width: 90%; /* Ajuste para celular */
+            max-width: 320px;
         }
-        
-        /* Animación de entrada suave */
-        .fade-in { 
-            animation: fadeIn 2s ease-in; 
+
+        /* LOGO SIN BORDES NI RESPLANDOR */
+        .logo-limpio {
+            width: 100%;
+            height: auto;
+            /* Eliminamos box-shadow y border-radius para que sea natural */
+            box-shadow: none !important; 
+            border: none !important;
+            display: block;
+            margin: 0 auto;
         }
-        
-        @keyframes fadeIn { 
-            from { opacity: 0; } 
-            to { opacity: 1; } 
+
+        /* ANIMACIÓN DE CARGA ELEGANTE EN ORO */
+        .loader {
+            border: 3px solid #111;
+            border-top: 3px solid #D4AF37;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 25px auto 0;
         }
-        
-        /* Estilos específicos para la imagen del logo */
-        .logo-will-pay { 
-            width: 100%; /* Se ajusta al ancho del contenedor */
-            max-width: 280px; /* Tamaño máximo para que no se vea pixelado en pantallas grandes */
-            height: auto; /* Mantiene la proporción */
-            border-radius: 20px; /* Bordes redondeados elegantes */
-            /* ¡Resplandor eliminado! Ya no hay box-shadow dorado aquí. */
-            display: block; /* Asegura el centrado correcto */
-            margin: 0 auto; /* Centrado horizontal dentro del contenedor */
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
     <meta http-equiv="refresh" content="4;url=/acceso">
 </head>
 <body>
-    <div class="splash-container fade-in">
-        <img src="/static/logonuevo.png" alt="Will-Pay Logo" class="logo-will-pay">
-        
-        <div class="mt-4 spinner-border text-warning" role="status">
-            <span class="visually-hidden">Cargando...</span>
-        </div>
+    <div class="splash-container">
+        <img src="/static/logonuevo.png" alt="Will-Pay" class="logo-limpio">
+        <div class="loader"></div>
     </div>
 </body>
 </html>
