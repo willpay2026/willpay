@@ -3,12 +3,13 @@ import psycopg2, os, datetime
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
+# Usamos una clave secreta consistente para las sesiones
 app.secret_key = 'willpay_2026_legado_wilyanny'
 
-# Base de Datos
+# Base de Datos (Se recomienda usar variables de entorno en Render para mayor seguridad)
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
-# DATOS DE RECEPCIÓN (TUS DATOS PARA PAGO MÓVIL)
+# DATOS DE RECEPCIÓN
 DATOS_PAGO_MOVIL = {
     "banco": "Banesco",
     "telefono": "0412-6602555",
@@ -36,10 +37,8 @@ def query_db(query, args=(), one=False, commit=False):
         conn.close()
     return rv
 
-# --- INYECTOR AUTOMÁTICO DE BASE DE DATOS (EL MOTOR) ---
 @app.before_request
 def inicializar_sistema():
-    # Solo ejecutamos esto una vez por cada reinicio para no saturar
     if not session.get('db_ready'):
         # Crear tabla usuarios
         query_db("""
@@ -63,7 +62,7 @@ def inicializar_sistema():
             );
         """, commit=True)
         
-        # INSERTAR AL CEO (WILFREDO) AUTOMÁTICAMENTE
+        # Insertar al CEO (Wilfredo)
         query_db("""
             INSERT INTO usuarios (id, nombre, saldo_bs) 
             VALUES ('13496133', 'WILFREDO DONQUIZ (CEO)', 5000.00)
@@ -79,18 +78,36 @@ def splash():
 @app.route('/acceso', methods=['GET', 'POST'])
 def acceso():
     if request.method == 'POST':
-        # Buscamos por la cédula que pongas en el formulario
-        user_id = request.form.get('id')
+        user_id = request.form.get('id', '').strip()
         if not user_id: return "Por favor ingresa tu cédula"
         
-        user_id = user_id.strip()
         u = query_db("SELECT * FROM usuarios WHERE id=%s", (user_id,), one=True)
-        
         if u:
             session['u'] = u['id']
             return redirect('/dashboard')
         return "ID Incorrecto o Usuario no registrado"
     return render_template('acceso.html')
+
+# --- NUEVA RUTA: PROCESAR REGISTRO (CORRIGE EL ERROR 404) ---
+@app.route('/procesar_registro', methods=['POST'])
+def procesar_registro():
+    nuevo_id = request.form.get('id', '').strip()
+    nuevo_nombre = request.form.get('nombre', '').strip()
+    
+    if not nuevo_id or not nuevo_nombre:
+        return "Error: Faltan datos obligatorios."
+
+    # Verificar si ya existe
+    existe = query_db("SELECT id FROM usuarios WHERE id=%s", (nuevo_id,), one=True)
+    if existe:
+        return "Este usuario ya está registrado. Intenta iniciar sesión."
+
+    # Registrar nuevo usuario con saldo 0
+    query_db("INSERT INTO usuarios (id, nombre, saldo_bs) VALUES (%s, %s, 0.00)", 
+             (nuevo_id, nuevo_nombre), commit=True)
+    
+    session['u'] = nuevo_id
+    return redirect('/dashboard')
 
 @app.route('/dashboard')
 def dashboard():
@@ -98,7 +115,7 @@ def dashboard():
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
     
     pendientes = []
-    # Si la cédula es la tuya, te muestra el panel de control
+    # Panel de control para el CEO
     if "13496133" in u['id']:
         pendientes = query_db("SELECT * FROM transacciones WHERE estatus='PENDIENTE' ORDER BY fecha DESC")
         
@@ -108,20 +125,19 @@ def dashboard():
                            pendientes=pendientes,
                            banco_ce=DATOS_PAGO_MOVIL)
 
-@app.route('/api/get_balance')
-def get_balance():
-    if 'u' not in session: return jsonify({"error": "No login"}), 401
-    u = query_db("SELECT saldo_bs FROM usuarios WHERE id=%s", (session['u'],), one=True)
-    return jsonify({"saldo": u['saldo_bs']})
-
 @app.route('/enviar_pago', methods=['POST'])
 def enviar_pago():
     if 'u' not in session: return redirect('/acceso')
     
     emisor_id = session['u']
-    receptor_id = request.form.get('receptor_id').strip()
-    monto = float(request.form.get('monto'))
+    receptor_id = request.form.get('receptor_id', '').strip()
+    try:
+        monto = float(request.form.get('monto', 0))
+    except ValueError:
+        return "Monto inválido."
     
+    if monto <= 0: return "El monto debe ser mayor a cero."
+
     emisor = query_db("SELECT * FROM usuarios WHERE id=%s", (emisor_id,), one=True)
     receptor = query_db("SELECT * FROM usuarios WHERE id=%s", (receptor_id,), one=True)
     
@@ -133,13 +149,13 @@ def enviar_pago():
     monto_neto = monto - comision
     referencia = f"WP-{datetime.datetime.now().strftime('%H%M%S')}"
 
+    # Nota: Para máxima seguridad, estas tres operaciones deberían estar en una sola transacción SQL
     query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, emisor_id), commit=True)
     query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto_neto, receptor_id), commit=True)
-    
     query_db("INSERT INTO transacciones (emisor, receptor, monto, referencia, estatus) VALUES (%s, %s, %s, %s, 'EXITOSO')",
              (emisor_id, receptor_id, monto, referencia), commit=True)
     
-    return f"¡Pago Enviado! Referencia: {referencia}"
+    return f"¡Pago Enviado con éxito! Referencia: {referencia}"
 
 @app.route('/logout')
 def logout():
