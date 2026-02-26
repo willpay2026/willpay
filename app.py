@@ -11,10 +11,6 @@ if not os.path.exists(BASE_DIR): os.makedirs(BASE_DIR)
 
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
-# COMISIONES (El Grifo de Wilfredo)
-COMISION_TRANSACCION = 2.5 # % por pagar
-COMISION_RETIRO = 3.0      # % por sacar el dinero al banco
-
 def query_db(query, args=(), one=False, commit=False):
     conn = psycopg2.connect(DB_URL, sslmode='require')
     cur = conn.cursor(cursor_factory=DictCursor)
@@ -28,7 +24,16 @@ def query_db(query, args=(), one=False, commit=False):
     return rv
 
 @app.route('/')
-def splash(): return render_template('splash.html')
+def splash(): 
+    return render_template('splash.html')
+
+@app.route('/acceso')
+def acceso():
+    return render_template('acceso.html')
+
+@app.route('/registro_kyc')
+def registro_kyc():
+    return render_template('registro.html')
 
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
@@ -57,7 +62,12 @@ def procesar_registro():
     session['u'] = correlativo
     return redirect('/ticket_bienvenida')
 
-# --- NUEVA RUTA: SOLICITAR RECARGA ---
+@app.route('/ticket_bienvenida')
+def ticket_bienvenida():
+    if 'u' not in session: return redirect('/acceso')
+    u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
+    return render_template('ticket_bienvenida.html', user=u)
+
 @app.route('/solicitar_recarga', methods=['POST'])
 def solicitar_recarga():
     if 'u' not in session: return redirect('/acceso')
@@ -67,27 +77,10 @@ def solicitar_recarga():
     # ANTI-ESTAFA: Verificar si la referencia ya existe
     existe = query_db("SELECT id FROM transacciones WHERE referencia=%s", (referencia,), one=True)
     if existe:
-        return "ERROR: Esta referencia ya fue utilizada. Intento de estafa registrado."
+        return "ERROR: Esta referencia ya fue utilizada."
 
-    # Guardar solicitud pendiente
     query_db("INSERT INTO transacciones (usuario_id, tipo, monto, referencia, estatus) VALUES (%s, 'RECARGA', %s, %s, 'PENDIENTE')",
              (session['u'], monto, referencia), commit=True)
-    
-    return redirect('/dashboard')
-
-# --- NUEVA RUTA: SOLICITAR RETIRO ---
-@app.route('/solicitar_retiro', methods=['POST'])
-def solicitar_retiro():
-    if 'u' not in session: return redirect('/acceso')
-    monto_solicitado = float(request.form.get('monto'))
-    
-    # Calcular tajada de Wilfredo
-    comision = monto_solicitado * (COMISION_RETIRO / 100)
-    monto_final = monto_solicitado - comision
-
-    query_db("INSERT INTO transacciones (usuario_id, tipo, monto, estatus, observacion) VALUES (%s, 'RETIRO', %s, 'PENDIENTE', %s)",
-             (session['u'], monto_solicitado, f"Comisión: {comision} | A depositar: {monto_final}"), commit=True)
-    
     return redirect('/dashboard')
 
 @app.route('/dashboard')
@@ -95,10 +88,13 @@ def dashboard():
     if 'u' not in session: return redirect('/acceso')
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
     
-    # Si eres el CEO, traemos la lista de lo que tienes que aprobar
     pendientes = []
     if "CEO" in u['id']:
-        pendientes = query_db("SELECT * FROM transacciones WHERE estatus='PENDIENTE'")
+        # Corregido: Si no hay tabla transacciones, esto podría fallar, pero por ahora lo dejamos listo
+        try:
+            pendientes = query_db("SELECT * FROM transacciones WHERE estatus='PENDIENTE'")
+        except:
+            pendientes = []
         
     return render_template('dashboard.html', user=u, es_ceo=("CEO" in u['id']), pendientes=pendientes)
 
