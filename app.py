@@ -11,6 +11,13 @@ if not os.path.exists(BASE_DIR): os.makedirs(BASE_DIR)
 
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
+# CONTROL DE COMISIONES (Decimales soportados)
+# Valores iniciales por defecto
+config_willpay = {
+    'ganancia_pago': 2.5,   # Ejemplo: 2.5%
+    'ganancia_retiro': 3.0  # Ejemplo: 3.0%
+}
+
 def query_db(query, args=(), one=False, commit=False):
     conn = psycopg2.connect(DB_URL, sslmode='require')
     cur = conn.cursor(cursor_factory=DictCursor)
@@ -48,7 +55,6 @@ def procesar_registro():
         prefijo = {'usuario': 'US', 'chofer_ind': 'TR'}.get(actividad, 'SR')
         correlativo = f"{prefijo}-{ahora.strftime('%Y%m%d-%H%M%S')}"
 
-    # Crear Carpetas
     u_path = os.path.join(BASE_DIR, correlativo)
     if not os.path.exists(u_path):
         os.makedirs(u_path)
@@ -68,35 +74,18 @@ def ticket_bienvenida():
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
     return render_template('ticket_bienvenida.html', user=u)
 
+# --- PANEL DE CONTROL DE COMISIONES (EL GRIFO) ---
+@app.route('/actualizar_grifo', methods=['POST'])
+def actualizar_grifo():
+    if 'u' not in session or "CEO" not in session['u']: return redirect('/acceso')
+    
+    # Captura de decimales (1.3, 2.7, etc)
+    config_willpay['ganancia_pago'] = float(request.form.get('g_pago'))
+    config_willpay['ganancia_retiro'] = float(request.form.get('g_retiro'))
+    
+    return redirect('/dashboard')
+
 @app.route('/solicitar_recarga', methods=['POST'])
 def solicitar_recarga():
     if 'u' not in session: return redirect('/acceso')
-    monto = request.form.get('monto')
-    referencia = request.form.get('referencia')
-    
-    # ANTI-ESTAFA: Verificar si la referencia ya existe
-    existe = query_db("SELECT id FROM transacciones WHERE referencia=%s", (referencia,), one=True)
-    if existe:
-        return "ERROR: Esta referencia ya fue utilizada."
-
-    query_db("INSERT INTO transacciones (usuario_id, tipo, monto, referencia, estatus) VALUES (%s, 'RECARGA', %s, %s, 'PENDIENTE')",
-             (session['u'], monto, referencia), commit=True)
-    return redirect('/dashboard')
-
-@app.route('/dashboard')
-def dashboard():
-    if 'u' not in session: return redirect('/acceso')
-    u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
-    
-    pendientes = []
-    if "CEO" in u['id']:
-        # Corregido: Si no hay tabla transacciones, esto podría fallar, pero por ahora lo dejamos listo
-        try:
-            pendientes = query_db("SELECT * FROM transacciones WHERE estatus='PENDIENTE'")
-        except:
-            pendientes = []
-        
-    return render_template('dashboard.html', user=u, es_ceo=("CEO" in u['id']), pendientes=pendientes)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    monto = request.form.get('monto
