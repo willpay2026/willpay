@@ -1,12 +1,12 @@
 from flask import Flask, render_template_string, request, redirect, session, jsonify, url_for, send_from_directory
-import psycopg2, os, datetime, base64
+import psycopg2, os, datetime
 from psycopg2.extras import DictCursor
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'willpay_emporio_final_2026_legado_wilyanny'
 
-# --- CARPETA DE AUDITORÍA ---
+# --- CARPETA PARA EXPEDIENTES ---
 UPLOAD_FOLDER = 'expedientes'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -35,15 +35,14 @@ LAYOUT = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Emporio Digital</title>
+    <title>Will-Pay | Tu Billetera Digital</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --oro: #D4AF37; --negro: #000; }
         body { background: var(--negro); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; }
         .card-will { background: #111; border: 2px solid var(--oro); border-radius: 25px; padding: 25px; margin: 20px auto; max-width: 450px; }
         .oro-text { color: var(--oro); font-weight: bold; }
-        .btn-will { background: var(--oro); color: black; font-weight: bold; border-radius: 12px; border: none; padding: 15px; width: 100%; }
+        .btn-will { background: var(--oro); color: black; font-weight: bold; border-radius: 12px; border: none; padding: 15px; width: 100%; text-decoration: none; display: inline-block; }
         .logo-img { width: 250px; border-radius: 15px; margin: 15px 0; }
         .input-will { background: #222 !important; color: white !important; border: 1px solid #444 !important; margin-bottom: 10px; text-align: center; }
     </style>
@@ -76,17 +75,6 @@ LAYOUT = '''
                     <a href="/cambiar_rol/pasajero" class="btn {{ 'btn-warning' if u.rol == 'pasajero' else 'btn-dark' }}">PAGAR</a>
                     <a href="/cambiar_rol/prestador" class="btn {{ 'btn-warning' if u.rol == 'prestador' else 'btn-dark' }}">COBRAR</a>
                 </div>
-
-                {% if u.rol == 'pasajero' %}
-                    <label class="oro-text small">Indique monto a pagar:</label>
-                    <input type="number" id="val_pago" class="form-control input-will border-0 oro-text" style="font-size:2.5rem;" placeholder="0.00" oninput="genQR()">
-                    <div class="bg-white p-2 d-inline-block rounded mt-2">
-                        <img id="q_img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=WP|{{u.id}}|0" style="width:180px;">
-                    </div>
-                {% else %}
-                    <button class="btn-will py-3" onclick="scan()">📷 ESCANEAR QR</button>
-                    <video id="video_camara" style="width:100%; display:none; border-radius:15px; margin-top:15px; border: 2px solid var(--oro);"></video>
-                {% endif %}
                 <hr><a href="/logout" class="text-danger small text-decoration-none">Cerrar Sesión</a>
             </div>
         {% else %}
@@ -96,16 +84,20 @@ LAYOUT = '''
                     <input type="text" name="user_id" class="form-control input-will" placeholder="Tu ID de Usuario" required>
                     <button type="submit" class="btn-will">ENTRAR AL PANEL</button>
                 </form>
+                <hr>
+                <p class="small">¿Eres nuevo?</p>
+                <button class="btn btn-outline-light w-100" data-bs-toggle="collapse" data-bs-target="#panelRegistro">CREAR CUENTA</button>
+                
+                <div class="collapse mt-3" id="panelRegistro">
+                    <form action="/registrar" method="POST">
+                        <input type="text" name="nombre" class="form-control input-will" placeholder="Nombre Completo" required>
+                        <button type="submit" class="btn-will">REGISTRARME</button>
+                    </form>
+                </div>
             </div>
         {% endif %}
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function genQR() {
-            const m = document.getElementById('val_pago').value || 0;
-            document.getElementById('q_img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=WP|{{u.id if u else 0}}|${m}`;
-        }
-    </script>
 </body>
 </html>
 '''
@@ -119,15 +111,33 @@ def index():
 
 @app.route('/login_manual', methods=['POST'])
 def login_manual():
-    session['u'] = request.form.get('user_id')
+    user_id = request.form.get('user_id')
+    u = query_db("SELECT * FROM usuarios WHERE id=%s", (user_id,), one=True)
+    if u:
+        session['u'] = user_id
+    return redirect('/')
+
+@app.route('/registrar', methods=['POST'])
+def registrar():
+    nombre = request.form.get('nombre')
+    query_db("INSERT INTO usuarios (nombre, saldo_bs, rol) VALUES (%s, 0, 'pasajero')", (nombre,), commit=True)
     return redirect('/')
 
 @app.route('/solicitar_recarga', methods=['POST'])
 def solicitar_recarga():
     if 'u' in session:
-        # Lógica de guardado de capture
-        pass
+        monto = request.form.get('monto')
+        ref = request.form.get('referencia')
+        file = request.files['capture']
+        if file:
+            user_folder = os.path.join(UPLOAD_FOLDER, str(session['u']))
+            if not os.path.exists(user_folder): os.makedirs(user_folder)
+            filename = secure_filename(f"REF_{ref}_{file.filename}")
+            file.save(os.path.join(user_folder, filename))
     return redirect('/')
+
+@app.route('/logonuevo.png')
+def logo(): return send_from_directory(os.getcwd(), 'logonuevo.png')
 
 @app.route('/logout')
 def logout():
