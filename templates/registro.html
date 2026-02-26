@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro KYC | Will-Pay</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #000; color: white; padding: 20px; }
+        .card-kyc { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 25px; max-width: 600px; margin: auto; }
+        .oro { color: #D4AF37; }
+        .form-label { font-weight: bold; font-size: 0.9rem; }
+        .input-will { background: #222 !important; color: white !important; border: 1px solid #444 !important; }
+        .btn-will { background: #D4AF37; color: black; font-weight: bold; width: 100%; padding: 12px; border: none; border-radius: 10px; }
+        .hidden-field { display: none; }
+    </style>
+</head>
+<body>
+    <div class="card-kyc">
+        <h3 class="text-center oro mb-4">Registro de Usuario Bancario</h3>
+        <form action="/procesar_registro" method="POST" enctype="multipart/form-data">
+            
+            <div class="mb-3">
+                <label class="form-label">Nombre Completo (Como en Cédula)</label>
+                <input type="text" name="nombre" class="form-control input-will" required>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Cédula / RIF</label>
+                    <input type="text" name="cedula" class="form-control input-will" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" name="telefono" class="form-control input-will" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Tipo de Usuario / Actividad</label>
+                <select name="actividad" id="actividadSelect" class="form-select input-will" onchange="checkActividad()" required>
+                    <option value="usuario">Usuario Particular (Pasajero/Cliente)</option>
+                    <option value="chofer_ind">Chofer Independiente</option>
+                    <option value="linea_transporte">Línea de Transporte</option>
+                    <option value="transporte_urbano">Transporte Público Urbano</option>
+                    <option value="transporte_extra">Transporte Extra Urbano</option>
+                    <option value="moto_taxi">Moto Taxista</option>
+                    <option value="taxi">Taxista</option>
+                    <option value="buhonero">Trabajador Informal (Buhonero)</option>
+                    <option value="delivery">Servicio de Delivery</option>
+                    <option value="comida_rapida">Comida Rápida</option>
+                    <option value="reposteria">Servicio de Repostería</option>
+                    <option value="reparaciones">Reparaciones en General</option>
+                    <option value="domestico">Trabajador Doméstico</option>
+                    <option value="manualidades">Manualidades</option>
+                </select>
+            </div>
+
+            <div id="campoExtra" class="mb-3 hidden-field">
+                <label class="form-label oro">Nombre de la Línea / Empresa</label>
+                <input type="text" name="nombre_linea" class="form-control input-will" placeholder="Escriba el nombre aquí...">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Foto de Cédula (Auditoría Visual)</label>
+                <input type="file" name="foto_cedula" class="form-control input-will">
+            </div>
+
+            <button type="submit" class="btn-will mt-3">FINALIZAR REGISTRO Y GENERAR EXPEDIENTE</button>
+        </form>
+    </div>
+
+    <script>
+        function checkActividad() {
+            var select = document.getElementById("actividadSelect").value;
+            var campoExtra = document.getElementById("campoExtra");
+            // Mostrar cuadro de texto si es Línea de Transporte o Taxi
+            if (select === "linea_transporte" || select === "taxi") {
+                campoExtra.style.display = "block";
+            } else {
+                campoExtra.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
