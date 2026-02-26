@@ -33,7 +33,7 @@
 
         <div class="card-wallet text-center mb-4">
             <p class="text-secondary small mb-1">SALDO DISPONIBLE</p>
-            <h1 class="fw-bold display-4">Bs. {{ user.saldo_bs }}</h1>
+            <h1 class="fw-bold display-4">Bs. <span id="saldo-texto">{{ user.saldo_bs }}</span></h1>
             <div class="d-flex justify-content-center gap-2 mt-3">
                 <button class="btn btn-gold btn-sm" data-bs-toggle="modal" data-bs-target="#modalRecarga">+ RECARGAR</button>
                 <button class="btn btn-outline-gold btn-sm" data-bs-toggle="modal" data-bs-target="#modalRetiro">- RETIRAR</button>
@@ -83,17 +83,13 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-center p-4">
                 <h5 class="gold-text fw-bold">MI CÓDIGO WILL-PAY</h5>
-                <p class="text-secondary small mb-3">Muestra este código para cobrar al instante</p>
-                
                 <div class="qr-container">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ user.id }}" alt="QR">
                 </div>
-
                 <div class="bg-dark p-2 rounded mb-3 border border-secondary">
-                    <small class="text-secondary d-block">TU ID PARA PAGOS:</small>
+                    <small class="text-secondary d-block">ID DE COBRO:</small>
                     <span class="fw-bold">{{ user.id }}</span>
                 </div>
-                
                 <button type="button" class="btn btn-outline-gold btn-sm w-100" data-bs-dismiss="modal">CERRAR</button>
             </div>
         </div>
@@ -104,41 +100,4 @@
             <div class="modal-content p-4">
                 <h5 class="gold-text fw-bold text-center mb-3">ENVIAR PAGO</h5>
                 <form action="/enviar_pago" method="POST">
-                    <input type="text" name="receptor_id" class="form-control bg-dark text-white border-secondary mb-2" placeholder="ID del Destinatario" required>
-                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Monto en Bs." required>
-                    <button type="submit" class="btn btn-gold w-100">CONFIRMAR ENVÍO</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalRecarga" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-4">
-                <h5 class="gold-text fw-bold mb-3">RECARGAR SALDO</h5>
-                <p class="small text-secondary">Transfiera a: {{ banco_ce.banco }} | {{ banco_ce.telefono }} | {{ banco_ce.cedula }}</p>
-                <form action="/solicitar_recarga" method="POST">
-                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Monto reportado" required>
-                    <input type="text" name="referencia" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Nro de Referencia" required>
-                    <button type="submit" class="btn btn-gold w-100">INFORMAR PAGO</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalRetiro" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-4">
-                <h5 class="gold-text fw-bold mb-3">RETIRAR FONDOS</h5>
-                <form action="/solicitar_retiro" method="POST">
-                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Monto a retirar" required>
-                    <textarea name="datos_bancarios" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Tus datos bancarios para recibir" required></textarea>
-                    <button type="submit" class="btn btn-gold w-100">SOLICITAR CAMBIO</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+                    <input type="text" name="receptor_id
