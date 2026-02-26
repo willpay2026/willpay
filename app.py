@@ -12,6 +12,10 @@ if not os.path.exists(BASE_DIR):
 
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
+# --- MOTOR DE NEGOCIO (EL GRIFO) ---
+# Aquí defines la comisión general. Luego haremos que la cambies desde el panel.
+COMISION_GENERAL = 2.5  # Representa el 2.5% por transacción
+
 def query_db(query, args=(), one=False, commit=False):
     conn = psycopg2.connect(DB_URL, sslmode='require')
     cur = conn.cursor(cursor_factory=DictCursor)
@@ -47,42 +51,46 @@ def procesar_registro():
     telefono = request.form.get('telefono')
     nombre_linea = request.form.get('nombre_linea') or "N/A"
     
-    # 1. TRUCO DEL FUNDADOR: Identificación de Wilfredo Donquiz
     ahora = datetime.datetime.now()
-    if nombre.strip().upper() == "WILFREDO DONQUIZ":
+    
+    # 1. TRUCO DE JERARQUÍA: Fundador y Socios
+    nombre_clean = nombre.strip().upper()
+    
+    if nombre_clean == "WILFREDO DONQUIZ":
         correlativo = "CEO-0001-FOUNDER"
         actividad = "FUNDADOR GLOBAL / CEO"
+    elif "SOCIO" in nombre_clean or "PARTNER" in nombre_clean:
+        # Si incluyes la palabra 'SOCIO' en el nombre al registrar, te da rango de Socio
+        correlativo = f"PARTNER-{ahora.strftime('%y%m%d-%H%M')}"
+        actividad = "SOCIO ESTRATÉGICO"
     else:
-        # Generar ID Correlativo normal para otros usuarios
+        # Generar ID Correlativo normal
         prefijos = {'usuario': 'US', 'chofer_ind': 'TR', 'linea_transporte': 'TR', 'buhonero': 'CM'}
         prefijo = prefijos.get(actividad, 'SR')
         correlativo = f"{prefijo}-{ahora.strftime('%Y%m%d-%H%M%S')}"
     
-    # 2. CREACIÓN DEL BÚNKER DE AUDITORÍA (Carpetas)
+    # 2. CREACIÓN DEL BÚNKER DE AUDITORÍA
     user_path = os.path.join(BASE_DIR, correlativo)
-    subcarpetas = ['KYC', 'Recibos', 'Historial_Recargas']
-    
     if not os.path.exists(user_path):
         os.makedirs(user_path)
-        for sub in subcarpetas:
+        for sub in ['KYC', 'Recibos', 'Historial_Recargas']:
             os.makedirs(os.path.join(user_path, sub))
             
-    # 3. Crear Ficha de Apertura (Primer documento del expediente)
+    # 3. Ficha de Apertura con Rango
     with open(os.path.join(user_path, "ficha_apertura.txt"), "w") as f:
         f.write(f"EXPEDIENTE WILL-PAY GLOBAL\n")
-        f.write(f"JERARQUÍA: {'MAXIMA' if 'CEO' in correlativo else 'ESTANDAR'}\n")
+        f.write(f"RANGO: {'ADMINISTRATIVO' if ('CEO' in correlativo or 'PARTNER' in correlativo) else 'CLIENTE'}\n")
         f.write(f"ID: {correlativo}\n")
         f.write(f"Nombre: {nombre}\n")
         f.write(f"Cédula: {cedula}\n")
         f.write(f"Actividad: {actividad}\n")
-        f.write(f"Fecha de Creación: {ahora.strftime('%d/%m/%Y %H:%M:%S')}\n")
+        f.write(f"Fecha: {ahora.strftime('%d/%m/%Y %H:%M:%S')}\n")
 
-    # 4. Guardar en DB (Si ya existe, actualizamos para evitar errores)
+    # 4. Guardar en DB
     try:
         query_db("INSERT INTO usuarios (id, nombre, cedula, actividad, nombre_linea, saldo_bs) VALUES (%s, %s, %s, %s, %s, 0.00)", 
                  (correlativo, nombre, cedula, actividad, nombre_linea), commit=True)
-    except Exception as e:
-        # Si el CEO ya se registró, simplemente iniciamos sesión
+    except:
         pass
     
     session['u'] = correlativo
@@ -98,7 +106,12 @@ def ticket_bienvenida():
 def dashboard():
     if 'u' not in session: return redirect('/acceso')
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
-    return render_template('dashboard.html', user=u)
+    
+    # Detectar niveles de acceso para el HTML
+    es_ceo = "CEO" in u['id']
+    es_socio = "PARTNER" in u['id']
+    
+    return render_template('dashboard.html', user=u, es_ceo=es_ceo, es_socio=es_socio, tajada=COMISION_GENERAL)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
