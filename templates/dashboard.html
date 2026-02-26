@@ -17,6 +17,7 @@
         .btn-outline-gold { border: 1px solid #D4AF37; color: #D4AF37; background: transparent; }
         .modal-content { background: #111; color: white; border: 1px solid #D4AF37; }
         .admin-section { background: rgba(212, 175, 55, 0.05); border: 1px dashed #D4AF37; border-radius: 15px; padding: 20px; margin-top: 30px; }
+        .qr-container { background: white; padding: 15px; display: inline-block; border-radius: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body class="p-3">
@@ -41,4 +42,103 @@
 
         <div class="row g-2 mb-4 text-center">
             <div class="col-6">
-                <button class="btn p-3 border border-secondary rounded small w-100 text-white" data-bs-toggle="modal" data-bs-
+                <button class="btn p-3 border border-secondary rounded small w-100 text-white" data-bs-toggle="modal" data-bs-target="#modalEnviar">💸 ENVIAR</button>
+            </div>
+            <div class="col-6">
+                <button class="btn p-3 border border-secondary rounded small w-100 text-white" data-bs-toggle="modal" data-bs-target="#modalRecibir">📥 RECIBIR</button>
+            </div>
+        </div>
+
+        {% if es_ceo %}
+        <div class="admin-section">
+            <h5 class="gold-text fw-bold mb-3">🛠️ PANEL CEO</h5>
+            <h6 class="text-white small mb-3">SOLICITUDES POR APROBAR</h6>
+            <div class="table-responsive">
+                <table class="table table-dark table-sm small">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Monto</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pendientes %}
+                        <tr>
+                            <td>{{ p.usuario_id }}</td>
+                            <td class="gold-text">{{ p.monto }}</td>
+                            <td>
+                                <a href="/aprobar_pago/{{ p.id }}" class="btn btn-success btn-xs p-1" style="font-size: 0.6rem;">APROBAR</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="modal fade" id="modalRecibir" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4">
+                <h5 class="gold-text fw-bold">MI CÓDIGO WILL-PAY</h5>
+                <p class="text-secondary small mb-3">Muestra este código para cobrar al instante</p>
+                
+                <div class="qr-container">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ user.id }}" alt="QR">
+                </div>
+
+                <div class="bg-dark p-2 rounded mb-3 border border-secondary">
+                    <small class="text-secondary d-block">TU ID PARA PAGOS:</small>
+                    <span class="fw-bold">{{ user.id }}</span>
+                </div>
+                
+                <button type="button" class="btn btn-outline-gold btn-sm w-100" data-bs-dismiss="modal">CERRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEnviar" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4">
+                <h5 class="gold-text fw-bold text-center mb-3">ENVIAR PAGO</h5>
+                <form action="/enviar_pago" method="POST">
+                    <input type="text" name="receptor_id" class="form-control bg-dark text-white border-secondary mb-2" placeholder="ID del Destinatario" required>
+                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Monto en Bs." required>
+                    <button type="submit" class="btn btn-gold w-100">CONFIRMAR ENVÍO</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRecarga" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4">
+                <h5 class="gold-text fw-bold mb-3">RECARGAR SALDO</h5>
+                <p class="small text-secondary">Transfiera a: {{ banco_ce.banco }} | {{ banco_ce.telefono }} | {{ banco_ce.cedula }}</p>
+                <form action="/solicitar_recarga" method="POST">
+                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Monto reportado" required>
+                    <input type="text" name="referencia" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Nro de Referencia" required>
+                    <button type="submit" class="btn btn-gold w-100">INFORMAR PAGO</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRetiro" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4">
+                <h5 class="gold-text fw-bold mb-3">RETIRAR FONDOS</h5>
+                <form action="/solicitar_retiro" method="POST">
+                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Monto a retirar" required>
+                    <textarea name="datos_bancarios" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Tus datos bancarios para recibir" required></textarea>
+                    <button type="submit" class="btn btn-gold w-100">SOLICITAR CAMBIO</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
