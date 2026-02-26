@@ -47,11 +47,16 @@ def procesar_registro():
     telefono = request.form.get('telefono')
     nombre_linea = request.form.get('nombre_linea') or "N/A"
     
-    # 1. Generar ID Correlativo
-    prefijos = {'usuario': 'US', 'chofer_ind': 'TR', 'linea_transporte': 'TR', 'buhonero': 'CM'}
-    prefijo = prefijos.get(actividad, 'SR')
+    # 1. TRUCO DEL FUNDADOR: Identificación de Wilfredo Donquiz
     ahora = datetime.datetime.now()
-    correlativo = f"{prefijo}-{ahora.strftime('%Y%m%d-%H%M%S')}"
+    if nombre.strip().upper() == "WILFREDO DONQUIZ":
+        correlativo = "CEO-0001-FOUNDER"
+        actividad = "FUNDADOR GLOBAL / CEO"
+    else:
+        # Generar ID Correlativo normal para otros usuarios
+        prefijos = {'usuario': 'US', 'chofer_ind': 'TR', 'linea_transporte': 'TR', 'buhonero': 'CM'}
+        prefijo = prefijos.get(actividad, 'SR')
+        correlativo = f"{prefijo}-{ahora.strftime('%Y%m%d-%H%M%S')}"
     
     # 2. CREACIÓN DEL BÚNKER DE AUDITORÍA (Carpetas)
     user_path = os.path.join(BASE_DIR, correlativo)
@@ -65,15 +70,20 @@ def procesar_registro():
     # 3. Crear Ficha de Apertura (Primer documento del expediente)
     with open(os.path.join(user_path, "ficha_apertura.txt"), "w") as f:
         f.write(f"EXPEDIENTE WILL-PAY GLOBAL\n")
+        f.write(f"JERARQUÍA: {'MAXIMA' if 'CEO' in correlativo else 'ESTANDAR'}\n")
         f.write(f"ID: {correlativo}\n")
         f.write(f"Nombre: {nombre}\n")
         f.write(f"Cédula: {cedula}\n")
         f.write(f"Actividad: {actividad}\n")
         f.write(f"Fecha de Creación: {ahora.strftime('%d/%m/%Y %H:%M:%S')}\n")
 
-    # 4. Guardar en DB
-    query_db("INSERT INTO usuarios (id, nombre, cedula, actividad, nombre_linea, saldo_bs) VALUES (%s, %s, %s, %s, %s, 0.00)", 
-             (correlativo, nombre, cedula, actividad, nombre_linea), commit=True)
+    # 4. Guardar en DB (Si ya existe, actualizamos para evitar errores)
+    try:
+        query_db("INSERT INTO usuarios (id, nombre, cedula, actividad, nombre_linea, saldo_bs) VALUES (%s, %s, %s, %s, %s, 0.00)", 
+                 (correlativo, nombre, cedula, actividad, nombre_linea), commit=True)
+    except Exception as e:
+        # Si el CEO ya se registró, simplemente iniciamos sesión
+        pass
     
     session['u'] = correlativo
     return redirect('/ticket_bienvenida')
