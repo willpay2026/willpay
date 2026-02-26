@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = 'willpay_emporio_final_2026_legado_wilyanny'
 
-# CONFIGURACIÓN DE EXPEDIENTES
+# --- CARPETA PARA EXPEDIENTES DE AUDITORÍA ---
 UPLOAD_FOLDER = 'expedientes'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -46,6 +46,7 @@ LAYOUT = '''
         .btn-will { background: var(--oro); color: black; font-weight: bold; border-radius: 12px; border: none; padding: 15px; width: 100%; }
         .logo-img { width: 250px; border-radius: 15px; margin: 15px 0; }
         .input-will { background: #222 !important; color: white !important; border: 1px solid #444 !important; margin-bottom: 10px; text-align: center; }
+        
         #pantalla_recibo { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; padding-top:40px; }
         .recibo-digital { background: white; color: black; padding: 25px; border-radius: 15px; max-width: 340px; margin: auto; font-family: monospace; box-shadow: 0 0 20px var(--oro); }
     </style>
@@ -58,23 +59,22 @@ LAYOUT = '''
             <div class="card-will">
                 <p class="small text-secondary">Bienvenido, {{ u.nombre }}</p>
                 <h2 class="oro-text">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h2>
-
+                
                 <button class="btn btn-outline-warning btn-sm w-100 mb-3" data-bs-toggle="collapse" data-bs-target="#panelRecarga">
-                    ➕ SOLICITAR RECARGA
+                    ➕ RECARGAR SALDO
                 </button>
 
                 <div class="collapse" id="panelRecarga">
-                    <div class="p-3 mb-3 border border-secondary rounded shadow-sm" style="background: #1a1a1a;">
+                    <div class="p-3 mb-3" style="background: #1a1a1a; border-radius: 15px; border: 1px dashed var(--oro);">
                         <form action="/solicitar_recarga" method="POST" enctype="multipart/form-data">
                             <input type="number" name="monto" step="0.01" class="form-control input-will" placeholder="Monto a recargar" required>
-                            <input type="text" name="referencia" class="form-control input-will" placeholder="Número de Referencia" required>
-                            <label class="small text-secondary d-block mb-1">Adjuntar Capture de Pago:</label>
+                            <input type="text" name="referencia" class="form-control input-will" placeholder="Referencia Bancaria" required>
+                            <label class="small oro-text">Adjuntar Comprobante:</label>
                             <input type="file" name="capture" class="form-control input-will" accept="image/*" required>
-                            <button type="submit" class="btn-will mt-2" style="padding: 8px;">ENVIAR RECARGA</button>
+                            <button type="submit" class="btn-will mt-2" style="padding: 10px;">NOTIFICAR PAGO</button>
                         </form>
                     </div>
                 </div>
-                
                 <div class="btn-group w-100 my-3">
                     <a href="/cambiar_rol/pasajero" class="btn {{ 'btn-warning' if u.rol == 'pasajero' else 'btn-dark' }}">PAGAR</a>
                     <a href="/cambiar_rol/prestador" class="btn {{ 'btn-warning' if u.rol == 'prestador' else 'btn-dark' }}">COBRAR</a>
@@ -106,15 +106,16 @@ LAYOUT = '''
                 <p><b>REF:</b> <span id="r_ref"></span></p>
                 <p><b>FECHA:</b> <span id="r_fec"></span></p>
                 <p><b>MONTO:</b> <span style="font-size: 1.3rem; color: #d4af37;">Bs. <span id="r_mon"></span></span></p>
-                <p><b>DE:</b> <br><span id="r_emi" class="text-secondary"></span></p>
-                <p><b>PARA:</b> <br><span id="r_rec" class="text-secondary"></span></p>
+                <p><b>DE (Pagador):</b> <br><span id="r_emi" class="text-secondary"></span></p>
+                <p><b>PARA (Cobrador):</b> <br><span id="r_rec" class="text-secondary"></span></p>
             </div>
             <hr style="border-top: 2px dashed #bbb;">
-            <button class="btn btn-dark w-100 mt-2" onclick="location.href='/'">LISTO</button>
+            <button class="btn btn-dark w-100 mt-2" onclick="location.href='/'">LISTO / FINALIZAR</button>
         </div>
     </div>
 
     <audio id="audio_exito" src="https://www.myinstants.com/media/sounds/cash-register-purchase.mp3"></audio>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function genQR() {
@@ -156,49 +157,42 @@ def index():
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
     return render_template_string(LAYOUT, u=u)
 
+# --- RUTA DE RECARGA (MANTIENE LA INTEGRIDAD) ---
 @app.route('/solicitar_recarga', methods=['POST'])
 def solicitar_recarga():
     if 'u' not in session: return redirect('/')
     monto = request.form.get('monto')
-    ref = request.form.get('referencia')
+    referencia = request.form.get('referencia')
     file = request.files['capture']
-    
     if file:
-        user_id = str(session['u'])
-        user_path = os.path.join(UPLOAD_FOLDER, user_id)
-        if not os.path.exists(user_path): os.makedirs(user_path)
-        
-        filename = secure_filename(f"REF_{ref}_{file.filename}")
-        file.save(os.path.join(user_path, filename))
-        
-        # Aquí guardamos la solicitud en estado 'PENDIENTE'
-        # Debes tener una tabla 'recargas' para esto
-        query_db("INSERT INTO recargas (usuario_id, monto, referencia, capture, estado) VALUES (%s, %s, %s, %s, 'PENDIENTE')", 
-                 (user_id, monto, ref, filename), commit=True)
-        
+        user_folder = os.path.join(UPLOAD_FOLDER, str(session['u']))
+        if not os.path.exists(user_folder): os.makedirs(user_folder)
+        filename = secure_filename(f"REF_{referencia}_{file.filename}")
+        file.save(os.path.join(user_folder, filename))
+        # Registro en DB (asegúrate de tener esta tabla de auditoría creada)
+        query_db("INSERT INTO auditoria_recargas (usuario_id, monto, referencia, capture, estado) VALUES (%s, %s, %s, %s, 'PENDIENTE')", 
+                 (session['u'], monto, referencia, filename), commit=True)
     return redirect('/')
 
 @app.route('/procesar_pago/<datos_qr>')
 def procesar_pago(datos_qr):
     try:
         p = datos_qr.split('|')
-        emisor_id, monto = p[1], float(p[2])
+        emisor_id = p[1]
+        monto = float(p[2])
         receptor_id = session.get('u')
         emisor = query_db("SELECT saldo_bs, nombre FROM usuarios WHERE id=%s", (emisor_id,), one=True)
-        
         if not emisor or emisor['saldo_bs'] < monto:
-            return jsonify({'status': 'error', 'msg': 'Saldo insuficiente'})
-
+            return jsonify({'status': 'error', 'msg': 'Saldo insuficiente o usuario no existe'})
+        
         query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id=%s", (monto, emisor_id), commit=True)
         query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id=%s", (monto, receptor_id), commit=True)
         
         receptor = query_db("SELECT nombre FROM usuarios WHERE id=%s", (receptor_id,), one=True)
-        ref_pago = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        
+        ref = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         return jsonify({
-            'status': 'ok', 'ref': ref_pago, 'monto': f"{monto:.2f}",
-            'fecha': datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
-            'emisor': emisor['nombre'], 'receptor': receptor['nombre']
+            'status': 'ok', 'ref': ref, 'fecha': datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
+            'monto': f"{monto:.2f}", 'emisor': emisor['nombre'], 'receptor': receptor['nombre']
         })
     except: return jsonify({'status': 'error', 'msg': 'QR Inválido'})
 
@@ -206,6 +200,9 @@ def procesar_pago(datos_qr):
 def cambiar_rol(r):
     query_db("UPDATE usuarios SET rol=%s WHERE id=%s", (r, session['u']), commit=True)
     return redirect('/')
+
+@app.route('/logonuevo.png')
+def logo(): return send_from_directory(os.getcwd(), 'logonuevo.png')
 
 @app.route('/logout')
 def logout():
