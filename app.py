@@ -3,10 +3,9 @@ import psycopg2, os, datetime
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
-# Usamos una clave secreta consistente para las sesiones
 app.secret_key = 'willpay_2026_legado_wilyanny'
 
-# Base de Datos (Se recomienda usar variables de entorno en Render para mayor seguridad)
+# Base de Datos
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
 # DATOS DE RECEPCIÓN
@@ -40,7 +39,6 @@ def query_db(query, args=(), one=False, commit=False):
 @app.before_request
 def inicializar_sistema():
     if not session.get('db_ready'):
-        # Crear tabla usuarios
         query_db("""
             CREATE TABLE IF NOT EXISTS usuarios (
                 id VARCHAR(50) PRIMARY KEY,
@@ -49,7 +47,6 @@ def inicializar_sistema():
             );
         """, commit=True)
         
-        # Crear tabla transacciones
         query_db("""
             CREATE TABLE IF NOT EXISTS transacciones (
                 id SERIAL PRIMARY KEY,
@@ -62,14 +59,14 @@ def inicializar_sistema():
             );
         """, commit=True)
         
-        # Insertar al CEO (Wilfredo)
         query_db("""
             INSERT INTO usuarios (id, nombre, saldo_bs) 
             VALUES ('13496133', 'WILFREDO DONQUIZ (CEO)', 5000.00)
             ON CONFLICT (id) DO NOTHING;
         """, commit=True)
-        
         session['db_ready'] = True
+
+# --- RUTAS DE NAVEGACIÓN ---
 
 @app.route('/')
 def splash(): 
@@ -88,25 +85,25 @@ def acceso():
         return "ID Incorrecto o Usuario no registrado"
     return render_template('acceso.html')
 
-# --- NUEVA RUTA: PROCESAR REGISTRO (CORRIGE EL ERROR 404) ---
+# ESTA ES LA RUTA QUE TE FALTABA PARA EL REGISTRO
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
-    nuevo_id = request.form.get('id', '').strip()
-    nuevo_nombre = request.form.get('nombre', '').strip()
+    user_id = request.form.get('id', '').strip()
+    nombre = request.form.get('nombre', '').strip()
     
-    if not nuevo_id or not nuevo_nombre:
-        return "Error: Faltan datos obligatorios."
+    if not user_id or not nombre:
+        return "Por favor, rellena todos los campos."
 
-    # Verificar si ya existe
-    existe = query_db("SELECT id FROM usuarios WHERE id=%s", (nuevo_id,), one=True)
+    # Verificar si ya existe para evitar errores de llave primaria
+    existe = query_db("SELECT id FROM usuarios WHERE id=%s", (user_id,), one=True)
     if existe:
-        return "Este usuario ya está registrado. Intenta iniciar sesión."
+        return "Este usuario ya existe en Will-Pay."
 
-    # Registrar nuevo usuario con saldo 0
+    # Insertar nuevo usuario
     query_db("INSERT INTO usuarios (id, nombre, saldo_bs) VALUES (%s, %s, 0.00)", 
-             (nuevo_id, nuevo_nombre), commit=True)
+             (user_id, nombre), commit=True)
     
-    session['u'] = nuevo_id
+    session['u'] = user_id
     return redirect('/dashboard')
 
 @app.route('/dashboard')
@@ -114,8 +111,12 @@ def dashboard():
     if 'u' not in session: return redirect('/acceso')
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
     
+    # Manejo de error si el usuario se borra de la DB pero sigue en sesión
+    if not u:
+        session.clear()
+        return redirect('/acceso')
+
     pendientes = []
-    # Panel de control para el CEO
     if "13496133" in u['id']:
         pendientes = query_db("SELECT * FROM transacciones WHERE estatus='PENDIENTE' ORDER BY fecha DESC")
         
@@ -131,31 +132,31 @@ def enviar_pago():
     
     emisor_id = session['u']
     receptor_id = request.form.get('receptor_id', '').strip()
+    
     try:
         monto = float(request.form.get('monto', 0))
-    except ValueError:
+    except:
         return "Monto inválido."
-    
-    if monto <= 0: return "El monto debe ser mayor a cero."
 
     emisor = query_db("SELECT * FROM usuarios WHERE id=%s", (emisor_id,), one=True)
     receptor = query_db("SELECT * FROM usuarios WHERE id=%s", (receptor_id,), one=True)
     
-    if not receptor: return "ERROR: Receptor no existe."
-    if emisor['saldo_bs'] < monto: return "ERROR: Saldo insuficiente."
-    if emisor_id == receptor_id: return "ERROR: Auto-pago no permitido."
+    if not receptor: return "ERROR: El receptor no está registrado en Will-Pay."
+    if emisor['saldo_bs'] < monto: return "ERROR: No tienes saldo suficiente."
+    if emisor_id == receptor_id: return "ERROR: No puedes enviarte dinero a ti mismo."
 
+    # Lógica de comisiones
     comision = monto * (config_willpay['ganancia_pago'] / 100)
     monto_neto = monto - comision
     referencia = f"WP-{datetime.datetime.now().strftime('%H%M%S')}"
 
-    # Nota: Para máxima seguridad, estas tres operaciones deberían estar en una sola transacción SQL
+    # Ejecución de la transacción
     query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, emisor_id), commit=True)
     query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto_neto, receptor_id), commit=True)
     query_db("INSERT INTO transacciones (emisor, receptor, monto, referencia, estatus) VALUES (%s, %s, %s, %s, 'EXITOSO')",
              (emisor_id, receptor_id, monto, referencia), commit=True)
     
-    return f"¡Pago Enviado con éxito! Referencia: {referencia}"
+    return f"¡Pago realizado! Ref: {referencia}. El receptor recibió {monto_neto} Bs."
 
 @app.route('/logout')
 def logout():
