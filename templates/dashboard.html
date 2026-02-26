@@ -52,24 +52,17 @@
         {% if es_ceo %}
         <div class="admin-section">
             <h5 class="gold-text fw-bold mb-3">🛠️ PANEL CEO</h5>
-            <h6 class="text-white small mb-3">SOLICITUDES POR APROBAR</h6>
             <div class="table-responsive">
                 <table class="table table-dark table-sm small">
                     <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Monto</th>
-                            <th>Acción</th>
-                        </tr>
+                        <tr><th>Usuario</th><th>Monto</th><th>Acción</th></tr>
                     </thead>
                     <tbody>
                         {% for p in pendientes %}
                         <tr>
                             <td>{{ p.usuario_id }}</td>
                             <td class="gold-text">{{ p.monto }}</td>
-                            <td>
-                                <a href="/aprobar_pago/{{ p.id }}" class="btn btn-success btn-xs p-1" style="font-size: 0.6rem;">APROBAR</a>
-                            </td>
+                            <td><a href="/aprobar_pago/{{ p.id }}" class="btn btn-success btn-xs p-1" style="font-size: 0.6rem;">APROBAR</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -82,10 +75,8 @@
     <div class="modal fade" id="modalRecibir" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-center p-4">
-                <h5 class="gold-text fw-bold">MI CÓDIGO WILL-PAY</h5>
-                <div class="qr-container">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ user.id }}" alt="QR">
-                </div>
+                <h5 class="gold-text fw-bold">MI QR WILL-PAY</h5>
+                <div class="qr-container"><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ user.id }}" alt="QR"></div>
                 <div class="bg-dark p-2 rounded mb-3 border border-secondary">
                     <small class="text-secondary d-block">ID DE COBRO:</small>
                     <span class="fw-bold">{{ user.id }}</span>
@@ -100,4 +91,65 @@
             <div class="modal-content p-4">
                 <h5 class="gold-text fw-bold text-center mb-3">ENVIAR PAGO</h5>
                 <form action="/enviar_pago" method="POST">
-                    <input type="text" name="receptor_id
+                    <input type="text" name="receptor_id" class="form-control bg-dark text-white border-secondary mb-2" placeholder="ID del Destinatario" required>
+                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Monto en Bs." required>
+                    <button type="submit" class="btn btn-gold w-100">CONFIRMAR ENVÍO</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRecarga" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4">
+            <h5 class="gold-text fw-bold mb-3">RECARGAR</h5>
+            <form action="/solicitar_recarga" method="POST">
+                <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Monto" required>
+                <input type="text" name="referencia" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Referencia" required>
+                <button type="submit" class="btn btn-gold w-100">REPORTAR</button>
+            </form>
+        </div></div>
+    </div>
+
+    <div class="modal fade" id="modalRetiro" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4">
+            <h5 class="gold-text fw-bold mb-3">RETIRAR</h5>
+            <form action="/solicitar_retiro" method="POST">
+                <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Monto" required>
+                <textarea name="datos_bancarios" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Datos del banco" required></textarea>
+                <button type="submit" class="btn btn-gold w-100">SOLICITAR</button>
+            </form>
+        </div></div>
+    </div>
+
+    <audio id="audio-cash"><source src="https://assets.mixkit.co/active_storage/sfx/1017/1017-preview.mp3" type="audio/mpeg"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let saldoActual = parseFloat("{{ user.saldo_bs }}");
+        const audio = document.getElementById('audio-cash');
+
+        function revisarSaldo() {
+            fetch('/dashboard')
+            .then(response => response.text())
+            .then(html => {
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(html, 'text/html');
+                let nuevoSaldoTexto = doc.getElementById('saldo-texto').innerText;
+                let nuevoSaldo = parseFloat(nuevoSaldoTexto);
+
+                if (nuevoSaldo > saldoActual) {
+                    // ¡BEEP!
+                    audio.play();
+                    // VIBRAR (2 toques)
+                    if (navigator.vibrate) { navigator.vibrate([200, 100, 200]); }
+                    // ACTUALIZAR PANTALLA
+                    document.getElementById('saldo-texto').innerText = nuevoSaldoTexto;
+                    saldoActual = nuevoSaldo;
+                }
+            });
+        }
+        setInterval(revisarSaldo, 4000); // Revisa cada 4 segundos
+    </script>
+</body>
+</html>
