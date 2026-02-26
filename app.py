@@ -7,6 +7,13 @@ app.secret_key = 'willpay_2026_legado_wilyanny'
 
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
+# DATOS DE RECEPCIÓN (TUS DATOS)
+DATOS_PAGO_MOVIL = {
+    "banco": "Banesco",
+    "telefono": "0412-6602555",
+    "cedula": "13.496.133"
+}
+
 # CONTROL DE COMISIONES
 config_willpay = {
     'ganancia_pago': 2.5,
@@ -47,32 +54,16 @@ def dashboard():
                            es_ceo=("CEO" in u['id']), 
                            pendientes=pendientes,
                            g_pago=config_willpay['ganancia_pago'],
-                           g_retiro=config_willpay['ganancia_retiro'])
+                           g_retiro=config_willpay['ganancia_retiro'],
+                           banco_ce=DATOS_PAGO_MOVIL)
 
-# --- ACCIÓN MAESTRA: APROBAR RECARGA ---
 @app.route('/aprobar_pago/<int:transaccion_id>')
 def aprobar_pago(transaccion_id):
     if 'u' not in session or "CEO" not in session['u']: return redirect('/acceso')
-    
-    # 1. Obtener datos de la transacción
     t = query_db("SELECT * FROM transacciones WHERE id=%s", (transaccion_id,), one=True)
-    
     if t and t['estatus'] == 'PENDIENTE':
-        # 2. Subir el saldo al usuario
         query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (t['monto'], t['usuario_id']), commit=True)
-        
-        # 3. Marcar como completada
         query_db("UPDATE transacciones SET estatus = 'COMPLETADA' WHERE id = %s", (transaccion_id,), commit=True)
-        
-        print(f"✅ PAGO APROBADO: {t['monto']} Bs. cargados al usuario {t['usuario_id']}")
-    
-    return redirect('/dashboard')
-
-@app.route('/actualizar_grifo', methods=['POST'])
-def actualizar_grifo():
-    if 'u' not in session or "CEO" not in session['u']: return redirect('/acceso')
-    config_willpay['ganancia_pago'] = float(request.form.get('g_pago'))
-    config_willpay['ganancia_retiro'] = float(request.form.get('g_retiro'))
     return redirect('/dashboard')
 
 @app.route('/solicitar_recarga', methods=['POST'])
@@ -84,7 +75,22 @@ def solicitar_recarga():
              (session['u'], monto, referencia), commit=True)
     return redirect('/dashboard')
 
-# --- REGISTRO ---
+@app.route('/solicitar_retiro', methods=['POST'])
+def solicitar_retiro():
+    if 'u' not in session: return redirect('/acceso')
+    monto = float(request.form.get('monto'))
+    datos_banco = request.form.get('datos_bancarios') # Captura los datos del usuario
+    
+    comision = monto * (config_willpay['ganancia_retiro'] / 100)
+    total_a_pagar = monto - comision
+    
+    obs = f"BANCO USUARIO: {datos_banco} | A PAGAR: {total_a_pagar}"
+    
+    query_db("INSERT INTO transacciones (usuario_id, tipo, monto, estatus, observacion, fecha) VALUES (%s, 'RETIRO', %s, 'PENDIENTE', %s, NOW())",
+             (session['u'], monto, obs), commit=True)
+    return redirect('/dashboard')
+
+# ... (El resto de rutas procesar_registro y ticket siguen igual)
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
     nombre = request.form.get('nombre')
