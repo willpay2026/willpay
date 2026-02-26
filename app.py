@@ -36,6 +36,42 @@ def query_db(query, args=(), one=False, commit=False):
         conn.close()
     return rv
 
+# --- INYECTOR AUTOMÁTICO DE BASE DE DATOS (EL MOTOR) ---
+@app.before_request
+def inicializar_sistema():
+    # Solo ejecutamos esto una vez por cada reinicio para no saturar
+    if not session.get('db_ready'):
+        # Crear tabla usuarios
+        query_db("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id VARCHAR(50) PRIMARY KEY,
+                nombre VARCHAR(100),
+                saldo_bs DECIMAL(15, 2) DEFAULT 0.00
+            );
+        """, commit=True)
+        
+        # Crear tabla transacciones
+        query_db("""
+            CREATE TABLE IF NOT EXISTS transacciones (
+                id SERIAL PRIMARY KEY,
+                emisor VARCHAR(50),
+                receptor VARCHAR(50),
+                monto DECIMAL(10, 2),
+                referencia VARCHAR(20),
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                estatus VARCHAR(20) DEFAULT 'PENDIENTE'
+            );
+        """, commit=True)
+        
+        # INSERTAR AL CEO (WILFREDO) AUTOMÁTICAMENTE
+        query_db("""
+            INSERT INTO usuarios (id, nombre, saldo_bs) 
+            VALUES ('13496133', 'WILFREDO DONQUIZ (CEO)', 5000.00)
+            ON CONFLICT (id) DO NOTHING;
+        """, commit=True)
+        
+        session['db_ready'] = True
+
 @app.route('/')
 def splash(): 
     return render_template('splash.html')
@@ -43,12 +79,17 @@ def splash():
 @app.route('/acceso', methods=['GET', 'POST'])
 def acceso():
     if request.method == 'POST':
-        user_id = request.form.get('id').strip()
+        # Buscamos por la cédula que pongas en el formulario
+        user_id = request.form.get('id')
+        if not user_id: return "Por favor ingresa tu cédula"
+        
+        user_id = user_id.strip()
         u = query_db("SELECT * FROM usuarios WHERE id=%s", (user_id,), one=True)
+        
         if u:
             session['u'] = u['id']
             return redirect('/dashboard')
-        return "ID Incorrecto"
+        return "ID Incorrecto o Usuario no registrado"
     return render_template('acceso.html')
 
 @app.route('/dashboard')
@@ -57,23 +98,22 @@ def dashboard():
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
     
     pendientes = []
-    if "CEO" in u['id']:
+    # Si la cédula es la tuya, te muestra el panel de control
+    if "13496133" in u['id']:
         pendientes = query_db("SELECT * FROM transacciones WHERE estatus='PENDIENTE' ORDER BY fecha DESC")
         
     return render_template('dashboard.html', 
                            user=u, 
-                           es_ceo=("CEO" in u['id']), 
+                           es_ceo=("13496133" in u['id']), 
                            pendientes=pendientes,
                            banco_ce=DATOS_PAGO_MOVIL)
 
-# --- EL OÍDO DIGITAL (API PARA EL BEEP) ---
 @app.route('/api/get_balance')
 def get_balance():
     if 'u' not in session: return jsonify({"error": "No login"}), 401
     u = query_db("SELECT saldo_bs FROM usuarios WHERE id=%s", (session['u'],), one=True)
     return jsonify({"saldo": u['saldo_bs']})
 
-# --- MOTOR DE PAGOS ---
 @app.route('/enviar_pago', methods=['POST'])
 def enviar_pago():
     if 'u' not in session: return redirect('/acceso')
@@ -89,20 +129,17 @@ def enviar_pago():
     if emisor['saldo_bs'] < monto: return "ERROR: Saldo insuficiente."
     if emisor_id == receptor_id: return "ERROR: Auto-pago no permitido."
 
-    # Cálculo de comisiones
     comision = monto * (config_willpay['ganancia_pago'] / 100)
     monto_neto = monto - comision
     referencia = f"WP-{datetime.datetime.now().strftime('%H%M%S')}"
 
-    # Ejecutar en BD
     query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, emisor_id), commit=True)
     query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto_neto, receptor_id), commit=True)
     
-    # Registrar Transacción
     query_db("INSERT INTO transacciones (emisor, receptor, monto, referencia, estatus) VALUES (%s, %s, %s, %s, 'EXITOSO')",
              (emisor_id, receptor_id, monto, referencia), commit=True)
     
-    return render_template('comprobante.html', ref=referencia, monto=monto, receptor=receptor['nombre'])
+    return f"¡Pago Enviado! Referencia: {referencia}"
 
 @app.route('/logout')
 def logout():
