@@ -14,7 +14,7 @@ DATOS_PAGO_MOVIL = {
     "cedula": "13.496.133"
 }
 
-# CONTROL DE COMISIONES
+# CONTROL DE COMISIONES (Decimales soportados)
 config_willpay = {
     'ganancia_pago': 2.5,
     'ganancia_retiro': 3.0
@@ -57,57 +57,31 @@ def dashboard():
                            g_retiro=config_willpay['ganancia_retiro'],
                            banco_ce=DATOS_PAGO_MOVIL)
 
-@app.route('/aprobar_pago/<int:transaccion_id>')
-def aprobar_pago(transaccion_id):
-    if 'u' not in session or "CEO" not in session['u']: return redirect('/acceso')
-    t = query_db("SELECT * FROM transacciones WHERE id=%s", (transaccion_id,), one=True)
-    if t and t['estatus'] == 'PENDIENTE':
-        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (t['monto'], t['usuario_id']), commit=True)
-        query_db("UPDATE transacciones SET estatus = 'COMPLETADA' WHERE id = %s", (transaccion_id,), commit=True)
-    return redirect('/dashboard')
-
-@app.route('/solicitar_recarga', methods=['POST'])
-def solicitar_recarga():
+# --- MOTOR DE PAGOS ENTRE USUARIOS ---
+@app.route('/enviar_pago', methods=['POST'])
+def enviar_pago():
     if 'u' not in session: return redirect('/acceso')
-    monto = request.form.get('monto')
-    referencia = request.form.get('referencia')
-    query_db("INSERT INTO transacciones (usuario_id, tipo, monto, referencia, estatus, fecha) VALUES (%s, 'RECARGA', %s, %s, 'PENDIENTE', NOW())",
-             (session['u'], monto, referencia), commit=True)
-    return redirect('/dashboard')
-
-@app.route('/solicitar_retiro', methods=['POST'])
-def solicitar_retiro():
-    if 'u' not in session: return redirect('/acceso')
+    
+    emisor_id = session['u']
+    receptor_id = request.form.get('receptor_id').strip()
     monto = float(request.form.get('monto'))
-    datos_banco = request.form.get('datos_bancarios') # Captura los datos del usuario
     
-    comision = monto * (config_willpay['ganancia_retiro'] / 100)
-    total_a_pagar = monto - comision
+    emisor = query_db("SELECT * FROM usuarios WHERE id=%s", (emisor_id,), one=True)
+    receptor = query_db("SELECT * FROM usuarios WHERE id=%s", (receptor_id,), one=True)
     
-    obs = f"BANCO USUARIO: {datos_banco} | A PAGAR: {total_a_pagar}"
+    if not receptor:
+        return "ERROR: El ID del receptor no existe."
+    if emisor['saldo_bs'] < monto:
+        return "ERROR: Saldo insuficiente."
+    if emisor_id == receptor_id:
+        return "ERROR: No puedes enviarte a ti mismo."
+
+    # Cálculo de comisión Will-Pay
+    comision = monto * (config_willpay['ganancia_pago'] / 100)
+    monto_neto = monto - comision
+
+    # Ejecutar transferencia
+    query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, emisor_id), commit=True)
+    query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto_neto, receptor_id), commit=True)
     
-    query_db("INSERT INTO transacciones (usuario_id, tipo, monto, estatus, observacion, fecha) VALUES (%s, 'RETIRO', %s, 'PENDIENTE', %s, NOW())",
-             (session['u'], monto, obs), commit=True)
-    return redirect('/dashboard')
-
-# ... (El resto de rutas procesar_registro y ticket siguen igual)
-@app.route('/procesar_registro', methods=['POST'])
-def procesar_registro():
-    nombre = request.form.get('nombre')
-    cedula = request.form.get('cedula')
-    actividad = request.form.get('actividad')
-    correlativo = "CEO-0001-FOUNDER" if nombre.strip().upper() == "WILFREDO DONQUIZ" else f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
-    try:
-        query_db("INSERT INTO usuarios (id, nombre, cedula, actividad, saldo_bs) VALUES (%s, %s, %s, %s, 0.00)", 
-                 (correlativo, nombre, cedula, actividad), commit=True)
-    except: pass
-    session['u'] = correlativo
-    return redirect('/ticket_bienvenida')
-
-@app.route('/ticket_bienvenida')
-def ticket_bienvenida():
-    u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
-    return render_template('ticket_bienvenida.html', user=u)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    ref = f"WP-{datetime.datetime.now().strftime('%H%M%S')}"
