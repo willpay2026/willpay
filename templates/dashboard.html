@@ -3,74 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Principal | Will-Pay</title>
+    <title>Dashboard | Will-Pay</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { background: #050505; color: white; font-family: 'Inter', sans-serif; }
-        .header-will { padding: 20px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .saldo-card { background: linear-gradient(145deg, #111, #000); border: 1px solid #D4AF37; border-radius: 20px; padding: 30px; margin: 20px 0; text-align: center; box-shadow: 0 0 15px rgba(212, 175, 55, 0.1); }
-        .oro { color: #D4AF37; }
-        .btn-accion { background: #111; border: 1px solid #333; border-radius: 15px; padding: 20px; text-align: center; color: white; text-decoration: none; transition: 0.3s; height: 100%; display: block; }
-        .btn-accion:hover { border-color: #D4AF37; transform: translateY(-5px); }
-        .btn-accion i { font-size: 2rem; display: block; margin-bottom: 10px; color: #D4AF37; }
-        .qr-section { background: white; padding: 15px; border-radius: 15px; width: fit-content; margin: 20px auto; }
-        .correlativo-badge { background: #D4AF37; color: black; font-weight: bold; padding: 5px 15px; border-radius: 50px; font-size: 0.8rem; }
+        body { background: #000; color: white; font-family: 'sans-serif'; }
+        .gold-border { border: 1px solid #D4AF37; }
+        .gold-text { color: #D4AF37; }
+        .card-wallet { 
+            background: linear-gradient(145deg, #111, #222);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid #333;
+        }
+        .btn-action {
+            background: #1a1a1a;
+            color: white;
+            border: 1px solid #D4AF37;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 10px;
+            transition: 0.3s;
+        }
+        .btn-action:hover { background: #D4AF37; color: black; }
+        
+        /* PANEL EXCLUSIVO CEO */
+        .admin-panel {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px dashed #D4AF37;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
     </style>
 </head>
-<body>
-
-    <div class="header-will">
-        <img src="/static/logonuevo.png" style="width: 50px; border-radius: 5px;">
-        <span class="correlativo-badge">{{ user.id }}</span>
-        <a href="/logout" class="text-danger text-decoration-none"><i class="bi bi-box-arrow-right"></i></a>
-    </div>
+<body class="p-3">
 
     <div class="container">
-        <div class="text-center mt-3">
-            <p class="mb-0 text-secondary">Bienvenido, {{ user.nombre }}</p>
-            <p class="small text-uppercase oro">{{ user.actividad }} | {{ user.nombre_linea }}</p>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <p class="mb-0 text-secondary">Bienvenido,</p>
+                <h4 class="gold-text fw-bold">{{ user.nombre }}</h4>
+                <span class="badge bg-dark gold-border">{{ user.id }}</span>
+            </div>
+            <img src="/static/logonuevo.png" width="50" alt="Logo">
         </div>
 
-        <div class="saldo-card">
-            <h6 class="text-secondary text-uppercase">Saldo Disponible</h6>
-            <h1 class="display-4 fw-bold">Bs. {{ "{:,.2f}".format(user.saldo_bs) }}</h1>
-            <div class="mt-2 text-success small"><i class="bi bi-shield-check"></i> Fondos Auditados</div>
+        <div class="card-wallet text-center">
+            <p class="text-secondary small mb-1">SALDO DISPONIBLE</p>
+            <h1 class="fw-bold">Bs. {{ user.saldo_bs }}</h1>
+            <div class="d-flex justify-content-around mt-3">
+                <small class="text-success">● Cuenta Activa</small>
+                <small class="gold-text">● Nivel: {{ user.actividad }}</small>
+            </div>
         </div>
 
-        <div class="row g-3">
-            <div class="col-6">
-                <a href="/recarga" class="btn-accion">
-                    <i class="bi bi-plus-circle-fill"></i>
-                    <span>RECARGAR</span>
-                </a>
-            </div>
-            <div class="col-6">
-                <a href="/pagar" class="btn-accion">
-                    <i class="bi bi-qr-code-scan"></i>
-                    <span>PAGAR</span>
-                </a>
-            </div>
-            <div class="col-6">
-                <a href="/cobrar" class="btn-accion">
-                    <i class="bi bi-wallet2"></i>
-                    <span>COBRAR</span>
-                </a>
-            </div>
-            <div class="col-6">
-                <a href="/historial" class="btn-accion">
-                    <i class="bi bi-clock-history"></i>
-                    <span>HISTORIAL</span>
-                </a>
-            </div>
+        <div class="mt-4">
+            <p class="fw-bold">OPERACIONES</p>
+            <a href="#" class="btn-action">💸 ENVIAR PAGO</a>
+            <a href="#" class="btn-action">📥 RECIBIR PAGO (QR)</a>
+            <a href="#" class="btn-action">📊 MOVIMIENTOS</a>
         </div>
+
+        {% if es_ceo %}
+        <div class="admin-panel">
+            <h5 class="gold-text fw-bold">🛠️ PANEL DE CONTROL MASTER</h5>
+            <p class="small text-secondary">Control total de la plataforma Will-Pay</p>
+            
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="bg-dark p-3 border border-secondary rounded">
+                        <small class="text-secondary d-block">TAJADA ACTUAL</small>
+                        <span class="h4 gold-text">{{ tajada }}%</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="bg-dark p-3 border border-secondary rounded">
+                        <small class="text-secondary d-block">ESTATUS</small>
+                        <span class="text-success small">SISTEMA ONLINE</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-outline-warning w-100 mt-3 fw-bold">MODIFICAR COMISIONES</button>
+            <button class="btn btn-outline-warning w-100 mt-2 fw-bold">AUDITAR EXPEDIENTES</button>
+        </div>
+        {% endif %}
+
+        {% if es_socio %}
+        <div class="admin-panel border-info">
+            <h5 class="text-info fw-bold">💼 PANEL DE SOCIO</h5>
+            <p class="small text-secondary">Métricas de crecimiento y volumen</p>
+            <button class="btn btn-outline-info w-100 mt-2 fw-bold">VER VOLUMEN DE RED</button>
+        </div>
+        {% endif %}
 
         <div class="text-center mt-5">
-            <h6 class="text-secondary">Tu Código de Auditoría Will-Pay</h6>
-            <div class="qr-section">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ user.id }}" alt="QR Usuario">
-            </div>
-            <p class="small text-secondary">Presenta este código para recibir pagos o ser auditado.</p>
+            <a href="/acceso" class="text-danger text-decoration-none small">Cerrar Sesión Segura</a>
         </div>
     </div>
 
