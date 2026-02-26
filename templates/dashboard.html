@@ -18,6 +18,7 @@
         .modal-content { background: #111; color: white; border: 1px solid #D4AF37; }
         .admin-section { background: rgba(212, 175, 55, 0.05); border: 1px dashed #D4AF37; border-radius: 15px; padding: 20px; margin-top: 30px; }
         .qr-container { background: white; padding: 15px; display: inline-block; border-radius: 10px; margin-bottom: 15px; }
+        .coin-icon { width: 80px; margin-bottom: 10px; filter: drop-shadow(0 0 10px #D4AF37); }
     </style>
 </head>
 <body class="p-3">
@@ -32,6 +33,7 @@
         </div>
 
         <div class="card-wallet text-center mb-4">
+            <img src="https://i.ibb.co/XfXkY9q/moneda-willpay.png" class="coin-icon" alt="Will-Pay Coin">
             <p class="text-secondary small mb-1">SALDO DISPONIBLE</p>
             <h1 class="fw-bold display-4">Bs. <span id="saldo-texto">{{ user.saldo_bs }}</span></h1>
             <div class="d-flex justify-content-center gap-2 mt-3">
@@ -130,24 +132,23 @@
         const audio = document.getElementById('audio-cash');
 
         function revisarSaldo() {
-            fetch('/dashboard')
-            .then(response => response.text())
-            .then(html => {
-                let parser = new DOMParser();
-                let doc = parser.parseFromString(html, 'text/html');
-                let nuevoSaldoTexto = doc.getElementById('saldo-texto').innerText;
-                let nuevoSaldo = parseFloat(nuevoSaldoTexto);
+            // Ahora consultamos la API ligera, no toda la página
+            fetch('/api/get_balance')
+            .then(response => response.json())
+            .then(data => {
+                let nuevoSaldo = parseFloat(data.saldo);
 
                 if (nuevoSaldo > saldoActual) {
                     // ¡BEEP!
                     audio.play();
-                    // VIBRAR (2 toques)
+                    // VIBRAR
                     if (navigator.vibrate) { navigator.vibrate([200, 100, 200]); }
                     // ACTUALIZAR PANTALLA
-                    document.getElementById('saldo-texto').innerText = nuevoSaldoTexto;
+                    document.getElementById('saldo-texto').innerText = nuevoSaldo.toFixed(2);
                     saldoActual = nuevoSaldo;
                 }
-            });
+            })
+            .catch(err => console.log("Error de conexión"));
         }
         setInterval(revisarSaldo, 4000); // Revisa cada 4 segundos
     </script>
