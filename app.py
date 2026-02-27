@@ -5,10 +5,13 @@ from psycopg2.extras import DictCursor
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = 'willpay_2026_legado_wilyanny'
 
-DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
+# 🚀 CHORIZO CORREGIDO: Usamos la variable de entorno de Render
+# Esto conecta tu código con la base de datos blindada automáticamente
+DB_URL = os.environ.get('DATABASE_URL')
 
 def query_db(query, args=(), one=False, commit=False):
     try:
+        # Conexión segura con SSL para Oregón
         conn = psycopg2.connect(DB_URL, sslmode='require')
         conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         cur = conn.cursor(cursor_factory=DictCursor)
@@ -20,12 +23,13 @@ def query_db(query, args=(), one=False, commit=False):
         conn.close()
         return rv
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error en el motor Will-Pay: {e}")
         return None
 
 @app.before_request
 def inicializar_sistema():
     if not session.get('db_ready'):
+        # Tablas para el legado de Wilyanny
         query_db("CREATE TABLE IF NOT EXISTS usuarios (id VARCHAR(50) PRIMARY KEY, nombre VARCHAR(100), cedula VARCHAR(20), actividad VARCHAR(100), saldo_bs DECIMAL(15, 2) DEFAULT 0.00);", commit=True)
         query_db("CREATE TABLE IF NOT EXISTS transacciones (id SERIAL PRIMARY KEY, usuario_id VARCHAR(50), tipo VARCHAR(20), monto DECIMAL(15, 2), referencia VARCHAR(50), estatus VARCHAR(20), fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP);", commit=True)
         query_db("CREATE TABLE IF NOT EXISTS configuracion (id INT PRIMARY KEY, p_envio DECIMAL(5,2), p_retiro DECIMAL(5,2), modo_auto BOOLEAN);", commit=True)
@@ -40,8 +44,10 @@ def acceso():
     if request.method == 'POST':
         cedula = request.form.get('id', '').strip()
         u = query_db("SELECT * FROM usuarios WHERE cedula=%s", (cedula,), one=True)
-        if u: session['u'] = u['id']; return redirect('/dashboard')
-        return "Usuario no registrado."
+        if u: 
+            session['u'] = u['id']
+            return redirect('/dashboard')
+        return "Usuario no registrado. Regístrese para continuar."
     return render_template('acceso.html')
 
 @app.route('/dashboard')
@@ -86,6 +92,7 @@ def aprobar_pago(id):
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
     n, c, a = request.form.get('nombre'), request.form.get('cedula'), request.form.get('actividad')
+    # 👑 Identificación de Fundador Wilfredo
     corr = "CEO-0001-FOUNDER" if "WILFREDO" in n.upper() else f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
     s = 5000.0 if "CEO" in corr else 0.0
     query_db("INSERT INTO usuarios (id, nombre, cedula, actividad, saldo_bs) VALUES (%s,%s,%s,%s,%s)", (corr, n, c, a, s), commit=True)
@@ -96,4 +103,5 @@ def procesar_registro():
 def logout(): session.clear(); return redirect('/')
 
 if __name__ == '__main__':
+    # Puerto dinámico para Render
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
