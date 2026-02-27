@@ -19,24 +19,36 @@ def query_db(query, args=(), one=False, commit=False):
         conn.close()
         return rv
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error en DB: {e}")
         if conn: conn.close()
         return None
 
 def preparar_sistema():
-    # 1. Creamos las tablas con las mejoras (WPC, Puntos de Minería y USD)
+    # 1. Crear tabla base si no existe
     query_db("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id VARCHAR(50) PRIMARY KEY, 
             nombre VARCHAR(100), 
             cedula VARCHAR(20), 
             actividad VARCHAR(100), 
-            saldo_bs DECIMAL(15, 2) DEFAULT 0.00,
-            saldo_wpc DECIMAL(15, 2) DEFAULT 0.00,
-            saldo_usd DECIMAL(15, 2) DEFAULT 0.00,
-            puntos_mineria INT DEFAULT 0
+            saldo_bs DECIMAL(15, 2) DEFAULT 0.00
         );""", commit=True)
     
+    # 2. ACTUALIZACIÓN DINÁMICA: Forzamos la creación de columnas nuevas si no existen
+    # Esto evita el error "column saldo_wpc does not exist"
+    columnas_nuevas = [
+        ("saldo_wpc", "DECIMAL(15, 2) DEFAULT 0.00"),
+        ("saldo_usd", "DECIMAL(15, 2) DEFAULT 0.00"),
+        ("puntos_mineria", "INT DEFAULT 0")
+    ]
+    
+    for col_nombre, col_tipo in columnas_nuevas:
+        try:
+            query_db(f"ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS {col_nombre} {col_tipo};", commit=True)
+        except:
+            pass # Si ya existe, no hace nada
+
+    # 3. Resto de tablas
     query_db("""
         CREATE TABLE IF NOT EXISTS transacciones (
             id SERIAL PRIMARY KEY, 
@@ -60,6 +72,7 @@ def preparar_sistema():
     
     query_db("INSERT INTO configuracion (id, p_envio, p_retiro, tasa_wpc, modo_auto) VALUES (1, 2.5, 3.0, 15.50, FALSE) ON CONFLICT DO NOTHING", commit=True)
 
+# Ejecutamos la preparación al arrancar
 preparar_sistema()
 
 # --- RUTAS DE LA APP ---
@@ -82,6 +95,9 @@ def acceso():
 def dashboard():
     if 'u' not in session: return redirect(url_for('acceso'))
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
+    
+    if not u: return redirect(url_for('logout'))
+
     conf = query_db("SELECT * FROM configuracion WHERE id=1", one=True)
     es_ceo = "CEO" in str(u['id'])
     
@@ -89,40 +105,43 @@ def dashboard():
     
     return render_template('dashboard.html', user=u, conf=conf, es_ceo=es_ceo, auditoria=auditoria)
 
-# --- MEJORA: MINERÍA SOCIAL (₩) ---
 @app.route('/minar', methods=['POST'])
 def minar():
     if 'u' not in session: return redirect(url_for('acceso'))
-    # Sumamos 10 puntos por actividad
     query_db("UPDATE usuarios SET puntos_mineria = puntos_mineria + 10 WHERE id = %s", (session['u'],), commit=True)
     
-    # Verificamos si ya puede canjear por 1 WPC (₩)
     u = query_db("SELECT puntos_mineria FROM usuarios WHERE id=%s", (session['u'],), one=True)
-    if u['puntos_mineria'] >= 100:
+    if u and u['puntos_mineria'] >= 100:
         query_db("UPDATE usuarios SET saldo_wpc = saldo_wpc + 1, puntos_mineria = 0 WHERE id = %s", (session['u'],), commit=True)
         flash("¡BRUTAL! Has minado 1 Will-Pay Coin (₩)")
     
     return redirect(url_for('dashboard'))
 
-# --- MEJORA: EXCHANGE (CONVERSIÓN) ---
 @app.route('/convertir', methods=['POST'])
 def convertir():
-    monto_usd = float(request.form.get('monto_usd', 0))
-    conf = query_db("SELECT tasa_wpc FROM configuracion WHERE id=1", one=True)
-    u = query_db("SELECT saldo_usd FROM usuarios WHERE id=%s", (session['u'],), one=True)
+    if 'u' not in session: return redirect(url_for('acceso'))
+    try:
+        monto_usd = float(request.form.get('monto_usd', 0))
+        conf = query_db("SELECT tasa_wpc FROM configuracion WHERE id=1", one=True)
+        u = query_db("SELECT saldo_usd FROM usuarios WHERE id=%s", (session['u'],), one=True)
 
-    if u['saldo_usd'] >= monto_usd and monto_usd > 0:
-        wpc_final = monto_usd * float(conf['tasa_wpc'])
-        query_db("UPDATE usuarios SET saldo_usd = saldo_usd - %s, saldo_wpc = saldo_wpc + %s WHERE id = %s", 
-                 (monto_usd, wpc_final, session['u']), commit=True)
-        flash(f"Cambio Exitoso: +{wpc_final} ₩")
-    else:
-        flash("Saldo insuficiente en USD.")
+        if u and u['saldo_usd'] >= monto_usd and monto_usd > 0:
+            wpc_final = monto_usd * float(conf['tasa_wpc'])
+            query_db("UPDATE usuarios SET saldo_usd = saldo_usd - %s, saldo_wpc = saldo_wpc + %s WHERE id = %s", 
+                     (monto_usd, wpc_final, session['u']), commit=True)
+            flash(f"Cambio Exitoso: +{wpc_final} ₩")
+        else:
+            flash("Saldo insuficiente o monto inválido.")
+    except Exception as e:
+        flash("Error en la conversión.")
     return redirect(url_for('dashboard'))
 
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
-    n, c, a = request.form.get('nombre'), request.form.get('cedula'), request.form.get('actividad')
+    n = request.form.get('nombre', 'Usuario')
+    c = request.form.get('cedula', '0')
+    a = request.form.get('actividad', 'General')
+    
     if "WILFREDO" in n.upper():
         corr, s_bs, s_wpc, s_usd = "CEO-0001-FOUNDER", 10000.0, 100.0, 50.0
     else:
