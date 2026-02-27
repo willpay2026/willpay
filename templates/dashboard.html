@@ -3,117 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Panel de {{ user.nombre }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Will-Pay | Ferrari Edition</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f0c29; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 1100px; margin: auto; padding: 20px; }
-        
-        /* Header Estilo Premium */
-        .header { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to right, #24243e, #302b63, #0f0c29); color: white; padding: 20px 30px; border-radius: 15px; margin-bottom: 25px; border-bottom: 3px solid gold; }
-        
-        /* Billetera Mágica */
-        .wallet-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 30px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); margin-bottom: 35px; position: relative; overflow: hidden; }
-        .wallet-card::after { content: '₩'; position: absolute; right: -20px; bottom: -30px; font-size: 15em; color: rgba(255,255,255,0.05); }
-        .wallet-balances { display: flex; justify-content: space-around; text-align: center; gap: 15px; flex-wrap: wrap; }
-        .balance-item { flex: 1; min-width: 150px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(5px); }
-        .balance-item h2 { margin: 10px 0 0 0; font-size: 1.8em; color: #fdbb2d; }
-        
-        /* Minería Social */
-        .mining-section { margin-top: 25px; text-align: center; }
-        .progress-container { background: rgba(255,255,255,0.2); border-radius: 20px; height: 10px; margin: 10px 0; overflow: hidden; }
-        .progress-bar { background: gold; height: 100%; transition: width 0.5s ease; }
-        .btn-mine { background: gold; color: #1a2a6c; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1em; transition: 0.3s; box-shadow: 0 5px 15px rgba(255,215,0,0.3); }
-        .btn-mine:hover { transform: translateY(-3px); background: #ffcc00; box-shadow: 0 8px 20px rgba(255,215,0,0.5); }
-
-        /* Grid de Acciones */
-        .grid-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 30px; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); }
-        .card h3 { margin-top: 0; color: #1a2a6c; border-left: 5px solid #b21f1f; padding-left: 10px; }
-
-        /* CEO Panel Especial */
-        .ceo-panel { background: #1c1c1c; color: #e0e0e0; padding: 30px; border-radius: 25px; border: 2px solid gold; margin-top: 40px; box-shadow: 0 0 30px rgba(255,215,0,0.1); }
-        
-        /* Mensajes de Feedback */
-        .flash-messages { list-style: none; padding: 0; }
-        .flash { padding: 15px; margin-bottom: 20px; border-radius: 10px; background: #d4edda; color: #155724; font-weight: bold; text-align: center; }
-
-        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; margin-top: 15px; }
-        th { color: gold; text-transform: uppercase; font-size: 0.85em; padding: 15px; }
-        td { background: #2a2a2a; color: white; padding: 15px; }
-        td:first-child { border-radius: 10px 0 0 10px; }
-        td:last-child { border-radius: 0 10px 10px 0; }
-
-        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 1em; }
-        .btn-send { background: #1a2a6c; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-send:hover { background: #b21f1f; }
+        body { background: #000; color: #fff; font-family: 'Garamond', serif; }
+        .oro-text { color: #D4AF37; }
+        .oro-border { border: 1px solid #D4AF37; }
+        .card-willpay { background: #111; border: 1px solid #D4AF37; padding: 20px; margin-bottom: 20px; }
+        .btn-oro { background: linear-gradient(45deg, #D4AF37, #F9E2AF); color: #000; font-weight: bold; border: none; }
+        .panel-ceo { border: 2px solid #D4AF37; background: rgba(212, 175, 55, 0.1); padding: 20px; }
     </style>
 </head>
 <body>
+<nav class="navbar navbar-dark bg-black border-bottom oro-border">
+    <div class="container"><span class="navbar-brand oro-text fw-bold">WILL-PAY LEGADO</span><a href="/logout" class="btn btn-outline-danger btn-sm">SALIR</a></div>
+</nav>
 
-<div class="container">
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul class="flash-messages">
-          {% for message in messages %}
-            <li class="flash">{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-
-    <div class="header">
-        <div>
-            <h2 style="margin:0;">Hola, {{ user.nombre }} 👋</h2>
-            <small style="color: gold;">ADN Digital: {{ user.id }}</small>
-        </div>
-        <a href="/logout" style="background: rgba(255,0,0,0.2); color: #ff7675; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold;">Cerrar Bóveda</a>
+<div class="container mt-4">
+    <div class="card-willpay text-center">
+        <p class="oro-text mb-0 small">SALDO DISPONIBLE</p>
+        <h1 class="display-3 fw-bold">{{ "{:,.2f}".format(user.saldo_bs) }} Bs</h1>
     </div>
 
-    <div class="wallet-card">
-        <h3 style="margin-top:0;">🏦 Bóveda Patrimonial Will-Pay</h3>
-        <p style="font-size: 0.9em; opacity: 0.9;">Legado en marcha para las futuras generaciones.</p>
+    {% if es_ceo %}
+    <div class="panel-ceo mb-4">
+        <h4 class="oro-text text-center">??? TABLERO DE PODER CEO</h4>
+        <form action="/actualizar_config" method="POST" class="row g-3 mt-2">
+            <div class="col-md-4"><label class="small text-secondary">GANANCIA ENV O (%)</label><input type="number" step="0.1" name="p_envio" class="form-control bg-dark text-white border-warning" value="{{ conf.p_envio }}"></div>
+            <div class="col-md-4"><label class="small text-secondary">GANANCIA RETIRO (%)</label><input type="number" step="0.1" name="p_retiro" class="form-control bg-dark text-white border-warning" value="{{ conf.p_retiro }}"></div>
+            <div class="col-md-4 d-flex align-items-end"><div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="modo_auto" {% if conf.modo_auto %}checked{% endif %}><label class="form-check-label">RECARGA AUTO</label></div></div>
+            <div class="col-12 text-center"><button type="submit" class="btn btn-oro btn-sm w-50">GUARDAR CONFIGURACI N</button></div>
+        </form>
+        <hr class="oro-border">
+        <p class="text-success text-center">GANANCIAS ACUMULADAS: <b>{{ "{:,.2f}".format(ganancias_willpay) }} Bs</b></p>
         
-        <div class="wallet-balances">
-            <div class="balance-item">
-                <small>EFECTIVO (BS)</small>
-                <h2>{{ "{:,.2f}".format(user.saldo_bs) }}</h2>
-            </div>
-            <div class="balance-item" style="border: 1px solid gold;">
-                <small>WILL-PAY COIN (₩)</small>
-                <h2>₩ {{ "{:,.2f}".format(user.saldo_wpc) }}</h2>
-            </div>
-            <div class="balance-item">
-                <small>RESERVA (USD)</small>
-                <h2>$ {{ "{:,.2f}".format(user.saldo_usd) }}</h2>
-            </div>
-        </div>
-
-        <div class="mining-section">
-            <small>Energía de Minería Social: {{ user.puntos_mineria }}%</small>
-            <div class="progress-container">
-                <div class="progress-bar" style="width: {{ user.puntos_mineria }}%;"></div>
-            </div>
-            <form action="/minar" method="POST">
-                <button type="submit" class="btn-mine">⛏️ ACTIVAR MINERÍA SOCIAL</button>
-            </form>
+        <h6 class="oro-text mt-4">?? AUDITOR A TOTAL DE RED</h6>
+        <div class="table-responsive">
+            <table class="table table-dark table-sm small">
+                <thead><tr><th>FECHA</th><th>USUARIO</th><th>TIPO</th><th>MONTO</th><th>REF</th><th>ACCI N</th></tr></thead>
+                <tbody>
+                    {% for t in auditoria %}
+                    <tr><td>{{ t.fecha.strftime('%d/%m %H:%M') }}</td><td>{{ t.usuario_id }}</td><td>{{ t.tipo }}</td><td class="oro-text">{{ t.monto }}</td><td>{{ t.referencia }}</td>
+                    <td>{% if t.estatus == 'PENDIENTE' %}<a href="/aprobar_pago/{{ t.id }}" class="btn btn-success btn-sm">OK</a>{% else %}?{% endif %}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
+    {% endif %}
 
-    <div class="grid-actions">
-        <div class="card">
-            <h3>📥 Cargar Bóveda</h3>
-            <p><small>Notifica tus transferencias bancarias aquí.</small></p>
-            <form action="/solicitar_recarga" method="POST">
-                <input type="number" step="0.01" name="monto" placeholder="Monto en Bs" required>
-                <input type="text" name="referencia" placeholder="Referencia o Captura" required>
-                <button type="submit" class="btn-send">Validar Fondos</button>
-            </form>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card-willpay">
+                <h5 class="oro-text">BANCO</h5>
+                <button class="btn btn-outline-warning w-100 mb-2" data-bs-toggle="modal" data-bs-target="#mR">RECARGAR</button>
+                <button class="btn btn-outline-light w-100" data-bs-toggle="modal" data-bs-target="#mT">RETIRAR ({{ conf.p_retiro }}%)</button>
+            </div>
         </div>
+        <div class="col-md-6">
+            <div class="card-willpay">
+                <h5 class="oro-text">ENVIAR PAGO</h5>
+                <form action="/enviar_pago" method="POST">
+                    <input type="text" name="receptor_id" class="form-control bg-dark text-white mb-2" placeholder="C dula Receptor">
+                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white mb-2" placeholder="Monto Bs">
+                    <button type="submit" class="btn btn-oro w-100">TRANSFERIR</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <div class="card">
-            <h3>🔄 Will-Exchange</h3>
-            <p><small>Convierte tus reservas. Tasa: 1 USD = {{ conf.tasa_wpc }} ₩</small></p>
-            <form action="/convertir" method="POST">
-                <input type="number" step="0
+<div class="modal fade" id="mR" tabindex="-1"><div class="modal-dialog"><div class="modal-content bg-dark border-warning"><div class="modal-body">
+    <h5 class="oro-text">PAGO M VIL CEO</h5><p>Banesco | 0412-6602555 | 13.496.133</p>
+    <form action="/solicitar_recarga" method="POST">
+        <input type="number" name="monto" class="form-control mb-2" placeholder="Monto">
+        <input type="text" name="referencia" class="form-control mb-2" placeholder="Referencia">
+        <button type="submit" class="btn btn-oro w-100">REPORTAR</button>
+    </form>
+</div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
