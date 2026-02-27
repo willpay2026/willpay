@@ -3,141 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Ferrari Edition</title>
+    <title>Will-Pay | Panel de Control</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; font-family: 'Garamond', serif; }
-        .oro-text { color: #D4AF37; }
-        .oro-border { border: 1px solid #D4AF37; }
-        .card-willpay { background: #111; border: 1px solid #D4AF37; padding: 20px; margin-bottom: 20px; border-radius: 15px; }
-        .btn-oro { background: linear-gradient(45deg, #D4AF37, #F9E2AF); color: #000; font-weight: bold; border: none; transition: 0.3s; }
-        .btn-oro:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
-        .panel-ceo { border: 2px solid #D4AF37; background: rgba(212, 175, 55, 0.1); padding: 20px; border-radius: 15px; }
-        .progress-mineria { height: 8px; background: #222; border-radius: 10px; margin: 10px 0; }
-        .progress-bar-oro { background: #D4AF37; }
+        body { background-color: #0b0b0b; color: #f1f1f1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background: linear-gradient(90deg, #1a1a1a 0%, #332b00 100%); border-bottom: 2px solid #ffcc00; }
+        .gold-text { color: #ffcc00; text-shadow: 0px 0px 5px rgba(255, 204, 0, 0.5); }
+        .card-vault { background: #151515; border: 1px solid #333; border-radius: 15px; transition: 0.3s; }
+        .card-vault:hover { border-color: #ffcc00; box-shadow: 0px 0px 20px rgba(255, 204, 0, 0.2); }
+        .btn-gold { background-color: #ffcc00; color: #000; font-weight: bold; border: none; }
+        .btn-gold:hover { background-color: #e6b800; color: #000; }
+        .badge-ceo { background: linear-gradient(45deg, #ffcc00, #ff9900); color: #000; font-weight: bold; }
+        .table { color: #f1f1f1; }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-black border-bottom oro-border">
-    <div class="container">
-        <span class="navbar-brand oro-text fw-bold">WILL-PAY LEGADO</span>
-        <span class="text-secondary small d-none d-md-inline">ID: {{ user.id }}</span>
-        <a href="/logout" class="btn btn-outline-danger btn-sm">SALIR</a>
+<nav class="navbar navbar-dark p-3">
+    <div class="container d-flex justify-content-between">
+        <span class="navbar-brand h1 mb-0 gold-text">WILL-PAY VENEZUELA</span>
+        <div class="text-end">
+            <span class="me-3">Bienvenido, <strong>{{ user.nombre }}</strong></span>
+            <a href="/logout" class="btn btn-outline-danger btn-sm">Cerrar Sesión</a>
+        </div>
     </div>
 </nav>
 
-<div class="container mt-4">
-    <div class="card-willpay text-center">
-        <p class="oro-text mb-2 small">BÓVEDA PATRIMONIAL</p>
-        <div class="row">
-            <div class="col-4 border-end border-secondary">
-                <small class="text-secondary">Bolívares</small>
-                <h4 class="fw-bold">{{ "{:,.2f}".format(user.saldo_bs) }} Bs</h4>
-            </div>
-            <div class="col-4 border-end border-secondary">
-                <small class="oro-text">Will-Pay Coin</small>
-                <h4 class="fw-bold">₩ {{ "{:,.2f}".format(user.saldo_wpc) }}</h4>
-            </div>
-            <div class="col-4">
-                <small class="text-secondary">Dólares</small>
-                <h4 class="fw-bold">$ {{ "{:,.2f}".format(user.saldo_usd) }}</h4>
+<div class="container mt-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card card-vault p-4 text-center">
+                <h5 class="text-secondary uppercase">Bóveda de Patrimonio</h5>
+                <h2 class="display-4 gold-text">Bs. {{ "{:,.2f}".format(user.saldo_bs) }}</h2>
+                <p class="text-muted small">ID: {{ user.id }}</p>
+                {% if es_ceo %}
+                    <span class="badge badge-ceo p-2">SISTEMA FUNDADOR</span>
+                {% endif %}
             </div>
         </div>
-        
-        <div class="mt-4 pt-3 border-top border-secondary">
-            <small class="text-secondary">ENERGÍA DE MINERÍA SOCIAL: {{ user.puntos_mineria }}%</small>
-            <div class="progress progress-mineria">
-                <div class="progress-bar progress-bar-oro" style="width: {{ user.puntos_mineria }}%"></div>
+
+        <div class="col-md-8">
+            <div class="card card-vault p-4">
+                <h5 class="gold-text mb-4">Operaciones Rápidas</h5>
+                <div class="d-flex gap-3">
+                    <button class="btn btn-gold flex-fill py-3" data-bs-toggle="modal" data-bs-target="#modalRecarga">RECARGAR SALDO</button>
+                    <button class="btn btn-outline-warning flex-fill py-3">ENVIAR PAGO</button>
+                </div>
             </div>
-            <form action="/minar" method="POST">
-                <button type="submit" class="btn btn-oro btn-sm px-4">⛏️ ACTIVAR MINERÍA</button>
-            </form>
         </div>
     </div>
 
     {% if es_ceo %}
-    <div class="panel-ceo mb-4">
-        <h4 class="oro-text text-center">🏆 TABLERO DE PODER CEO</h4>
-        <form action="/actualizar_config" method="POST" class="row g-3 mt-2">
-            <div class="col-md-4">
-                <label class="small text-secondary">GANANCIA ENVÍO (%)</label>
-                <input type="number" step="0.1" name="p_envio" class="form-control bg-dark text-white border-warning" value="{{ conf.p_envio }}">
-            </div>
-            <div class="col-md-4">
-                <label class="small text-secondary">GANANCIA RETIRO (%)</label>
-                <input type="number" step="0.1" name="p_retiro" class="form-control bg-dark text-white border-warning" value="{{ conf.p_retiro }}">
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <div class="form-check form-switch mb-2">
-                    <input class="form-check-input" type="checkbox" name="modo_auto" {% if conf.modo_auto %}checked{% endif %}>
-                    <label class="form-check-label">RECARGA AUTO</label>
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card card-vault p-4 border-warning">
+                <h3 class="gold-text">Panel Maestro (Auditoría de Wilfredo)</h3>
+                <hr style="border-color: #333;">
+                <div class="row text-center mb-4">
+                    <div class="col-md-4">
+                        <h6 class="text-secondary">Comisión por Envío</h6>
+                        <h4 class="gold-text">{{ conf.p_envio }}%</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-secondary">Estado del Sistema</h6>
+                        <h4 class="{{ 'text-success' if conf.modo_auto else 'text-warning' }}">
+                            {{ 'AUTOMÁTICO' if conf.modo_auto else 'MANUAL' }}
+                        </h4>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-secondary">Ganancias Will-Pay</h6>
+                        <h4 class="text-info">Bs. {{ "{:,.2f}".format(ganancias_willpay) }}</h4>
+                    </div>
+                </div>
+                
+                <h5>Últimas Transacciones del Sistema</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mt-3">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Usuario ID</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Referencia</th>
+                                <th>Estatus</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in auditoria %}
+                            <tr>
+                                <td>{{ t.fecha.strftime('%d/%m %H:%M') }}</td>
+                                <td>{{ t.usuario_id }}</td>
+                                <td>{{ t.tipo }}</td>
+                                <td class="gold-text">Bs. {{ t.monto }}</td>
+                                <td>{{ t.referencia }}</td>
+                                <td><span class="badge {{ 'bg-success' if t.estatus == 'COMPLETADA' else 'bg-warning' }}">{{ t.estatus }}</span></td>
+                                <td>
+                                    {% if t.estatus == 'PENDIENTE' %}
+                                        <a href="/aprobar_pago/{{ t.id }}" class="btn btn-success btn-sm">Aprobar</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <div class="col-12 text-center">
-                <button type="submit" class="btn btn-oro btn-sm w-50">GUARDAR CONFIGURACIÓN</button>
-            </div>
-        </form>
-        <hr class="oro-border">
-        
-        <h6 class="oro-text mt-4">📜 AUDITORÍA DE RED</h6>
-        <div class="table-responsive">
-            <table class="table table-dark table-sm small">
-                <thead><tr><th>FECHA</th><th>USUARIO</th><th>TIPO</th><th>MONTO</th><th>ACCIÓN</th></tr></thead>
-                <tbody>
-                    {% for t in auditoria %}
-                    <tr>
-                        <td>{{ t.fecha.strftime('%d/%m') }}</td>
-                        <td>{{ t.usuario_id }}</td>
-                        <td>{{ t.tipo }}</td>
-                        <td class="oro-text">{{ t.monto }}</td>
-                        <td>
-                            {% if t.estatus == 'PENDIENTE' %}
-                            <a href="/aprobar_pago/{{ t.id }}" class="btn btn-success btn-xs" style="font-size: 10px;">OK</a>
-                            {% else %}
-                            ✅
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
     {% endif %}
-
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card-willpay">
-                <h5 class="oro-text">BANCO</h5>
-                <button class="btn btn-outline-warning w-100 mb-2" data-bs-toggle="modal" data-bs-target="#mR">RECARGAR BS</button>
-                <button class="btn btn-outline-light w-100" data-bs-toggle="modal" data-bs-target="#mE">EXCHANGE (₩ a $)</button>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card-willpay">
-                <h5 class="oro-text">ENVIAR PAGO</h5>
-                <form action="/enviar_pago" method="POST">
-                    <input type="text" name="receptor_id" class="form-control bg-dark text-white mb-2" placeholder="Cédula Receptor">
-                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white mb-2" placeholder="Monto Bs">
-                    <button type="submit" class="btn btn-oro w-100">TRANSFERIR</button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
-<div class="modal fade" id="mR" tabindex="-1"><div class="modal-dialog"><div class="modal-content bg-dark border-warning"><div class="modal-body">
-    <h5 class="oro-text">PAGO MÓVIL FOUNDER</h5>
-    <p class="small text-secondary">Banesco | 0412-6602555 | 13.496.133</p>
-    <form action="/solicitar_recarga" method="POST">
-        <input type="number" step="0.01" name="monto" class="form-control mb-2 bg-dark text-white" placeholder="Monto Bs">
-        <input type="text" name="referencia" class="form-control mb-2 bg-dark text-white" placeholder="Nro Referencia">
-        <button type="submit" class="btn btn-oro w-100">REPORTAR PAGO</button>
-    </form>
-</div></div></div></div>
-
-<div class="modal fade" id="mE" tabindex="-1"><div class="modal-dialog"><div class="modal-content bg-dark border-warning"><div class="modal-body">
-    <h5 class="oro-text">WILL-EXCHANGE</h5>
-    <p class="small text-secondary">Tasa actual: 1 USD = {{ conf.tasa_wpc }} ₩</p>
-    <form action="/convert
+<div class="modal fade" id="modalRecarga" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white border-warning">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title gold-text">Reportar Recarga</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/solicitar_recarga" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Monto en Bolívares</label>
+                        <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary" required>
