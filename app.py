@@ -1,5 +1,3 @@
-PYTHON app.py
-
 from flask import Flask, render_template, request, redirect, session, flash, url_for
 import psycopg2, os, datetime
 from psycopg2.extras import DictCursor
@@ -99,3 +97,4 @@ def logout(): session.clear(); return redirect('/')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+
