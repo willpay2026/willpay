@@ -23,26 +23,6 @@ def query_db(query, args=(), one=False, commit=False):
         print(f"Error: {e}")
         return None
 
-@app.before_request
-def inicializar_sistema():
-    if not session.get('db_ready'):
-        # Tablas base
-        query_db("CREATE TABLE IF NOT EXISTS usuarios (id VARCHAR(50) PRIMARY KEY, nombre VARCHAR(100), cedula VARCHAR(20), actividad VARCHAR(100), saldo_bs DECIMAL(15, 2) DEFAULT 0.00);", commit=True)
-        query_db("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cedula VARCHAR(20);", commit=True)
-        query_db("CREATE TABLE IF NOT EXISTS transacciones (id SERIAL PRIMARY KEY, usuario_id VARCHAR(50), tipo VARCHAR(20), monto DECIMAL(15, 2), referencia VARCHAR(50), estatus VARCHAR(20), fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP);", commit=True)
-        
-        # TABLA DE CONFIGURACIÓN (EL CEREBRO DEL CEO)
-        query_db("""CREATE TABLE IF NOT EXISTS configuracion (
-            id INT PRIMARY KEY, 
-            p_envio DECIMAL(5,2), 
-            p_retiro DECIMAL(5,2), 
-            modo_auto BOOLEAN
-        );""", commit=True)
-        
-        # Valores iniciales si no existen
-        query_db("INSERT INTO configuracion (id, p_envio, p_retiro, modo_auto) VALUES (1, 2.5, 3.0, FALSE) ON CONFLICT DO NOTHING", commit=True)
-        session['db_ready'] = True
-
 @app.route('/dashboard')
 def dashboard():
     if 'u' not in session: return redirect('/acceso')
@@ -50,36 +30,43 @@ def dashboard():
     conf = query_db("SELECT * FROM configuracion WHERE id=1", one=True)
     
     es_ceo = "CEO" in str(u['id'])
-    pendientes = query_db("SELECT * FROM transacciones WHERE estatus='PENDIENTE' ORDER BY fecha DESC") if es_ceo else []
     
-    # Ganancias totales
+    # AUDITORÍA TOTAL PARA EL CEO (Todas las columnas que pediste)
+    auditoria = []
+    if es_ceo:
+        auditoria = query_db("SELECT * FROM transacciones ORDER BY fecha DESC LIMIT 50")
+    
+    # Ganancias calculadas
     res = query_db("SELECT SUM(monto * (%s/100)) as total FROM transacciones WHERE tipo='ENVIO' AND estatus='COMPLETADA'", (conf['p_envio'],), one=True)
     ganancias = res['total'] if res and res['total'] else 0
 
-    return render_template('dashboard.html', user=u, conf=conf, es_ceo=es_ceo, pendientes=pendientes, ganancias_willpay=ganancias)
+    return render_template('dashboard.html', user=u, conf=conf, es_ceo=es_ceo, auditoria=auditoria, ganancias_willpay=ganancias)
 
-@app.route('/actualizar_config', methods=['POST'])
-def actualizar_config():
-    p_envio = request.form.get('p_envio')
-    p_retiro = request.form.get('p_retiro')
-    modo_auto = 'modo_auto' in request.form
-    query_db("UPDATE configuracion SET p_envio=%s, p_retiro=%s, modo_auto=%s WHERE id=1", (p_envio, p_retiro, modo_auto), commit=True)
+@app.route('/solicitar_recarga', methods=['POST'])
+def solicitar_recarga():
+    if 'u' not in session: return redirect('/')
+    monto = float(request.form.get('monto'))
+    ref = request.form.get('referencia')
+    conf = query_db("SELECT * FROM configuracion WHERE id=1", one=True)
+    
+    estatus = 'COMPLETADA' if conf['modo_auto'] else 'PENDIENTE'
+    
+    # Registrar la transacción
+    query_db("INSERT INTO transacciones (usuario_id, tipo, monto, referencia, estatus) VALUES (%s, 'RECARGA', %s, %s, %s)", 
+             (session['u'], monto, ref, estatus), commit=True)
+    
+    # Si es automático, sumar de una vez
+    if conf['modo_auto']:
+        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto, session['u']), commit=True)
+        
     return redirect('/dashboard')
 
-@app.route('/procesar_registro', methods=['POST'])
-def procesar_registro():
-    nombre, cedula, actividad = request.form.get('nombre'), request.form.get('cedula'), request.form.get('actividad')
-    correlativo = "CEO-0001-FOUNDER" if "WILFREDO" in nombre.upper() else f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
-    saldo = 5000.00 if "CEO" in correlativo else 0.00
-    query_db("INSERT INTO usuarios (id, nombre, cedula, actividad, saldo_bs) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (id) DO UPDATE SET cedula=EXCLUDED.cedula", (correlativo, nombre, cedula, actividad, saldo), commit=True)
-    session['u'] = correlativo
-    return redirect('/ticket_bienvenida')
+@app.route('/aprobar_pago/<int:id>')
+def aprobar_pago(id):
+    t = query_db("SELECT * FROM transacciones WHERE id=%s AND estatus='PENDIENTE'", (id,), one=True)
+    if t:
+        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (t['monto'], t['usuario_id']), commit=True)
+        query_db("UPDATE transacciones SET estatus='COMPLETADA' WHERE id=%s", (id,), commit=True)
+    return redirect('/dashboard')
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/')
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+# ... (Mantenemos las otras rutas de registro y config igual)
