@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Will-Pay | Expediente Digital</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #050505; color: #eee; font-family: 'Courier New', Courier, monospace; }
+        .card-expediente { background: #111; border: 2px solid #D4AF37; border-radius: 10px; padding: 30px; }
+        .oro-text { color: #D4AF37; }
+        .table-auditoria { font-size: 0.85rem; border-color: #333; }
+        .watermark { position: absolute; opacity: 0.05; transform: rotate(-45deg); font-size: 5rem; z-index: 0; pointer-events: none; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container position-relative">
+        <div class="watermark">AUDITORÍA WILL-PAY</div>
+        
+        <div class="card-expediente shadow-lg">
+            <div class="text-center mb-4">
+                <h2 class="oro-text fw-bold">EXPEDIENTE DIGITAL DE USUARIO</h2>
+                <p class="small">ID ÚNICO DE RED: {{ u.id }}</p>
+            </div>
+
+            <div class="row border-bottom border-warning pb-3 mb-4">
+                <div class="col-md-6">
+                    <h5 class="oro-text">ADN DE IDENTIDAD (KYC)</h5>
+                    <p class="mb-1"><strong>NOMBRE:</strong> {{ u.nombre }}</p>
+                    <p class="mb-1"><strong>CÉDULA/RIF:</strong> {{ u.cedula }}</p>
+                    <p class="mb-1"><strong>TELÉFONO:</strong> {{ u.telefono }}</p>
+                    <p class="mb-1"><strong>OFICIO:</strong> {{ u.actividad }}</p>
+                    <p class="mb-1"><strong>NEGOCIO:</strong> {{ u.nombre_negocio or 'N/A' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="oro-text">BÓVEDA DE RETIRO</h5>
+                    <p class="mb-1"><strong>BANCO:</strong> {{ u.banco }}</p>
+                    <p class="mb-1"><strong>MÉTODO:</strong> {{ u.metodo_retiro }}</p>
+                    <p class="mb-1"><strong>CUENTA:</strong> {{ u.numero_cuenta or 'PAGO MÓVIL' }}</p>
+                    <p class="mb-1"><strong>TIPO:</strong> {{ u.tipo_cuenta }} ({{ u.tipo_titular }})</p>
+                </div>
+            </div>
+
+            <h5 class="oro-text mb-3">📑 HISTORIAL DE AUDITORÍA (INVIOLABLE)</h5>
+            <table class="table table-dark table-hover table-auditoria">
+                <thead>
+                    <tr class="text-warning">
+                        <th>FECHA Y HORA</th>
+                        <th>TIPO</th>
+                        <th>SERIAL CORRELATIVO</th>
+                        <th class="text-end">MONTO (Bs)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in historial %}
+                    <tr>
+                        <td>{{ h.fecha }}</td>
+                        <td>{{ h.tipo }}</td>
+                        <td class="small">{{ h.referencia }}</td>
+                        <td class="text-end fw-bold {% if h.tipo == 'RECARGA' %}text-success{% else %}text-danger{% endif %}">
+                            {{ "{:,.2f}".format(h.monto) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="text-center mt-4 no-print">
+                <button onclick="window.print()" class="btn btn-outline-warning btn-sm">🖨️ IMPRIMIR REPORTE LEGAL</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
