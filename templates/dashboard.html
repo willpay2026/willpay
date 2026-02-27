@@ -3,127 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Panel de Control</title>
+    <title>Will-Pay | Billetera Digital</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #0b0b0b; color: #f1f1f1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar { background: linear-gradient(90deg, #1a1a1a 0%, #332b00 100%); border-bottom: 2px solid #ffcc00; }
-        .gold-text { color: #ffcc00; text-shadow: 0px 0px 5px rgba(255, 204, 0, 0.5); }
-        .card-vault { background: #151515; border: 1px solid #333; border-radius: 15px; transition: 0.3s; }
-        .card-vault:hover { border-color: #ffcc00; box-shadow: 0px 0px 20px rgba(255, 204, 0, 0.2); }
-        .btn-gold { background-color: #ffcc00; color: #000; font-weight: bold; border: none; }
-        .btn-gold:hover { background-color: #e6b800; color: #000; }
-        .badge-ceo { background: linear-gradient(45deg, #ffcc00, #ff9900); color: #000; font-weight: bold; }
-        .table { color: #f1f1f1; }
+        body { 
+            background-color: #000000; 
+            color: #ffffff; 
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .logo-header {
+            max-width: 180px;
+            margin-bottom: 20px;
+        }
+        .app-card {
+            background-color: #111111;
+            border: 2px solid #ffcc00;
+            border-radius: 25px;
+            padding: 25px;
+            margin-top: 10px;
+        }
+        .welcome-text {
+            color: #888888;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        .balance-label {
+            color: #ffcc00;
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .btn-action-main {
+            background-color: #ffcc00;
+            border: none;
+            color: black;
+            font-weight: bold;
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .inner-box {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-input {
+            background-color: #000;
+            border: 1px solid #444;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .btn-notify {
+            background-color: #d4af37;
+            border: none;
+            color: black;
+            font-weight: bold;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+        .footer-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-footer {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: none;
+        }
+        .btn-pay { background-color: #ffcc00; color: black; }
+        .btn-collect { background-color: #222222; color: white; border: 1px solid #333; }
+        .logout-link {
+            color: #ff4444;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: block;
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark p-3">
-    <div class="container d-flex justify-content-between">
-        <span class="navbar-brand h1 mb-0 gold-text">WILL-PAY VENEZUELA</span>
-        <div class="text-end">
-            <span class="me-3">Bienvenido, <strong>{{ user.nombre }}</strong></span>
-            <a href="/logout" class="btn btn-outline-danger btn-sm">Cerrar Sesión</a>
-        </div>
-    </div>
-</nav>
+<div class="app-container">
+    <img src="https://i.imgur.com/your_logo_id.png" alt="Will-Pay Logo" class="logo-header">
+    <p style="color: #d4af37; font-size: 0.8rem; margin-top: -15px;">Tu Billetera Digital de Confianza</p>
 
-<div class="container mt-5">
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card card-vault p-4 text-center">
-                <h5 class="text-secondary uppercase">Bóveda de Patrimonio</h5>
-                <h2 class="display-4 gold-text">Bs. {{ "{:,.2f}".format(user.saldo_bs) }}</h2>
-                <p class="text-muted small">ID: {{ user.id }}</p>
-                {% if es_ceo %}
-                    <span class="badge badge-ceo p-2">SISTEMA FUNDADOR</span>
-                {% endif %}
-            </div>
+    <div class="app-card">
+        <p class="welcome-text">Bienvenido, {{ user.nombre }}</p>
+        <h2 class="balance-label">Bs. {{ "{:,.2f}".format(user.saldo_bs) }}</h2>
+        
+        <button class="btn-action-main" data-bs-toggle="modal" data-bs-target="#modalRecarga">+ SOLICITAR RECARGA</button>
+
+        <div class="inner-box">
+            <form action="/solicitar_recarga" method="POST">
+                <input type="number" step="0.01" name="monto" class="form-input" placeholder="Monto" required>
+                <input type="text" name="referencia" class="form-input" placeholder="Referencia" required>
+                <button type="submit" class="btn-notify">NOTIFICAR PAGO</button>
+            </form>
         </div>
 
-        <div class="col-md-8">
-            <div class="card card-vault p-4">
-                <h5 class="gold-text mb-4">Operaciones Rápidas</h5>
-                <div class="d-flex gap-3">
-                    <button class="btn btn-gold flex-fill py-3" data-bs-toggle="modal" data-bs-target="#modalRecarga">RECARGAR SALDO</button>
-                    <button class="btn btn-outline-warning flex-fill py-3">ENVIAR PAGO</button>
-                </div>
-            </div>
+        <div class="footer-actions">
+            <button class="btn-footer btn-pay">PAGAR</button>
+            <button class="btn-footer btn-collect">COBRAR</button>
         </div>
-    </div>
 
-    {% if es_ceo %}
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card card-vault p-4 border-warning">
-                <h3 class="gold-text">Panel Maestro (Auditoría de Wilfredo)</h3>
-                <hr style="border-color: #333;">
-                <div class="row text-center mb-4">
-                    <div class="col-md-4">
-                        <h6 class="text-secondary">Comisión por Envío</h6>
-                        <h4 class="gold-text">{{ conf.p_envio }}%</h4>
-                    </div>
-                    <div class="col-md-4">
-                        <h6 class="text-secondary">Estado del Sistema</h6>
-                        <h4 class="{{ 'text-success' if conf.modo_auto else 'text-warning' }}">
-                            {{ 'AUTOMÁTICO' if conf.modo_auto else 'MANUAL' }}
-                        </h4>
-                    </div>
-                    <div class="col-md-4">
-                        <h6 class="text-secondary">Ganancias Will-Pay</h6>
-                        <h4 class="text-info">Bs. {{ "{:,.2f}".format(ganancias_willpay) }}</h4>
-                    </div>
-                </div>
-                
-                <h5>Últimas Transacciones del Sistema</h5>
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover mt-3">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Usuario ID</th>
-                                <th>Tipo</th>
-                                <th>Monto</th>
-                                <th>Referencia</th>
-                                <th>Estatus</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for t in auditoria %}
-                            <tr>
-                                <td>{{ t.fecha.strftime('%d/%m %H:%M') }}</td>
-                                <td>{{ t.usuario_id }}</td>
-                                <td>{{ t.tipo }}</td>
-                                <td class="gold-text">Bs. {{ t.monto }}</td>
-                                <td>{{ t.referencia }}</td>
-                                <td><span class="badge {{ 'bg-success' if t.estatus == 'COMPLETADA' else 'bg-warning' }}">{{ t.estatus }}</span></td>
-                                <td>
-                                    {% if t.estatus == 'PENDIENTE' %}
-                                        <a href="/aprobar_pago/{{ t.id }}" class="btn btn-success btn-sm">Aprobar</a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <hr style="border-color: #333; margin: 25px 0;">
+        <a href="/logout" class="logout-link">Cerrar Sesión</a>
     </div>
-    {% endif %}
 </div>
 
-<div class="modal fade" id="modalRecarga" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-white border-warning">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title gold-text">Reportar Recarga</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="/solicitar_recarga" method="POST">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Monto en Bolívares</label>
-                        <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary" required>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
