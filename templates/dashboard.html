@@ -1,34 +1,80 @@
-<style>
-    .recibo-legal {
-        background: #fff; color: #000; padding: 20px; border-radius: 10px;
-        font-family: 'Courier New', Courier, monospace; border: 2px dashed #D4AF37;
-    }
-    .beep-success { color: #28a745; font-weight: bold; font-size: 1.2rem; }
-</style>
+from flask import Flask, render_template, request, redirect, session, os, datetime
+import psycopg2
+from psycopg2.extras import DictCursor
 
-<div class="container mt-3">
-    {% if request.args.get('pago') == 'exito' and session.get('ultimo_recibo') %}
-    <div class="recibo-legal shadow-lg mb-4 mx-auto" style="max-width: 400px;">
-        <div class="text-center">
-            <h4 class="fw-bold mb-0">WILL-PAY VENEZUELA</h4>
-            <p class="small text-muted">LEGADO WILYANNY DONQUIZ</p>
-            <div class="beep-success mb-2">🟢 (+) TRANSACCIÓN EXITOSA</div>
-        </div>
-        <hr>
-        <p class="mb-1"><strong>CORRELATIVO:</strong> {{ session.ultimo_recibo.serial }}</p>
-        <p class="mb-1"><strong>FECHA:</strong> {{ session.ultimo_recibo.fecha }}</p>
-        <hr>
-        <p class="mb-1"><strong>DE:</strong> {{ session.ultimo_recibo.emi_nom }}</p>
-        <p class="small text-muted">OFICIO: {{ session.ultimo_recibo.emi_act }}</p>
-        <p class="mb-1"><strong>PARA:</strong> {{ session.ultimo_recibo.rec_nom }}</p>
-        <p class="small text-muted">OFICIO: {{ session.ultimo_recibo.rec_act }}</p>
-        <hr>
-        <h3 class="text-center fw-bold">{{ "{:,.2f}".format(session.ultimo_recibo.monto) }} Bs.</h3>
-        <p class="text-center small mt-3">*** DOCUMENTO PARA AUDITORÍA ***</p>
-    </div>
+app = Flask(__name__)
+app.secret_key = 'willpay_2026_legado_wilyanny'
+
+DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
+
+def query_db(query, args=(), one=False, commit=False):
+    try:
+        conn = psycopg2.connect(DB_URL, sslmode='require')
+        conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cur = conn.cursor(cursor_factory=DictCursor)
+        cur.execute(query, args)
+        rv = (cur.fetchone() if one else cur.fetchall()) if not commit else None
+        cur.close()
+        conn.close()
+        return rv
+    except Exception as e:
+        print(f"Error DB: {e}")
+        return None
+
+@app.before_request
+def inicializar_boveda():
+    if not session.get('db_ready'):
+        # Tabla Maestra con ADN de Usuario
+        query_db("""CREATE TABLE IF NOT EXISTS usuarios (
+            id VARCHAR(50) PRIMARY KEY, 
+            nombre VARCHAR(100), 
+            cedula VARCHAR(20) UNIQUE, 
+            telefono VARCHAR(20),
+            actividad VARCHAR(100), 
+            nombre_negocio VARCHAR(100),
+            tipo_transporte VARCHAR(50),
+            banco VARCHAR(50),
+            metodo_retiro VARCHAR(20),
+            numero_cuenta VARCHAR(25),
+            tipo_cuenta VARCHAR(20),
+            tipo_titular VARCHAR(20),
+            saldo_bs DECIMAL(15, 2) DEFAULT 0.00,
+            estatus_kyc VARCHAR(20) DEFAULT 'PENDIENTE'
+        );""", commit=True)
+        # Tabla de Auditoría Inviolable
+        query_db("""CREATE TABLE IF NOT EXISTS transacciones (
+            id SERIAL PRIMARY KEY, 
+            usuario_id VARCHAR(50), 
+            tipo VARCHAR(20), 
+            monto DECIMAL(15, 2), 
+            referencia VARCHAR(50) UNIQUE, 
+            estatus VARCHAR(20), 
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );""", commit=True)
+        session['db_ready'] = True
+
+@app.route('/procesar_registro', methods=['POST'])
+def procesar_registro():
+    d = request.form
+    n_caps = d.get('nombre').upper()
+    corr = "CEO-0001-FOUNDER" if "WILFREDO" in n_caps else f"WP-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
     
-    <audio autoplay>
-        <source src="https://www.soundjay.com/buttons/sounds/beep-07a.mp3" type="audio/mpeg">
-    </audio>
-    {% endif %}
-</div>
+    query_db("""INSERT INTO usuarios (id, nombre, cedula, telefono, actividad, nombre_negocio, tipo_transporte, banco, metodo_retiro, numero_cuenta, tipo_cuenta, tipo_titular) 
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
+             (corr, n_caps, d.get('cedula'), d.get('telefono'), d.get('actividad'), d.get('nombre_negocio'), 
+              d.get('tipo_transporte'), d.get('banco'), d.get('metodo_pago'), d.get('numero_cuenta'), 
+              d.get('tipo_cuenta'), d.get('tipo_titular')), commit=True)
+    
+    session['u'] = corr
+    return redirect('/dashboard')
+
+@app.route('/expediente/<uid>')
+def ver_expediente(uid):
+    if 'u' not in session or (session['u'] != uid and "CEO" not in session['u']):
+        return "Acceso Denegado a la Bóveda."
+    u = query_db("SELECT * FROM usuarios WHERE id=%s", (uid,), one=True)
+    historial = query_db("SELECT * FROM transacciones WHERE usuario_id=%s ORDER BY fecha DESC", (uid,))
+    return render_template('expediente.html', u=u, historial=historial)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
