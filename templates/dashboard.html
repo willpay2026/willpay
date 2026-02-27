@@ -3,89 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Billetera Will-Pay | El Legado</title>
+    <title>Will-Pay | Panel de Control</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background: #000; color: #fff; font-family: 'Garamond', serif; }
         .oro-text { color: #D4AF37; }
         .oro-border { border: 1px solid #D4AF37; }
-        .card-willpay { background: #111; border: 1px solid #D4AF37; border-radius: 0; padding: 20px; margin-bottom: 20px; }
-        .btn-oro { background: linear-gradient(45deg, #D4AF37, #F9E2AF); color: #000; font-weight: bold; border: none; border-radius: 0; }
-        .balance-box { text-align: center; padding: 30px; border-bottom: 2px double #D4AF37; }
-        .ceo-section { border: 2px solid #D4AF37; background: rgba(212, 175, 55, 0.05); padding: 20px; margin-top: 20px; }
-        .ganancia-box { background: #002200; border: 1px solid #00ff00; padding: 15px; text-align: center; margin-bottom: 20px; }
+        .card-willpay { background: #111; border: 1px solid #D4AF37; padding: 20px; margin-bottom: 20px; }
+        .btn-oro { background: linear-gradient(45deg, #D4AF37, #F9E2AF); color: #000; font-weight: bold; border: none; }
+        .panel-ceo { border: 2px solid #D4AF37; background: rgba(212, 175, 55, 0.1); padding: 20px; }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-dark bg-black border-bottom oro-border">
     <div class="container">
-        <a class="navbar-brand oro-text fw-bold" href="#">
-            WILL-PAY LEGADO
-        </a>
-        <div class="d-flex">
-            <span class="nav-link text-secondary me-3">ID: {{ user.id }}</span>
-            <a href="/logout" class="btn btn-outline-danger btn-sm">SALIR</a>
-        </div>
+        <span class="navbar-brand oro-text fw-bold">WILL-PAY LEGADO</span>
+        <a href="/logout" class="btn btn-outline-danger btn-sm">SALIR</a>
     </div>
 </nav>
 
 <div class="container mt-4">
-    <div class="card-willpay balance-box">
-        <p class="oro-text text-uppercase mb-1">Saldo Disponible</p>
-        <h1 class="display-3 fw-bold">{{ "{:,.2f}".format(user.saldo_bs) }} <small class="h4">Bs</small></h1>
+    <div class="card-willpay text-center">
+        <p class="oro-text mb-0">SALDO DISPONIBLE</p>
+        <h1 class="display-3 fw-bold">{{ "{:,.2f}".format(user.saldo_bs) }} Bs</h1>
     </div>
 
     {% if es_ceo %}
-    <div class="ceo-section">
-        <h4 class="oro-text fw-bold">👑 PANEL FOUNDER (CEO)</h4>
-        
-        <div class="ganancia-box">
-            <h6 class="text-success text-uppercase">Ganancias Acumuladas de la Red</h6>
-            <h2 class="text-white">{{ "{:,.2f}".format(ganancias_willpay) }} Bs</h2>
-            <p class="small text-secondary mb-0">Basado en comisión del {{ g_pago }}% por transacción</p>
-        </div>
-
-        <h6 class="oro-text">Auditoría de Pagos Móviles Pendientes:</h6>
-        <div class="table-responsive">
-            <table class="table table-dark table-sm">
-                <thead>
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Monto</th>
-                        <th>Ref</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for t in pendientes %}
-                    <tr>
-                        <td>{{ t.usuario_id }}</td>
-                        <td>{{ t.monto }} Bs</td>
-                        <td>{{ t.referencia }}</td>
-                        <td><a href="/aprobar_pago/{{ t.id }}" class="btn btn-success btn-sm">OK</a></td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="4" class="text-center small text-secondary">No hay pagos por auditar</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="panel-ceo mb-4">
+        <h4 class="oro-text text-center">🕹️ TABLERO DE PODER CEO</h4>
+        <form action="/actualizar_config" method="POST" class="row g-3 mt-2">
+            <div class="col-md-4">
+                <label class="small text-secondary">GANANCIA ENVÍO (%)</label>
+                <input type="number" step="0.1" name="p_envio" class="form-control bg-dark text-white border-warning" value="{{ conf.p_envio }}">
+            </div>
+            <div class="col-md-4">
+                <label class="small text-secondary">GANANCIA RETIRO (%)</label>
+                <input type="number" step="0.1" name="p_retiro" class="form-control bg-dark text-white border-warning" value="{{ conf.p_retiro }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" name="modo_auto" {% if conf.modo_auto %}checked{% endif %}>
+                    <label class="form-check-label text-white">RECARGA AUTO</label>
+                </div>
+            </div>
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-oro btn-sm w-50">GUARDAR CAMBIOS MAESTROS</button>
+            </div>
+        </form>
+        <hr class="oro-border">
+        <p class="text-success text-center mb-0">GANANCIAS ACUMULADAS: <b>{{ "{:,.2f}".format(ganancias_willpay) }} Bs</b></p>
     </div>
     {% endif %}
 
-    <div class="row mt-4">
+    <div class="row">
         <div class="col-md-6">
             <div class="card-willpay">
-                <h5 class="oro-text">ENVIAR PAGO</h5>
+                <h5 class="oro-text">OPERACIONES BANCARIAS</h5>
+                <button class="btn btn-outline-warning w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalRecarga">RECARGAR SALDO</button>
+                <button class="btn btn-outline-light w-100" data-bs-toggle="modal" data-bs-target="#modalRetiro">RETIRAR A MI BANCO ({{ conf.p_retiro }}% Comisión)</button>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card-willpay">
+                <h5 class="oro-text">ENVIAR PAGO FLASH</h5>
                 <form action="/enviar_pago" method="POST">
-                    <input type="text" name="receptor_id" class="form-control bg-dark text-white mb-2" placeholder="Cédula del Receptor" required>
-                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white mb-3" placeholder="Monto Bs" required>
-                    <button type="submit" class="btn btn-oro w-100">TRANSFERIR YA</button>
+                    <input type="text" name="receptor_id" class="form-control bg-dark text-white mb-2" placeholder="Cédula del Receptor">
+                    <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white mb-2" placeholder="Monto Bs">
+                    <button type="submit" class="btn btn-oro w-100">TRANSFERIR AHORA</button>
                 </form>
             </div>
         </div>
     </div>
+</div>
+
+<div class="modal fade" id="modalRecarga" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content bg-dark border-warning"><div class="modal-body">
+        <h5 class="oro-text">DATOS PAGO MÓVIL CEO</h5>
+        <p>Banesco | 0412-6602555 | 13.496.133</p>
+        <hr>
+        <form action="/solicitar_recarga" method="POST">
+            <input type="number" name="monto" class="form-control mb-2" placeholder="Monto pagado">
+            <input type="text" name="referencia" class="form-control mb-2" placeholder="Referencia">
+            <button type="submit" class="btn btn-oro w-100">REPORTAR PAGO</button>
+        </form>
+    </div></div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
