@@ -21,54 +21,37 @@ def query_db(query, args=(), one=False, commit=False):
         print(f"Error DB: {e}")
         return None
 
-@app.before_request
-def inicializar_sistema():
-    if not session.get('db_ready'):
-        # Tabla Maestra con KYC y Datos Bancarios Detallados
-        query_db("""CREATE TABLE IF NOT EXISTS usuarios (
-            id VARCHAR(50) PRIMARY KEY, 
-            nombre VARCHAR(100), 
-            cedula VARCHAR(20) UNIQUE, 
-            telefono VARCHAR(20),
-            actividad VARCHAR(100), 
-            nombre_negocio VARCHAR(100),
-            tipo_transporte VARCHAR(50),
-            banco VARCHAR(50),
-            metodo_retiro VARCHAR(20),
-            numero_cuenta VARCHAR(25),
-            tipo_cuenta VARCHAR(20),
-            tipo_titular VARCHAR(20),
-            saldo_bs DECIMAL(15, 2) DEFAULT 0.00,
-            estatus_kyc VARCHAR(20) DEFAULT 'PENDIENTE'
-        );""", commit=True)
-        query_db("CREATE TABLE IF NOT EXISTS transacciones (id SERIAL PRIMARY KEY, usuario_id VARCHAR(50), tipo VARCHAR(20), monto DECIMAL(15, 2), referencia VARCHAR(50), estatus VARCHAR(20), fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP);", commit=True)
-        query_db("CREATE TABLE IF NOT EXISTS configuracion (id INT PRIMARY KEY, p_envio DECIMAL(5,2), p_retiro DECIMAL(5,2), modo_auto BOOLEAN);", commit=True)
-        query_db("INSERT INTO configuracion (id, p_envio, p_retiro, modo_auto) VALUES (1, 2.5, 3.0, FALSE) ON CONFLICT DO NOTHING", commit=True)
-        session['db_ready'] = True
-
-@app.route('/procesar_registro', methods=['POST'])
-def procesar_registro():
-    d = request.form
-    n_caps = d.get('nombre').upper()
-    corr = "CEO-0001-FOUNDER" if "WILFREDO" in n_caps else f"WP-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
-    saldo = 5000.0 if "CEO" in corr else 0.0
-    
-    query_db("""INSERT INTO usuarios (id, nombre, cedula, telefono, actividad, nombre_negocio, tipo_transporte, banco, metodo_retiro, numero_cuenta, tipo_cuenta, tipo_titular, saldo_bs) 
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
-             (corr, n_caps, d.get('cedula'), d.get('telefono'), d.get('actividad'), d.get('nombre_negocio'), 
-              d.get('tipo_transporte'), d.get('banco'), d.get('metodo_pago'), d.get('numero_cuenta'), 
-              d.get('tipo_cuenta'), d.get('tipo_titular'), saldo), commit=True)
-    
-    session['u'] = corr
-    return redirect('/dashboard')
-
-@app.route('/dashboard')
-def dashboard():
+@app.route('/enviar_pago', methods=['POST'])
+def enviar_pago():
     if 'u' not in session: return redirect('/')
-    u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
-    conf = query_db("SELECT * FROM configuracion WHERE id=1", one=True)
-    es_ceo = "CEO" in str(u['id'])
-    auditoria = query_db("SELECT * FROM transacciones ORDER BY fecha DESC LIMIT 50") if es_ceo else []
-    return render_template('dashboard.html', user=u, conf=conf, es_ceo=es_ceo, auditoria=auditoria)
-
-# ... (Rutas de actualizar_config, solicitar_recarga y aprobar_pago iguales al respaldo anterior)
+    emisor_id = session['u']
+    receptor_cedula = request.form.get('receptor_id')
+    monto = float(request.form.get('monto'))
+    
+    # 1. Buscar emisor y receptor
+    emi = query_db("SELECT * FROM usuarios WHERE id=%s", (emisor_id,), one=True)
+    rec = query_db("SELECT * FROM usuarios WHERE cedula=%s", (receptor_cedula,), one=True)
+    
+    if emi and rec and emi['saldo_bs'] >= monto:
+        # 2. Generar Correlativo Legal
+        serial = f"WP-TR-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        # 3. Mover la plata
+        query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, emisor_id), commit=True)
+        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto, rec['id']), commit=True)
+        
+        # 4. Registrar en Auditoría
+        query_db("""INSERT INTO transacciones (usuario_id, tipo, monto, referencia, estatus) 
+                    VALUES (%s, 'ENVIO', %s, %s, 'COMPLETADA')""", 
+                 (emisor_id, monto, serial), commit=True)
+        
+        # Guardar datos para el recibo en la sesión temporal
+        session['ultimo_recibo'] = {
+            'serial': serial, 'monto': monto,
+            'emi_nom': emi['nombre'], 'emi_act': emi['actividad'],
+            'rec_nom': rec['nombre'], 'rec_act': rec['actividad'],
+            'fecha': datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        }
+        return redirect('/dashboard?pago=exito')
+    
+    return "Error: Saldo insuficiente o usuario no existe."
