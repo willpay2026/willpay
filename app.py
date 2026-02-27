@@ -7,7 +7,6 @@ from flask import Flask, render_template, request, redirect, session
 app = Flask(__name__)
 app.secret_key = 'willpay_2026_legado_wilyanny'
 
-# URL de la base de datos (ADN del sistema)
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
 def query_db(query, args=(), one=False, commit=False):
@@ -27,7 +26,6 @@ def query_db(query, args=(), one=False, commit=False):
 @app.before_request
 def inicializar_boveda():
     if not session.get('db_ready'):
-        # Tablas para el Legado: Usuarios y Auditoría Serializada
         query_db("""CREATE TABLE IF NOT EXISTS usuarios (
             id VARCHAR(50) PRIMARY KEY, 
             nombre VARCHAR(100), 
@@ -63,12 +61,11 @@ def index():
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
     d = request.form
-    n_caps = d.get('nombre').upper()
-    # Generación de ID Único Will-Pay
+    n_caps = d.get('nombre', '').upper()
     corr = "CEO-0001-FOUNDER" if "WILFREDO" in n_caps else f"WP-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
     
     query_db("""INSERT INTO usuarios (id, nombre, cedula, telefono, actividad, nombre_negocio, tipo_transporte, banco, metodo_retiro, numero_cuenta, tipo_cuenta, tipo_titular) 
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (cedula) DO UPDATE SET telefono = EXCLUDED.telefono""", 
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (cedula) DO NOTHING""", 
              (corr, n_caps, d.get('cedula'), d.get('telefono'), d.get('actividad'), d.get('nombre_negocio'), 
               d.get('tipo_transporte'), d.get('banco'), d.get('metodo_pago'), d.get('numero_cuenta'), 
               d.get('tipo_cuenta'), d.get('tipo_titular')), commit=True)
@@ -82,23 +79,6 @@ def dashboard():
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
     return render_template('dashboard.html', user=u)
 
-@app.route('/expediente/<uid>')
-def ver_expediente(uid):
-    if 'u' not in session: return redirect('/')
-    # Solo el CEO o el dueño pueden entrar a la bóveda
-    if session['u'] != uid and "CEO" not in session['u']:
-        return "ACCESO DENEGADO: Seguridad Will-Pay Activa."
-    
-    u = query_db("SELECT * FROM usuarios WHERE id=%s", (uid,), one=True)
-    historial = query_db("SELECT * FROM transacciones WHERE usuario_id=%s ORDER BY fecha DESC", (uid,))
-    return render_template('expediente.html', u=u, historial=historial)
-
-@app.route('/salir')
-def salir():
-    session.clear()
-    return redirect('/')
-
 if __name__ == '__main__':
-    # El arranque que Render necesita
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
