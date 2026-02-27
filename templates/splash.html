@@ -2,60 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Bienvenidos</title>
-    <style>
-        /* FONTO NEGRO PURO SIN DISTRACCIONES */
-        body { 
-            background: #000; 
-            margin: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            width: 100vw;
-            overflow: hidden;
-        }
-
-        .splash-container {
-            text-align: center;
-            width: 90%; /* Ajuste para celular */
-            max-width: 320px;
-        }
-
-        /* LOGO SIN BORDES NI RESPLANDOR */
-        .logo-limpio {
-            width: 100%;
-            height: auto;
-            /* Eliminamos box-shadow y border-radius para que sea natural */
-            box-shadow: none !important; 
-            border: none !important;
-            display: block;
-            margin: 0 auto;
-        }
-
-        /* ANIMACIÓN DE CARGA ELEGANTE EN ORO */
-        .loader {
-            border: 3px solid #111;
-            border-top: 3px solid #D4AF37;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 25px auto 0;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
     <meta http-equiv="refresh" content="4;url=/acceso">
+    <style>
+        body { background: #000; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .loader { border: 3px solid #111; border-top: 3px solid #D4AF37; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <div class="splash-container">
-        <img src="/static/logonuevo.png" alt="Will-Pay" class="logo-limpio">
+    <div style="text-align:center;">
+        <img src="/static/logonuevo.png" style="width:280px;">
         <div class="loader"></div>
+        <p style="color:#D4AF37; font-family: sans-serif; letter-spacing: 2px;">CARGANDO EL LEGADO...</p>
     </div>
 </body>
 </html>
