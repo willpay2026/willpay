@@ -1,10 +1,13 @@
-from flask import Flask, render_template, request, redirect, session, os, datetime
+import os
+import datetime
 import psycopg2
 from psycopg2.extras import DictCursor
+from flask import Flask, render_template, request, redirect, session
 
 app = Flask(__name__)
 app.secret_key = 'willpay_2026_legado_wilyanny'
 
+# URL de tu base de datos en Render
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
 def query_db(query, args=(), one=False, commit=False):
@@ -21,37 +24,71 @@ def query_db(query, args=(), one=False, commit=False):
         print(f"Error DB: {e}")
         return None
 
-@app.route('/enviar_pago', methods=['POST'])
-def enviar_pago():
+@app.before_request
+def inicializar_boveda():
+    if not session.get('db_ready'):
+        # Crear tablas con ADN de Usuario y Auditoría
+        query_db("""CREATE TABLE IF NOT EXISTS usuarios (
+            id VARCHAR(50) PRIMARY KEY, 
+            nombre VARCHAR(100), 
+            cedula VARCHAR(20) UNIQUE, 
+            telefono VARCHAR(20),
+            actividad VARCHAR(100), 
+            nombre_negocio VARCHAR(100),
+            tipo_transporte VARCHAR(50),
+            banco VARCHAR(50),
+            metodo_retiro VARCHAR(20),
+            numero_cuenta VARCHAR(25),
+            tipo_cuenta VARCHAR(20),
+            tipo_titular VARCHAR(20),
+            saldo_bs DECIMAL(15, 2) DEFAULT 0.00,
+            estatus_kyc VARCHAR(20) DEFAULT 'PENDIENTE'
+        );""", commit=True)
+        query_db("""CREATE TABLE IF NOT EXISTS transacciones (
+            id SERIAL PRIMARY KEY, 
+            usuario_id VARCHAR(50), 
+            tipo VARCHAR(20), 
+            monto DECIMAL(15, 2), 
+            referencia VARCHAR(50) UNIQUE, 
+            estatus VARCHAR(20), 
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );""", commit=True)
+        session['db_ready'] = True
+
+@app.route('/')
+def index():
+    return render_template('dashboard.html', user=None)
+
+@app.route('/procesar_registro', methods=['POST'])
+def procesar_registro():
+    d = request.form
+    n_caps = d.get('nombre').upper()
+    # Generador de ID Wilfredo Style
+    corr = "CEO-0001-FOUNDER" if "WILFREDO" in n_caps else f"WP-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
+    
+    query_db("""INSERT INTO usuarios (id, nombre, cedula, telefono, actividad, nombre_negocio, tipo_transporte, banco, metodo_retiro, numero_cuenta, tipo_cuenta, tipo_titular) 
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
+             (corr, n_caps, d.get('cedula'), d.get('telefono'), d.get('actividad'), d.get('nombre_negocio'), 
+              d.get('tipo_transporte'), d.get('banco'), d.get('metodo_pago'), d.get('numero_cuenta'), 
+              d.get('tipo_cuenta'), d.get('tipo_titular')), commit=True)
+    
+    session['u'] = corr
+    return redirect('/dashboard')
+
+@app.route('/dashboard')
+def dashboard():
     if 'u' not in session: return redirect('/')
-    emisor_id = session['u']
-    receptor_cedula = request.form.get('receptor_id')
-    monto = float(request.form.get('monto'))
-    
-    # 1. Buscar emisor y receptor
-    emi = query_db("SELECT * FROM usuarios WHERE id=%s", (emisor_id,), one=True)
-    rec = query_db("SELECT * FROM usuarios WHERE cedula=%s", (receptor_cedula,), one=True)
-    
-    if emi and rec and emi['saldo_bs'] >= monto:
-        # 2. Generar Correlativo Legal
-        serial = f"WP-TR-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        # 3. Mover la plata
-        query_db("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, emisor_id), commit=True)
-        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto, rec['id']), commit=True)
-        
-        # 4. Registrar en Auditoría
-        query_db("""INSERT INTO transacciones (usuario_id, tipo, monto, referencia, estatus) 
-                    VALUES (%s, 'ENVIO', %s, %s, 'COMPLETADA')""", 
-                 (emisor_id, monto, serial), commit=True)
-        
-        # Guardar datos para el recibo en la sesión temporal
-        session['ultimo_recibo'] = {
-            'serial': serial, 'monto': monto,
-            'emi_nom': emi['nombre'], 'emi_act': emi['actividad'],
-            'rec_nom': rec['nombre'], 'rec_act': rec['actividad'],
-            'fecha': datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        }
-        return redirect('/dashboard?pago=exito')
-    
-    return "Error: Saldo insuficiente o usuario no existe."
+    u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
+    return render_template('dashboard.html', user=u)
+
+@app.route('/expediente/<uid>')
+def ver_expediente(uid):
+    if 'u' not in session or (session['u'] != uid and "CEO" not in session['u']):
+        return "Acceso Denegado: Bóveda Blindada."
+    u = query_db("SELECT * FROM usuarios WHERE id=%s", (uid,), one=True)
+    historial = query_db("SELECT * FROM transacciones WHERE usuario_id=%s ORDER BY fecha DESC", (uid,))
+    return render_template('expediente.html', u=u, historial=historial)
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
