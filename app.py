@@ -1,125 +1,99 @@
-import os
-import psycopg2
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, session, flash, url_for
+import psycopg2, os, datetime
+from psycopg2.extras import DictCursor
 
-app = Flask(__name__)
-app.secret_key = 'willpay_legado_2026' # Llave para las sesiones de usuario
+app = Flask(__name__, template_folder='templates', static_folder='static')
+app.secret_key = 'willpay_2026_legado_wilyanny'
 
-# 1. Conexión a la Base de Datos en Render
-def get_db_connection():
-    # Usa la variable de entorno de Render para mayor seguridad
-    db_url = os.environ.get('DATABASE_URL') or "postgres://postgres:tu_password_aqui@localhost:5432/willpay_db"
-    conn = psycopg2.connect(db_url)
-    return conn
+DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
-# 2. Inicialización del Sistema (Crea las tablas si no existen)
+def query_db(query, args=(), one=False, commit=False):
+    try:
+        conn = psycopg2.connect(DB_URL, sslmode='require')
+        conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cur = conn.cursor(cursor_factory=DictCursor)
+        rv = None
+        cur.execute(query, args)
+        if not commit:
+            rv = cur.fetchone() if one else cur.fetchall()
+        cur.close()
+        conn.close()
+        return rv
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+@app.before_request
 def inicializar_sistema():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id VARCHAR(20) PRIMARY KEY,
-            nombre VARCHAR(100),
-            telefono VARCHAR(20),
-            actividad VARCHAR(50),
-            nombre_linea VARCHAR(100),
-            foto_cedula VARCHAR(255),
-            saldo DECIMAL(12,2) DEFAULT 0.00,
-            rol VARCHAR(20) DEFAULT 'USUARIO'
-        );
-    """)
-    conn.commit()
-    cur.close()
-    conn.close()
+    if not session.get('db_ready'):
+        query_db("CREATE TABLE IF NOT EXISTS usuarios (id VARCHAR(50) PRIMARY KEY, nombre VARCHAR(100), cedula VARCHAR(20), actividad VARCHAR(100), saldo_bs DECIMAL(15, 2) DEFAULT 0.00);", commit=True)
+        query_db("CREATE TABLE IF NOT EXISTS transacciones (id SERIAL PRIMARY KEY, usuario_id VARCHAR(50), tipo VARCHAR(20), monto DECIMAL(15, 2), referencia VARCHAR(50), estatus VARCHAR(20), fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP);", commit=True)
+        query_db("CREATE TABLE IF NOT EXISTS configuracion (id INT PRIMARY KEY, p_envio DECIMAL(5,2), p_retiro DECIMAL(5,2), modo_auto BOOLEAN);", commit=True)
+        query_db("INSERT INTO configuracion (id, p_envio, p_retiro, modo_auto) VALUES (1, 2.5, 3.0, FALSE) ON CONFLICT DO NOTHING", commit=True)
+        session['db_ready'] = True
 
-# Asegurar que las tablas existan al arrancar
-try:
-    inicializar_sistema()
-except:
-    pass
-
-# 3. RUTAS DEL SISTEMA
 @app.route('/')
-def home():
-    return redirect(url_for('acceso'))
+def splash(): return render_template('splash.html')
 
 @app.route('/acceso', methods=['GET', 'POST'])
 def acceso():
     if request.method == 'POST':
-        cedula = request.form.get('id')
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT nombre, rol FROM usuarios WHERE id = %s", (cedula,))
-        user = cur.fetchone()
-        cur.close()
-        conn.close()
-        
-        if user:
-            session['user_id'] = cedula
-            session['user_name'] = user[0]
-            return redirect(url_for('dashboard'))
-        return "Usuario no encontrado. Por favor regístrese."
+        cedula = request.form.get('id', '').strip()
+        u = query_db("SELECT * FROM usuarios WHERE cedula=%s", (cedula,), one=True)
+        if u: session['u'] = u['id']; return redirect('/dashboard')
+        return "Usuario no registrado."
     return render_template('acceso.html')
-
-@app.route('/registro')
-def registro():
-    return render_template('registro.html')
-
-@app.route('/procesar_registro', methods=['POST'])
-def procesar_registro():
-    nombre = request.form.get('nombre')
-    cedula = request.form.get('cedula')
-    telefono = request.form.get('telefono')
-    actividad = request.form.get('actividad')
-    nombre_linea = request.form.get('nombre_linea', 'N/A')
-    
-    # Manejo de imagen (Auditoría Visual)
-    foto = request.files.get('foto_cedula')
-    nombre_foto = "sin_foto.jpg"
-    if foto:
-        nombre_foto = f"cedula_{cedula}.jpg"
-        # Asegúrate de tener la carpeta static/uploads creada
-        foto.save(os.path.join('static/uploads', nombre_foto))
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        # Lógica del Legado: Wilfredo es el CEO
-        saldo_inicial = 5000.00 if "Wilfredo" in nombre else 10.00
-        rol = "CEO-FOUNDER" if "Wilfredo" in nombre else "USUARIO"
-
-        cur.execute("""
-            INSERT INTO usuarios (id, nombre, telefono, actividad, nombre_linea, foto_cedula, saldo, rol)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """, (cedula, nombre, telefono, actividad, nombre_linea, nombre_foto, saldo_inicial, rol))
-        conn.commit()
-        return render_template('ticket_bienvenida.html', nombre=nombre, id=cedula, saldo=saldo_inicial)
-    except Exception as e:
-        conn.rollback()
-        return f"Error: {e}"
-    finally:
-        cur.close()
-        conn.close()
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('acceso'))
+    if 'u' not in session: return redirect('/acceso')
+    u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
+    conf = query_db("SELECT * FROM configuracion WHERE id=1", one=True)
+    es_ceo = "CEO" in str(u['id'])
     
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM usuarios WHERE id = %s", (session['user_id'],))
-    user_data = cur.fetchone()
-    cur.close()
-    conn.close()
-    
-    return render_template('dashboard.html', user=user_data)
+    auditoria = query_db("SELECT * FROM transacciones ORDER BY fecha DESC LIMIT 50") if es_ceo else []
+    res = query_db("SELECT SUM(monto * (%s/100)) as total FROM transacciones WHERE tipo='ENVIO' AND estatus='COMPLETADA'", (conf['p_envio'],), one=True)
+    ganancias = res['total'] if res and res['total'] else 0
+
+    return render_template('dashboard.html', user=u, conf=conf, es_ceo=es_ceo, auditoria=auditoria, ganancias_willpay=ganancias)
+
+@app.route('/actualizar_config', methods=['POST'])
+def actualizar_config():
+    p_envio = request.form.get('p_envio')
+    p_retiro = request.form.get('p_retiro')
+    modo_auto = 'modo_auto' in request.form
+    query_db("UPDATE configuracion SET p_envio=%s, p_retiro=%s, modo_auto=%s WHERE id=1", (p_envio, p_retiro, modo_auto), commit=True)
+    return redirect('/dashboard')
+
+@app.route('/solicitar_recarga', methods=['POST'])
+def solicitar_recarga():
+    monto = float(request.form.get('monto'))
+    ref = request.form.get('referencia')
+    conf = query_db("SELECT * FROM configuracion WHERE id=1", one=True)
+    estatus = 'COMPLETADA' if conf['modo_auto'] else 'PENDIENTE'
+    query_db("INSERT INTO transacciones (usuario_id, tipo, monto, referencia, estatus) VALUES (%s, 'RECARGA', %s, %s, %s)", (session['u'], monto, ref, estatus), commit=True)
+    if conf['modo_auto']: query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto, session['u']), commit=True)
+    return redirect('/dashboard')
+
+@app.route('/aprobar_pago/<int:id>')
+def aprobar_pago(id):
+    t = query_db("SELECT * FROM transacciones WHERE id=%s AND estatus='PENDIENTE'", (id,), one=True)
+    if t:
+        query_db("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (t['monto'], t['usuario_id']), commit=True)
+        query_db("UPDATE transacciones SET estatus='COMPLETADA' WHERE id=%s", (id,), commit=True)
+    return redirect('/dashboard')
+
+@app.route('/procesar_registro', methods=['POST'])
+def procesar_registro():
+    n, c, a = request.form.get('nombre'), request.form.get('cedula'), request.form.get('actividad')
+    corr = "CEO-0001-FOUNDER" if "WILFREDO" in n.upper() else f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
+    s = 5000.0 if "CEO" in corr else 0.0
+    query_db("INSERT INTO usuarios (id, nombre, cedula, actividad, saldo_bs) VALUES (%s,%s,%s,%s,%s)", (corr, n, c, a, s), commit=True)
+    session['u'] = corr
+    return redirect('/dashboard')
 
 @app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('acceso'))
+def logout(): session.clear(); return redirect('/')
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
