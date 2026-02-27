@@ -38,6 +38,24 @@
             text-transform: uppercase;
         }
         .btn-entrar:hover { transform: scale(1.02); filter: brightness(1.1); }
+        
+        /* Nuevo estilo para el botón de salida */
+        .btn-salir {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #D4AF37;
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            border: 1px solid #D4AF37;
+            padding: 10px;
+            transition: 0.3s;
+        }
+        .btn-salir:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
         .sello-agua { 
             position: absolute; 
             top: 50%; 
@@ -90,6 +108,8 @@
             </div>
 
             <a href="/dashboard" class="btn-entrar">INGRESAR A MI BILLETERA DIGITAL</a>
+            
+            <a href="/logout" class="btn-salir">CERRAR Y REGISTRAR OTRO USUARIO</a>
             
             <p class="text-center mt-4 small text-secondary" style="font-size: 0.65rem; line-height: 1.2;">
                 Este documento electrónico certifica la apertura de su cuenta en la red Will-Pay.<br>
