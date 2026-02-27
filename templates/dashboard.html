@@ -1,80 +1,150 @@
-from flask import Flask, render_template, request, redirect, session, os, datetime
-import psycopg2
-from psycopg2.extras import DictCursor
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay | Dashboard de {{ user.nombre }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; }
+        .container { max-width: 1000px; margin: auto; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #1a2a6c; color: white; padding: 15px 30px; border-radius: 10px; margin-bottom: 20px; }
+        
+        /* Billetera Multimoneda */
+        .wallet-card { background: linear-gradient(45deg, #1a2a6c, #b21f1f, #fdbb2d); color: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); margin-bottom: 30px; }
+        .wallet-balances { display: flex; justify-content: space-around; text-align: center; }
+        .balance-item h2 { margin: 5px 0; font-size: 1.5em; }
+        
+        /* Botón Minería */
+        .btn-mine { background: gold; color: #333; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .btn-mine:hover { transform: scale(1.02); background: #ffcc00; }
 
-app = Flask(__name__)
-app.secret_key = 'willpay_2026_legado_wilyanny'
+        /* Grid de Acciones */
+        .grid-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; color: #1a2a6c; }
 
-DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
+        /* Panel CEO */
+        .ceo-panel { background: #2c3e50; color: white; padding: 25px; border-radius: 20px; border: 3px solid gold; margin-top: 40px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; color: #333; background: white; border-radius: 10px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; }
+        .status-pendiente { background: #ffeaa7; color: #d63031; }
+        .status-completada { background: #55efc4; color: #00b894; }
 
-def query_db(query, args=(), one=False, commit=False):
-    try:
-        conn = psycopg2.connect(DB_URL, sslmode='require')
-        conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cur = conn.cursor(cursor_factory=DictCursor)
-        cur.execute(query, args)
-        rv = (cur.fetchone() if one else cur.fetchall()) if not commit else None
-        cur.close()
-        conn.close()
-        return rv
-    except Exception as e:
-        print(f"Error DB: {e}")
-        return None
+        input, select, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn-send { background: #1a2a6c; color: white; border: none; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-@app.before_request
-def inicializar_boveda():
-    if not session.get('db_ready'):
-        # Tabla Maestra con ADN de Usuario
-        query_db("""CREATE TABLE IF NOT EXISTS usuarios (
-            id VARCHAR(50) PRIMARY KEY, 
-            nombre VARCHAR(100), 
-            cedula VARCHAR(20) UNIQUE, 
-            telefono VARCHAR(20),
-            actividad VARCHAR(100), 
-            nombre_negocio VARCHAR(100),
-            tipo_transporte VARCHAR(50),
-            banco VARCHAR(50),
-            metodo_retiro VARCHAR(20),
-            numero_cuenta VARCHAR(25),
-            tipo_cuenta VARCHAR(20),
-            tipo_titular VARCHAR(20),
-            saldo_bs DECIMAL(15, 2) DEFAULT 0.00,
-            estatus_kyc VARCHAR(20) DEFAULT 'PENDIENTE'
-        );""", commit=True)
-        # Tabla de Auditoría Inviolable
-        query_db("""CREATE TABLE IF NOT EXISTS transacciones (
-            id SERIAL PRIMARY KEY, 
-            usuario_id VARCHAR(50), 
-            tipo VARCHAR(20), 
-            monto DECIMAL(15, 2), 
-            referencia VARCHAR(50) UNIQUE, 
-            estatus VARCHAR(20), 
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );""", commit=True)
-        session['db_ready'] = True
+<div class="container">
+    <div class="header">
+        <div>
+            <h2>Bienvenido, {{ user.nombre }}</h2>
+            <small>ID ADN Digital: {{ user.id }}</small> [cite: 2026-02-27]
+        </div>
+        <a href="/logout" style="color: white; text-decoration: none; font-weight: bold;">Salir</a>
+    </div>
 
-@app.route('/procesar_registro', methods=['POST'])
-def procesar_registro():
-    d = request.form
-    n_caps = d.get('nombre').upper()
-    corr = "CEO-0001-FOUNDER" if "WILFREDO" in n_caps else f"WP-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
-    
-    query_db("""INSERT INTO usuarios (id, nombre, cedula, telefono, actividad, nombre_negocio, tipo_transporte, banco, metodo_retiro, numero_cuenta, tipo_cuenta, tipo_titular) 
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
-             (corr, n_caps, d.get('cedula'), d.get('telefono'), d.get('actividad'), d.get('nombre_negocio'), 
-              d.get('tipo_transporte'), d.get('banco'), d.get('metodo_pago'), d.get('numero_cuenta'), 
-              d.get('tipo_cuenta'), d.get('tipo_titular')), commit=True)
-    
-    session['u'] = corr
-    return redirect('/dashboard')
+    <div class="wallet-card">
+        <h3>🏦 Bóveda Personal Will-Pay</h3>
+        <div class="wallet-balances">
+            <div class="balance-item">
+                <small>Bolívares</small>
+                <h2>{{ "{:,.2f}".format(user.saldo_bs) }} Bs</h2>
+            </div>
+            <div class="balance-item">
+                <small>Will-Pay Coin (₩)</small>
+                <h2>₩ {{ "{:,.2f}".format(user.saldo_wpc) }}</h2>
+            </div>
+            <div class="balance-item">
+                <small>Dólares</small>
+                <h2>$ {{ "{:,.2f}".format(user.saldo_usd) }}</h2>
+            </div>
+        </div>
 
-@app.route('/expediente/<uid>')
-def ver_expediente(uid):
-    if 'u' not in session or (session['u'] != uid and "CEO" not in session['u']):
-        return "Acceso Denegado a la Bóveda."
-    u = query_db("SELECT * FROM usuarios WHERE id=%s", (uid,), one=True)
-    historial = query_db("SELECT * FROM transacciones WHERE usuario_id=%s ORDER BY fecha DESC", (uid,))
-    return render_template('expediente.html', u=u, historial=historial)
+        <form action="/minar" method="POST">
+            <button type="submit" class="btn-mine">
+                ⛏️ MINAR WPC (Progreso: {{ user.puntos_mineria }}/100)
+            </button>
+        </form>
+    </div>
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    <div class="grid-actions">
+        <div class="card">
+            <h3>📥 Recargar Saldo</h3>
+            <form action="/solicitar_recarga" method="POST">
+                <input type="number" step="0.01" name="monto" placeholder="Monto en Bs" required>
+                <input type="text" name="referencia" placeholder="Referencia Bancaria" required>
+                <button type="submit" class="btn-send">Notificar Pago</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>🔄 Will-Exchange</h3>
+            <small>Tasa: 1 USD = {{ conf.tasa_wpc }} ₩</small>
+            <form action="/convertir" method="POST">
+                <input type="number" step="0.01" name="monto_usd" placeholder="Dólares a cambiar ($)" required>
+                <button type="submit" class="btn-send" style="background: #27ae60;">Cambiar a ₩ WPC</button>
+            </form>
+        </div>
+    </div>
+
+    {% if es_ceo %}
+    <div class="ceo-panel">
+        <h2 style="color: gold;">🎖️ PANEL ADMINISTRADOR (FOUNDER)</h2>
+        <p>Control total del sistema Will-Pay. [cite: 2026-02-24]</p>
+        
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <h4>⚙️ Ajustes Globales</h4>
+            <form action="/actualizar_config" method="POST" style="display: flex; gap: 10px;">
+                <input type="number" step="0.1" name="p_envio" value="{{ conf.p_envio }}" placeholder="% Envío">
+                <input type="number" step="0.1" name="p_retiro" value="{{ conf.p_retiro }}" placeholder="% Retiro">
+                <button type="submit" style="background: white; color: black; width: auto;">Actualizar Tasas</button>
+            </form>
+        </div>
+
+        <h4>📋 Auditoría de Transacciones (Últimas 20)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Referencia</th>
+                    <th>Estatus</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in auditoria %}
+                <tr>
+                    <td>{{ t.usuario_id }}</td>
+                    <td>{{ t.tipo }}</td>
+                    <td>{{ t.monto }}</td>
+                    <td>{{ t.referencia }}</td>
+                    <td>
+                        <span class="status-badge {% if t.estatus == 'PENDIENTE' %}status-pendiente{% else %}status-completada{% endif %}">
+                            {{ t.estatus }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if t.estatus == 'PENDIENTE' %}
+                        <a href="/aprobar_pago/{{ t.id }}" style="color: green; font-weight: bold; text-decoration: none;">✅ Aprobar</a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
