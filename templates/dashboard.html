@@ -1,109 +1,34 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Will-Pay | Ferrari Edition</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; }
-        .oro-text { color: #D4AF37; }
-        .oro-border { border: 1px solid #D4AF37; }
-        .card-willpay { background: #111; border: 1px solid #D4AF37; padding: 25px; border-radius: 15px; }
-        .btn-oro { background: linear-gradient(45deg, #D4AF37, #F9E2AF); color: #000; font-weight: bold; border: none; }
-    </style>
-</head>
-<body class="p-4">
-    <div class="container">
-        {% if not user %}
-        <div class="card-willpay mx-auto" style="max-width: 650px;">
-            <h2 class="oro-text text-center fw-bold">🏦 AFILIACIÓN BANCARIA WILL-PAY</h2>
-            <form action="/procesar_registro" method="POST">
-                
-                <p class="text-secondary small border-bottom border-warning mt-3">DATOS DE IDENTIDAD</p>
-                <div class="row g-2">
-                    <div class="col-md-8"><input type="text" name="nombre" class="form-control bg-dark text-white border-warning" placeholder="Nombre completo / Razón Social" required></div>
-                    <div class="col-md-4"><input type="text" name="cedula" class="form-control bg-dark text-white border-warning" placeholder="V/J-Cédula" required></div>
-                </div>
-                <input type="text" name="telefono" class="form-control mt-2 bg-dark text-white border-warning" placeholder="Número de Teléfono" required>
+<style>
+    .recibo-legal {
+        background: #fff; color: #000; padding: 20px; border-radius: 10px;
+        font-family: 'Courier New', Courier, monospace; border: 2px dashed #D4AF37;
+    }
+    .beep-success { color: #28a745; font-weight: bold; font-size: 1.2rem; }
+</style>
 
-                <p class="text-secondary small border-bottom border-warning mt-3">ACTIVIDAD ECONÓMICA</p>
-                <select name="actividad" id="actividad" class="form-select bg-dark text-white border-warning" onchange="checkActividad()" required>
-                    <option value="">Seleccione su servicio...</option>
-                    <optgroup label="Transporte">
-                        <option value="linea_transporte">Línea de Transporte</option>
-                        <option value="transporte_independiente">Transporte Independiente</option>
-                        <option value="taxis_afiliados">Taxis Afiliados</option>
-                        <option value="taxis_no_afiliados">Taxis no Afiliados</option>
-                        <option value="moto_taxis">Moto Taxis</option>
-                        <option value="transporte_escolar">Transporte Escolar</option>
-                    </optgroup>
-                    <optgroup label="Comercios">
-                        <option value="bodega">Bodega</option>
-                        <option value="abasto">Abasto</option>
-                        <option value="comida_rapida">Comida Rápida</option>
-                        <option value="panaderia">Panadería</option>
-                        <option value="farmacia">Farmacia</option>
-                        <option value="quincalleria">Quincallería</option>
-                    </optgroup>
-                    <optgroup label="Oficios">
-                        <option value="barbero">Barbero</option>
-                        <option value="estilista">Estilista</option>
-                        <option value="manicurista">Manicurista</option>
-                        <option value="electricista">Electricista</option>
-                        <option value="mecanico">Mecánico</option>
-                        <option value="albañil">Albañil</option>
-                        <option value="obrero">Obrero</option>
-                    </optgroup>
-                </select>
-
-                <div id="extra_negocio" class="mt-2" style="display:none;">
-                    <input type="text" name="nombre_negocio" class="form-control bg-dark text-white border-info" placeholder="Nombre de la Línea, Negocio o Centro Educativo">
-                </div>
-                <div id="extra_transporte" class="mt-2" style="display:none;">
-                    <select name="tipo_transporte" class="form-select bg-dark text-white border-info">
-                        <option value="urbana">Ruta Urbana</option>
-                        <option value="extra_urbana">Ruta Extra-Urbana</option>
-                    </select>
-                </div>
-
-                <p class="text-secondary small border-bottom border-info mt-3">CONFIGURACIÓN DE RETIRO (PAGOS)</p>
-                <select name="banco" class="form-select mb-2 bg-dark text-white border-info" required>
-                    <option value="">Seleccione su Banco</option>
-                    <option value="0102">Banco de Venezuela</option>
-                    <option value="0134">Banesco</option>
-                    <option value="0105">Mercantil</option>
-                    <option value="0172">Bancamiga</option>
-                </select>
-                <select name="metodo_pago" id="metodo" class="form-select mb-2 bg-dark text-white border-info" onchange="checkMetodo()">
-                    <option value="pago_movil">Pago Móvil (Recomendado)</option>
-                    <option value="transferencia">Transferencia (Cuenta 20 dígitos)</option>
-                </select>
-
-                <div id="datos_cuenta" style="display:none;">
-                    <input type="text" name="numero_cuenta" class="form-control mb-2 bg-dark text-white border-info" placeholder="Número de cuenta (20 dígitos)">
-                    <div class="row g-2">
-                        <div class="col-6"><select name="tipo_cuenta" class="form-select bg-dark text-white border-info"><option value="corriente">Corriente</option><option value="ahorro">Ahorro</option></select></div>
-                        <div class="col-6"><select name="tipo_titular" class="form-select bg-dark text-white border-info"><option value="personal">Personal</option><option value="juridica">Jurídica</option></select></div>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-oro w-100 mt-4 py-2 fw-bold">ACTIVAR MI CUENTA WILL-PAY</button>
-            </form>
+<div class="container mt-3">
+    {% if request.args.get('pago') == 'exito' and session.get('ultimo_recibo') %}
+    <div class="recibo-legal shadow-lg mb-4 mx-auto" style="max-width: 400px;">
+        <div class="text-center">
+            <h4 class="fw-bold mb-0">WILL-PAY VENEZUELA</h4>
+            <p class="small text-muted">LEGADO WILYANNY DONQUIZ</p>
+            <div class="beep-success mb-2">🟢 (+) TRANSACCIÓN EXITOSA</div>
         </div>
-        {% else %}
-        <h2 class="oro-text text-center">BIENVENIDO AL SISTEMA, {{ user.nombre }}</h2>
-        {% endif %}
+        <hr>
+        <p class="mb-1"><strong>CORRELATIVO:</strong> {{ session.ultimo_recibo.serial }}</p>
+        <p class="mb-1"><strong>FECHA:</strong> {{ session.ultimo_recibo.fecha }}</p>
+        <hr>
+        <p class="mb-1"><strong>DE:</strong> {{ session.ultimo_recibo.emi_nom }}</p>
+        <p class="small text-muted">OFICIO: {{ session.ultimo_recibo.emi_act }}</p>
+        <p class="mb-1"><strong>PARA:</strong> {{ session.ultimo_recibo.rec_nom }}</p>
+        <p class="small text-muted">OFICIO: {{ session.ultimo_recibo.rec_act }}</p>
+        <hr>
+        <h3 class="text-center fw-bold">{{ "{:,.2f}".format(session.ultimo_recibo.monto) }} Bs.</h3>
+        <p class="text-center small mt-3">*** DOCUMENTO PARA AUDITORÍA ***</p>
     </div>
-
-    <script>
-    function checkActividad() {
-        var a = document.getElementById("actividad").value;
-        document.getElementById("extra_negocio").style.display = (["linea_transporte", "taxis_afiliados", "moto_taxis", "bodega", "abasto", "centro_educativo"].includes(a)) ? "block" : "none";
-        document.getElementById("extra_transporte").style.display = (a === "linea_transporte") ? "block" : "none";
-    }
-    function checkMetodo() {
-        document.getElementById("datos_cuenta").style.display = (document.getElementById("metodo").value === "transferencia") ? "block" : "none";
-    }
-    </script>
-</body>
-</html>
+    
+    <audio autoplay>
+        <source src="https://www.soundjay.com/buttons/sounds/beep-07a.mp3" type="audio/mpeg">
+    </audio>
+    {% endif %}
+</div>
