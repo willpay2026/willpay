@@ -18,41 +18,61 @@ def query_db(query, args=(), one=False, commit=False):
         conn.close()
         return rv
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error DB: {e}")
         return None
 
 @app.before_request
-def inicializar_kyc():
+def inicializar_sistema():
     if not session.get('db_ready'):
-        # Tabla extendida con campos KYC y Detalles de Negocio
+        # Tabla de Usuarios con KYC y Datos Bancarios Completos
         query_db("""CREATE TABLE IF NOT EXISTS usuarios (
             id VARCHAR(50) PRIMARY KEY, 
             nombre VARCHAR(100), 
             cedula VARCHAR(20) UNIQUE, 
+            telefono VARCHAR(20),
             actividad VARCHAR(100), 
             nombre_negocio VARCHAR(100),
             tipo_transporte VARCHAR(50),
+            banco VARCHAR(50),
+            numero_cuenta VARCHAR(25),
+            tipo_cuenta VARCHAR(20),
+            tipo_titular VARCHAR(20),
             saldo_bs DECIMAL(15, 2) DEFAULT 0.00,
             estatus_kyc VARCHAR(20) DEFAULT 'PENDIENTE'
         );""", commit=True)
+        # Tablas de Config y Transacciones
+        query_db("CREATE TABLE IF NOT EXISTS transacciones (id SERIAL PRIMARY KEY, usuario_id VARCHAR(50), tipo VARCHAR(20), monto DECIMAL(15, 2), referencia VARCHAR(50), estatus VARCHAR(20), fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP);", commit=True)
+        query_db("CREATE TABLE IF NOT EXISTS configuracion (id INT PRIMARY KEY, p_envio DECIMAL(5,2), p_retiro DECIMAL(5,2), modo_auto BOOLEAN);", commit=True)
+        query_db("INSERT INTO configuracion (id, p_envio, p_retiro, modo_auto) VALUES (1, 2.5, 3.0, FALSE) ON CONFLICT DO NOTHING", commit=True)
         session['db_ready'] = True
+
+@app.route('/')
+def index(): return render_template('acceso.html')
 
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
-    n = request.form.get('nombre').upper()
-    c = request.form.get('cedula')
-    act = request.form.get('actividad')
-    negocio = request.form.get('nombre_negocio', '')
-    transporte = request.form.get('tipo_transporte', '')
-    
-    corr = "CEO-0001-FOUNDER" if "WILFREDO" in n else f"WP-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
+    d = request.form
+    # Generar ID según legado Wilfredo
+    n_caps = d.get('nombre').upper()
+    corr = "CEO-0001-FOUNDER" if "WILFREDO" in n_caps else f"WP-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
     saldo = 5000.0 if "CEO" in corr else 0.0
     
-    query_db("""INSERT INTO usuarios (id, nombre, cedula, actividad, nombre_negocio, tipo_transporte, saldo_bs) 
-                VALUES (%s,%s,%s,%s,%s,%s,%s)""", 
-             (corr, n, c, act, negocio, transporte, saldo), commit=True)
+    query_db("""INSERT INTO usuarios (id, nombre, cedula, telefono, actividad, nombre_negocio, tipo_transporte, banco, numero_cuenta, tipo_cuenta, tipo_titular, saldo_bs) 
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
+             (corr, n_caps, d.get('cedula'), d.get('telefono'), d.get('actividad'), d.get('nombre_negocio'), 
+              d.get('tipo_transporte'), d.get('banco'), d.get('numero_cuenta'), d.get('tipo_cuenta'), d.get('tipo_titular'), saldo), commit=True)
     
     session['u'] = corr
     return redirect('/dashboard')
 
-# ... (Mantenemos las otras rutas de dashboard y config del chorizo anterior)
+@app.route('/dashboard')
+def dashboard():
+    if 'u' not in session: return redirect('/')
+    u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
+    conf = query_db("SELECT * FROM configuracion WHERE id=1", one=True)
+    es_ceo = "CEO" in str(u['id'])
+    auditoria = query_db("SELECT * FROM transacciones ORDER BY fecha DESC LIMIT 50") if es_ceo else []
+    return render_template('dashboard.html', user=u, conf=conf, es_ceo=es_ceo, auditoria=auditoria)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
