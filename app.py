@@ -7,7 +7,6 @@ from flask import Flask, render_template, request, redirect, session
 app = Flask(__name__)
 app.secret_key = 'willpay_2026_legado_wilyanny'
 
-# El ADN de la base de datos [cite: 2026-02-27]
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a/willpay_db"
 
 def query_db(query, args=(), one=False, commit=False):
@@ -28,7 +27,12 @@ def query_db(query, args=(), one=False, commit=False):
 def index():
     return render_template('dashboard.html', user=None)
 
-# El arranque que Render necesita para no dar "Huevo Pelao"
+@app.route('/dashboard')
+def dashboard():
+    if 'u' not in session: return redirect('/')
+    u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
+    return render_template('dashboard.html', user=u)
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
