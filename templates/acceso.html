@@ -3,43 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso | Will-Pay</title>
+    <title>Will-Pay | Acceso Legado</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .login-card { 
-            background: #111; padding: 40px; border-radius: 20px; 
-            border: 1px solid #D4AF37; width: 100%; max-width: 350px; text-align: center;
-        }
-        .gold-text { color: #D4AF37; }
-        .btn-gold { background: #D4AF37; color: black; font-weight: bold; border: none; width: 100%; padding: 12px; }
-        .form-control { background: #222; border: 1px solid #333; color: white; margin-bottom: 15px; text-align: center; }
-        .form-control:focus { background: #222; color: white; border-color: #D4AF37; box-shadow: none; }
-        .logo-img { width: 120px; height: auto; margin-bottom: 20px; }
+        body { background-color: #000; color: #fff; font-family: 'Garamond', serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .login-card { background: #111; border: 2px solid #D4AF37; padding: 40px; border-radius: 20px; box-shadow: 0 0 20px rgba(212, 175, 55, 0.3); text-align: center; max-width: 400px; width: 100%; }
+        .coin-logo { width: 150px; margin-bottom: 20px; border-radius: 50%; border: 2px solid #D4AF37; }
+        .oro-text { color: #D4AF37; font-weight: bold; }
+        .form-control { background: #222; border: 1px solid #444; color: #fff; text-align: center; }
+        .form-control:focus { background: #333; border-color: #D4AF37; color: #fff; box-shadow: none; }
+        .btn-oro { background: linear-gradient(45deg, #D4AF37, #F9E2AF); color: #000; font-weight: bold; border: none; width: 100%; padding: 12px; border-radius: 10px; transition: 0.3s; }
+        .btn-oro:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
     </style>
 </head>
 <body>
-
     <div class="login-card">
-        <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Will-Pay Logo" class="logo-img">
+        <img src="https://willpay.onrender.com/static/moneda_willpay_coin.jpg" alt="Will-Pay Coin" class="coin-logo">
+        <h2 class="oro-text">WILL-PAY</h2>
+        <p class="text-secondary small">Sistema de Pagos Revolucionario</p>
         
-        <h4 class="gold-text fw-bold mb-4">BIENVENIDO</h4>
-        
-        <form action="/procesar_registro" method="POST">
-            <input type="text" name="nombre" class="form-control" placeholder="Nombre Completo" required>
-            <input type="text" name="cedula" class="form-control" placeholder="Cédula de Identidad" required>
-            
-            <select name="actividad" class="form-control">
-                <option value="usuario">Usuario General</option>
-                <option value="chofer_ind">Transportista / Chofer</option>
-                <option value="comercio">Comercio</option>
-            </select>
-
-            <button type="submit" class="btn btn-gold mt-3">ENTRAR A LA BÓVEDA</button>
+        <form action="/acceso" method="POST" class="mt-4">
+            <div class="mb-3">
+                <label class="form-label text-secondary">Cédula de Identidad</label>
+                <input type="text" name="id" class="form-control" placeholder="Ej: 12345678" required>
+            </div>
+            <button type="submit" class="btn-oro">ENTRAR A MI BÓVEDA</button>
         </form>
         
-        <p class="text-secondary small mt-4">Will-Pay Venezuela © 2026</p>
+        <div class="mt-4">
+            <p class="small text-secondary">¿Aún no eres parte del legado? <br> 
+            <a href="/registro" class="oro-text text-decoration-none">Regístrate aquí</a></p>
+        </div>
     </div>
-
 </body>
 </html>
