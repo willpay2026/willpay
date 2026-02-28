@@ -3,20 +3,17 @@ import psycopg2, os, datetime
 from psycopg2.extras import DictCursor
 from werkzeug.utils import secure_filename
 
-# 1. PRIMERO DEFINIMOS LA APP (Las columnas)
+# 1. INICIALIZACIÓN (Columnas de la casa)
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = 'willpay_2026_legado_wilyanny'
 
-# 2. DEFINIMOS LAS RUTAS DE CARPETAS
 ADN_DIGITAL = 'expedientes_willpay'
 if not os.path.exists(ADN_DIGITAL):
     os.makedirs(ADN_DIGITAL)
 
 DB_URL = os.environ.get('DATABASE_URL')
 
-# 3. LAS FUNCIONES DE APOYO
 def query_db(query, args=(), one=False, commit=False):
-    # (Tu código de conexión aquí igual como lo tenías...)
     conn = None
     try:
         conn = psycopg2.connect(DB_URL, sslmode='require')
@@ -33,12 +30,54 @@ def query_db(query, args=(), one=False, commit=False):
         if conn: conn.close()
         print(f"Error DB: {e}"); return None
 
-# 4. AHORA SÍ PODEMOS USAR @app (El techo)
+# 2. CONFIGURACIÓN DE TABLAS (La Bóveda)
 @app.before_request
 def inicializar_sistema():
     if not session.get('db_ready'):
-        # Aquí van tus CREATE TABLE que ya tenemos listos...
-        # (Asegúrate de incluir los campos de saldo_wpc y saldo_usd)
+        query_db("""CREATE TABLE IF NOT EXISTS usuarios (
+            id SERIAL PRIMARY KEY, 
+            id_dna VARCHAR(50) UNIQUE,
+            nombre VARCHAR(100), 
+            telefono VARCHAR(20) UNIQUE, 
+            cedula VARCHAR(50),
+            pin VARCHAR(6), 
+            tipo_usuario VARCHAR(50), 
+            saldo_bs DECIMAL(15, 2) DEFAULT 0.00,
+            saldo_wpc DECIMAL(15, 2) DEFAULT 0.00,
+            saldo_usd DECIMAL(15, 2) DEFAULT 0.00,
+            es_socio BOOLEAN DEFAULT FALSE,
+            es_ceo BOOLEAN DEFAULT FALSE
+        );""", commit=True)
         session['db_ready'] = True
 
-# ... El resto de tus rutas (@app.route) siguen aquí abajo ...
+# 3. REGISTRO CON PODER DE CEO (Tu Billetera)
+@app.route('/procesar_registro', methods=['POST'])
+def procesar_registro():
+    n = request.form.get('nombre').upper().strip()
+    t = request.form.get('telefono').strip()
+    c = request.form.get('cedula').strip()
+    p = request.form.get('pin').strip()
+    tipo = request.form.get('tipo_usuario')
+    
+    # LÓGICA DE SALDOS PARA WILFREDO
+    if "WILFREDO" in n:
+        u_id_dna = "CEO-0001-FOUNDER"
+        s_bs, s_wpc, s_usd = 100000.00, 100000.00, 1000.00
+        soy_ceo = True
+    else:
+        u_id_dna = f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
+        s_bs, s_wpc, s_usd = 0.00, 0.00, 0.00
+        soy_ceo = False
+
+    query_db("""
+        INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, tipo_usuario, saldo_bs, saldo_wpc, saldo_usd, es_ceo) 
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """, (u_id_dna, n, t, c, p, tipo, s_bs, s_wpc, s_usd, soy_ceo), commit=True)
+    
+    u = query_db("SELECT id FROM usuarios WHERE telefono=%s", (t,), one=True)
+    user_folder = os.path.join(ADN_DIGITAL, f"{u_id_dna}_{t}")
+    for sub in ['documentos', 'recargas', 'comprobantes_pago', 'retiros']:
+        os.makedirs(os.path.join(user_folder, sub), exist_ok=True)
+        
+    session['u'] = u['id']
+    return redirect('/dashboard')
