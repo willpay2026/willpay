@@ -3,7 +3,7 @@ import psycopg2, os, datetime
 from psycopg2.extras import DictCursor
 from werkzeug.utils import secure_filename
 
-# 1. INICIALIZACIÓN (Columnas de la casa)
+# 1. INICIALIZACIÓN
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = 'willpay_2026_legado_wilyanny'
 
@@ -30,7 +30,24 @@ def query_db(query, args=(), one=False, commit=False):
         if conn: conn.close()
         print(f"Error DB: {e}"); return None
 
-# 2. CONFIGURACIÓN DE TABLAS (La Bóveda)
+# 2. RUTAS DE ACCESO (La Puerta Principal)
+@app.route('/')
+def index():
+    # Esta ruta elimina el error 404 al abrir la app
+    return render_template('splash.html')
+
+@app.route('/registro')
+def registro():
+    return render_template('registro.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'u' not in session:
+        return redirect('/')
+    user = query_db("SELECT * FROM usuarios WHERE id=%s", (session['u'],), one=True)
+    return render_template('dashboard.html', user=user)
+
+# 3. CONFIGURACIÓN DE TABLAS
 @app.before_request
 def inicializar_sistema():
     if not session.get('db_ready'):
@@ -50,7 +67,7 @@ def inicializar_sistema():
         );""", commit=True)
         session['db_ready'] = True
 
-# 3. REGISTRO CON PODER DE CEO (Tu Billetera)
+# 4. PROCESAMIENTO CON PODER DE CEO
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
     n = request.form.get('nombre').upper().strip()
@@ -59,7 +76,6 @@ def procesar_registro():
     p = request.form.get('pin').strip()
     tipo = request.form.get('tipo_usuario')
     
-    # LÓGICA DE SALDOS PARA WILFREDO
     if "WILFREDO" in n:
         u_id_dna = "CEO-0001-FOUNDER"
         s_bs, s_wpc, s_usd = 100000.00, 100000.00, 1000.00
@@ -81,3 +97,6 @@ def procesar_registro():
         
     session['u'] = u['id']
     return redirect('/dashboard')
+
+if __name__ == '__main__':
+    app.run(debug=True)
