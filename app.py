@@ -3,7 +3,7 @@ import psycopg2, os, random
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__)
-app.secret_key = 'willpay_2026_legado_wilyanny' # El legado para Wilyanny Donquiz
+app.secret_key = 'willpay_2026_legado_wilyanny'
 DB_URL = os.environ.get('DATABASE_URL')
 
 def query_db(query, args=(), one=False, commit=False):
@@ -19,7 +19,6 @@ def query_db(query, args=(), one=False, commit=False):
         cur.close()
         conn.close()
 
-# --- RUTAS DE NAVEGACIÓN ---
 @app.route('/')
 def index(): return render_template('splash.html')
 
@@ -29,36 +28,34 @@ def acceso(): return render_template('acceso.html')
 @app.route('/registro')
 def registro(): return render_template('registro.html')
 
-# --- SISTEMA DE REGISTRO AUTOMÁTICO ---
+# --- REGISTRO BLINDADO (EVITA EL ERROR DE DUPLICADOS) ---
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
     nombre = request.form.get('nombre', '').upper()
     cedula = request.form.get('cedula', '').strip()
     telefono = request.form.get('telefono', '').strip()
     pin = request.form.get('pin', '').strip()
-    
-    # ID DNA ÚNICO para cada usuario
     id_dna = f"WP-26-{random.randint(1000, 9999)}"
     
     try:
+        # Si la cédula ya existe, actualiza el PIN y el teléfono en lugar de dar error
         query_db("""INSERT INTO usuarios (id_dna, nombre, cedula, telefono, pin, saldo_bs, saldo_usd, saldo_wpc) 
-                 VALUES (%s, %s, %s, %s, %s, 0.0, 0.0, 0.0)""", 
+                 VALUES (%s, %s, %s, %s, %s, 0.0, 0.0, 0.0)
+                 ON CONFLICT (cedula) DO UPDATE SET pin = EXCLUDED.pin, telefono = EXCLUDED.telefono""", 
                  (id_dna, nombre, cedula, telefono, pin), commit=True)
         return render_template('ticket_bienvenida.html', nombre=nombre, id_dna=id_dna)
-    except:
-        return "<h1>⚠️ ERROR: Cédula o Teléfono ya registrados</h1><a href='/registro'>Volver</a>"
+    except Exception as e:
+        return f"<h1>⚠️ Error en el Servidor</h1><p>{str(e)}</p><a href='/registro'>Volver</a>"
 
-# --- LOGIN DIFERENCIADO (JEFE VS CLIENTE) ---
 @app.route('/login', methods=['POST'])
 def login():
     dato = request.form.get('telefono_login', '').strip()
     pin = request.form.get('pin_login', '').strip()
     user = query_db("SELECT * FROM usuarios WHERE (telefono=%s OR cedula=%s) AND pin=%s", (dato, dato, pin), one=True)
-    
     if user:
         session['user_id'] = user['id']
         return redirect(url_for('dashboard'))
-    return "<h1>❌ DATOS INCORRECTOS</h1><a href='/acceso'>Reintentar</a>"
+    return "<h1>❌ Datos Incorrectos</h1><a href='/acceso'>Volver</a>"
 
 @app.route('/dashboard')
 def dashboard():
@@ -66,43 +63,36 @@ def dashboard():
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
     m = query_db("SELECT * FROM movimientos WHERE usuario_id=%s ORDER BY id DESC LIMIT 5", (u['id'],))
     
-    # Si eres Wilfredo, vas al panel de control total
+    # Wilfredo va al Panel Maestro, los demás a su Billetera
     if u['cedula'] == '13496133':
         return render_template('ceo_panel.html', u=u, m=m)
-    
-    # Si eres cliente, vas a tu billetera personal
     return render_template('dashboard.html', u=u, m=m)
 
-# --- CONTROL MAESTRO DESDE EL PANEL ---
 @app.route('/actualizar_ceo', methods=['POST'])
 def actualizar_ceo():
     if 'user_id' not in session: return jsonify({"status": "error"}), 403
     data = request.json
-    campo = data.get('campo') # porcentaje_pago, porcentaje_retiro o auto_recargas
-    valor = data.get('valor')
-    query_db(f"UPDATE usuarios SET {campo} = %s WHERE id = %s", (valor, session['user_id']), commit=True)
+    query_db(f"UPDATE usuarios SET {data['campo']} = %s WHERE id = %s", (data['valor'], session['user_id']), commit=True)
     return jsonify({"status": "ok"})
 
-# --- INSTALACIÓN DE LA BÓVEDA ---
 @app.route('/instalar')
 def instalar():
     query_db("DROP TABLE IF EXISTS movimientos CASCADE", commit=True)
     query_db("DROP TABLE IF EXISTS usuarios CASCADE", commit=True)
     query_db("""CREATE TABLE usuarios (
-        id SERIAL PRIMARY KEY, id_dna TEXT, nombre TEXT, telefono TEXT UNIQUE, 
+        id SERIAL PRIMARY KEY, id_dna TEXT, nombre TEXT, telefono TEXT, 
         cedula TEXT UNIQUE, pin TEXT, actividad_economica TEXT,
         saldo_bs FLOAT DEFAULT 0.0, saldo_wpc FLOAT DEFAULT 0.0, 
         saldo_usd FLOAT DEFAULT 0.0, ganancia_neta FLOAT DEFAULT 0.0,
         porcentaje_pago FLOAT DEFAULT 1.5, porcentaje_retiro FLOAT DEFAULT 2.1,
         auto_recargas BOOLEAN DEFAULT FALSE)""", commit=True)
-    
     query_db("""CREATE TABLE movimientos (
         id SERIAL PRIMARY KEY, usuario_id INTEGER, 
         correlativo TEXT, monto_bs FLOAT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""", commit=True)
-    
-    # Registro del CEO Wilfredo Donquiz
+    # Usuario Fundador
     query_db("""INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad_economica, saldo_bs, saldo_wpc, saldo_usd) 
         VALUES ('CEO-001', 'WILFREDO DONQUIZ', '04126602555', '13496133', '1234', 'FUNDADOR', 100.0, 50.0, 10.0)""", commit=True)
-    return "<h1>🏛️ BÓVEDA SINCRONIZADA</h1><p>Usa 13496133 y PIN 1234 en /acceso</p>"
+    return "<h1>🏛️ Bóveda Reseteda y Blindada</h1><p>Usa 13496133 en /acceso</p>"
 
-if __name__ == '__main__': app.run(debug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
