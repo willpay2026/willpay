@@ -7,8 +7,8 @@
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; }
         .oro { color: #D4AF37; }
-        .card-will { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 20px; margin-bottom: 15px; }
-        .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
+        .card-will { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .form-switch .form-check-input { width: 3.5em; height: 1.8em; cursor: pointer; }
         .form-check-input:checked { background-color: #D4AF37; border-color: #D4AF37; }
     </style>
 </head>
@@ -18,25 +18,24 @@
         <h2 class="oro mt-2">BIENVENIDO, {{ u.nombre }}</h2>
         <p>ID DNA: <span class="badge bg-dark border border-warning">{{ u.id_dna }}</span></p>
 
-        <div class="row g-2 mb-4">
-            <div class="col-4"><div class="card-will"><h6>BS</h6><h4 class="oro">{{ "{:,.2f}".format(u.saldo_bs) }}</h4></div></div>
-            <div class="col-4"><div class="card-will"><h6>USD</h6><h4 class="oro">{{ "{:,.2f}".format(u.saldo_usd) }}</h4></div></div>
-            <div class="col-4"><div class="card-will"><h6>WPC</h6><h4 class="oro">{{ "{:,.2f}".format(u.saldo_wpc) }}</h4></div></div>
-        </div>
-
         <div class="card-will text-start">
-            <h5 class="oro">CONFIGURACIÓN CEO</h5>
-            <div class="form-switch mb-2">
+            <h4 class="oro mb-4">INTERRUPTORES DE MANDO</h4>
+            <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="sw_pagos" onclick="guardar(this)" {% if u.sw_pagos %}checked{% endif %}>
-                <label class="ms-2">Pagos Móviles Activos</label>
+                <label class="ms-3 h5">Sistema de Pagos Activo</label>
             </div>
-            <div class="form-switch mb-2">
+            <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="sw_legado" onclick="guardar(this)" {% if u.sw_legado %}checked{% endif %}>
-                <label class="ms-2">Modo Legado Wilyanny</label>
+                <label class="ms-3 h5">Modo Legado Wilyanny</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="sw_bio" onclick="guardar(this)" {% if u.sw_bio %}checked{% endif %}>
+                <label class="ms-3 h5">Seguridad Bio-DNA</label>
             </div>
         </div>
-        <a href="/acceso" class="btn btn-danger w-100">SALIR</a>
+        <a href="/acceso" class="btn btn-danger w-100 py-3 fw-bold">SALIR DEL SISTEMA</a>
     </div>
+
     <script>
     function guardar(el) {
         fetch('/actualizar_config', {
