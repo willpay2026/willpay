@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify
+from flask import Flask, render_template, request, redirect, session, url_for
 import psycopg2, os
 from psycopg2.extras import DictCursor
 
@@ -7,20 +7,17 @@ app.secret_key = 'willpay_2026_legado_wilyanny'
 DB_URL = os.environ.get('DATABASE_URL')
 
 def query_db(query, args=(), one=False, commit=False):
+    conn = psycopg2.connect(DB_URL, sslmode='require')
+    cur = conn.cursor(cursor_factory=DictCursor)
     try:
-        conn = psycopg2.connect(DB_URL, sslmode='require')
-        cur = conn.cursor(cursor_factory=DictCursor)
         cur.execute(query, args)
         if commit:
             conn.commit()
-            res = None
-        else:
-            res = cur.fetchone() if one else cur.fetchall()
+            return None
+        return cur.fetchone() if one else cur.fetchall()
+    finally:
         cur.close()
         conn.close()
-        return res
-    except Exception as e:
-        return str(e)
 
 @app.route('/')
 def index(): return render_template('splash.html')
@@ -32,37 +29,45 @@ def acceso(): return render_template('acceso.html')
 def login():
     dato = request.form.get('telefono_login', '').strip()
     pin = request.form.get('pin_login', '').strip()
-    # Buscamos al usuario
     user = query_db("SELECT * FROM usuarios WHERE (telefono=%s OR cedula=%s) AND pin=%s", (dato, dato, pin), one=True)
-    
-    if isinstance(user, str): return f"Error de DB: {user}" # Si la DB falla, nos avisa
-    
     if user:
         session['user_id'] = user['id']
-        session['nombre'] = user['nombre']
         return redirect(url_for('dashboard'))
     return "<h1>❌ Datos Incorrectos</h1><a href='/acceso'>Volver</a>"
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
-    # Buscamos tus datos para el panel
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
-    # Si eres Wilfredo, te manda a tu panel de jefe
+    # Buscamos movimientos de prueba para que la tabla no esté vacía
+    m = query_db("SELECT * FROM movimientos WHERE usuario_id=%s LIMIT 5", (u['id'],))
+    
     if u['cedula'] == '13496133':
-        return render_template('ceo_panel.html', u=u)
+        return render_template('ceo_panel.html', u=u, m=m)
     return render_template('dashboard.html', u=u)
 
 @app.route('/instalar')
 def instalar():
-    # Creamos la tabla desde cero
+    query_db("DROP TABLE IF EXISTS movimientos CASCADE", commit=True)
     query_db("DROP TABLE IF EXISTS usuarios CASCADE", commit=True)
+    # Creamos la tabla con TODOS los campos que pide tu HTML
     query_db("""CREATE TABLE usuarios (
-        id SERIAL PRIMARY KEY, nombre TEXT, telefono TEXT UNIQUE, 
-        cedula TEXT UNIQUE, pin TEXT, saldo_bs FLOAT DEFAULT 0.0)""", commit=True)
-    # Te insertamos como CEO
-    query_db("INSERT INTO usuarios (nombre, telefono, cedula, pin) VALUES ('WILFREDO', '04126602555', '13496133', '1234')", commit=True)
-    return "<h1>🏛️ BOVEDA LISTA</h1><p>Ve a /acceso y usa 13496133 y 1234</p>"
+        id SERIAL PRIMARY KEY, id_dna TEXT, nombre TEXT, telefono TEXT UNIQUE, 
+        cedula TEXT UNIQUE, pin TEXT, actividad_economica TEXT,
+        saldo_bs FLOAT DEFAULT 0.0, saldo_wpc FLOAT DEFAULT 0.0, 
+        saldo_usd FLOAT DEFAULT 0.0, ganancia_neta FLOAT DEFAULT 0.0,
+        auto_recargas BOOLEAN DEFAULT FALSE)""", commit=True)
+    
+    # Creamos la tabla de movimientos para que el HTML no de error al buscar 'm'
+    query_db("""CREATE TABLE movimientos (
+        id SERIAL PRIMARY KEY, usuario_id INTEGER, 
+        correlativo TEXT, monto_bs FLOAT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""", commit=True)
+    
+    # Te insertamos como CEO con saldos iniciales
+    query_db("""INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad_economica, saldo_bs, saldo_wpc, saldo_usd) 
+        VALUES ('CEO-001', 'WILFREDO DONQUIZ', '04126602555', '13496133', '1234', 'FUNDADOR', 100.0, 50.0, 10.0)""", commit=True)
+    
+    return "<h1>🏛️ Bóveda Sincronizada</h1><p>Entra a /acceso con 13496133 y PIN 1234</p>"
 
 if __name__ == '__main__':
     app.run(debug=True)
