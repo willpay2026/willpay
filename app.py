@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, jsonify
 import psycopg2, os, datetime
 from psycopg2.extras import DictCursor
 
@@ -32,46 +32,16 @@ def instalar():
             pin TEXT,
             actividad TEXT,
             nombre_linea TEXT,
-            saldo_bs FLOAT DEFAULT 0,
-            saldo_wpc FLOAT DEFAULT 0,
-            saldo_usd FLOAT DEFAULT 0,
-            comision_acumulada FLOAT DEFAULT 0,
-            es_ceo BOOLEAN DEFAULT FALSE
+            saldo_bs FLOAT DEFAULT 100000.0,
+            saldo_wpc FLOAT DEFAULT 100000.0,
+            saldo_usd FLOAT DEFAULT 1000.0,
+            sw_pagos BOOLEAN DEFAULT TRUE,
+            sw_sms BOOLEAN DEFAULT TRUE,
+            sw_bio BOOLEAN DEFAULT FALSE,
+            sw_legado BOOLEAN DEFAULT TRUE
         )
     """, commit=True)
-    return "<h1>🏛️ Bóveda Will-Pay Reiniciada</h1>"
-
-@app.route('/')
-def index(): return render_template('splash.html')
-
-@app.route('/acceso')
-def acceso(): return render_template('acceso.html')
-
-@app.route('/registro')
-def registro(): return render_template('registro.html')
-
-@app.route('/procesar_registro', methods=['POST'])
-def procesar_registro():
-    n = request.form.get('nombre').upper().strip()
-    t = request.form.get('telefono').strip().replace(" ", "").replace("+58", "")
-    c = request.form.get('cedula').strip()
-    p = request.form.get('pin').strip()
-    act = request.form.get('actividad') or "usuario"
-    lin = request.form.get('nombre_linea') or "N/A"
-    
-    if "WILFREDO" in n:
-        u_id, s_bs, s_wpc, s_usd, com, es_ceo = "CEO-0001-FOUNDER", 100000.0, 100000.0, 1000.0, 1000.0, True
-    else:
-        u_id, s_bs, s_wpc, s_usd, com, es_ceo = f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}", 0.0, 0.0, 0.0, 0.0, False
-
-    try:
-        query_db("""
-            INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad, nombre_linea, saldo_bs, saldo_wpc, saldo_usd, comision_acumulada, es_ceo) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """, (u_id, n, t, c, p, act, lin, s_bs, s_wpc, s_usd, com, es_ceo), commit=True)
-        return redirect('/acceso')
-    except:
-        return "<h1>Error de Datos</h1>"
+    return "<h1>🏛️ Bóveda Will-Pay Reiniciada con Memoria de Switches</h1>"
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -81,13 +51,24 @@ def login():
     if user:
         session['user_id'] = user['id']
         return redirect('/dashboard')
-    return "<h1>Denegado</h1>"
+    return "<h1>Acceso Denegado</h1>"
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect('/acceso')
     user = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
     return render_template('dashboard.html', u=user)
+
+# --- NUEVA RUTA PARA GUARDAR LOS SWITCHES EN VIVO ---
+@app.route('/actualizar_config', methods=['POST'])
+def actualizar_config():
+    if 'user_id' not in session: return jsonify({"status": "error"}), 403
+    data = request.json
+    campo = data.get('campo') # Ejemplo: sw_pagos
+    estado = data.get('estado') # True o False
+    
+    query_db(f"UPDATE usuarios SET {campo} = %s WHERE id = %s", (estado, session['user_id']), commit=True)
+    return jsonify({"status": "ok"})
 
 if __name__ == '__main__':
     app.run(debug=True)
