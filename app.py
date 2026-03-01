@@ -28,15 +28,13 @@ def procesar_registro():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # CORRECCIÓN: Añadimos saldo_usd para que coincida con la estructura
-        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc, saldo_usd) 
-                     VALUES (%s, %s, %s, %s, %s, 0.0, 0.0, 0.0)""", 
+        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc, saldo_usd, ganancia_neta) 
+                     VALUES (%s, %s, %s, %s, %s, 0.0, 0.0, 0.0, 0.0)""", 
                      (nombre, cedula, telefono, pin, rol))
         conn.commit()
         return redirect(url_for('acceso'))
     except Exception as e:
-        print(f"Error en registro: {e}")
-        return "<h1>⚠️ Error</h1><p>Cédula ya registrada o error de datos.</p><a href='/registro'>Volver</a>"
+        return f"<h1>⚠️ Error</h1><p>{e}</p><a href='/registro'>Volver</a>"
     finally:
         cur.close()
         conn.close()
@@ -64,7 +62,7 @@ def dashboard():
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
     
-    # IMPORTANTE: Para que la 'Actividad en Vivo' de tu diseño no de error:
+    # Buscamos usuarios para la "Actividad en Vivo" de tu diseño
     cur.execute("SELECT * FROM usuarios ORDER BY id DESC LIMIT 5")
     usuarios_recientes = cur.fetchall()
     
@@ -84,11 +82,12 @@ def instalar():
         telefono TEXT, pin TEXT, rol TEXT, 
         saldo_bs FLOAT DEFAULT 0.0, 
         saldo_wpc FLOAT DEFAULT 0.0, 
-        saldo_usd FLOAT DEFAULT 0.0)""")
+        saldo_usd FLOAT DEFAULT 0.0,
+        ganancia_neta FLOAT DEFAULT 0.0)""")
     
-    # CORRECCIÓN: Insertar los 3 valores de saldo para Wilfredo
-    cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc, saldo_usd) 
-                VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0, 50.0, 10.0)""")
+    # Insertamos a Wilfredo con su ganancia inicial para que el panel brille
+    cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc, saldo_usd, ganancia_neta) 
+                VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0, 50.0, 10.0, 5.0)""")
     
     for i in range(1, 6):
         cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol) VALUES (%s, %s, '0000', 'SOCIO')", 
@@ -96,7 +95,7 @@ def instalar():
     conn.commit()
     cur.close()
     conn.close()
-    return "<h1>🏛️ Bóveda Sincronizada</h1><p>Entra con 13496133 y PIN 1234</p>"
+    return "<h1>🏛️ Bóveda Sincronizada</h1><p>Wilfredo, entra ahora a /acceso</p>"
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
