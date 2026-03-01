@@ -65,6 +65,23 @@ def instalar():
 @app.route('/acceso')
 def acceso(): return render_template('acceso.html')
 
+@app.route('/registro')
+def registro(): return render_template('registro.html')
+
+@app.route('/registrar_usuario', methods=['POST'])
+def registrar_usuario():
+    nombre = request.form.get('nombre')
+    telefono = request.form.get('telefono').strip()
+    cedula = request.form.get('cedula').strip()
+    pin = request.form.get('pin').strip()
+    actividad = request.form.get('actividad')
+    id_dna = f"WP-{random.randint(1000, 9999)}"
+    query_db("""
+        INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad_economica)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (id_dna, nombre, telefono, cedula, pin, actividad), commit=True)
+    return redirect(url_for('acceso'))
+
 @app.route('/login', methods=['POST'])
 def login():
     t_in = request.form.get('telefono').strip()
@@ -73,14 +90,13 @@ def login():
     if user:
         session['user_id'] = user['id']
         return redirect(url_for('dashboard'))
-    return "Error de acceso"
+    return "<h1>Acceso Denegado</h1><a href='/acceso'>Volver</a>"
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
     m = query_db("SELECT * FROM movimientos WHERE usuario_id=%s ORDER BY fecha DESC LIMIT 5", (u['id'],))
-    # Si es CEO, mandamos al tablero maestro, si no, al del usuario
     if u['es_ceo']: return render_template('ceo_panel.html', u=u, m=m)
     return render_template('user_panel.html', u=u, m=m)
 
