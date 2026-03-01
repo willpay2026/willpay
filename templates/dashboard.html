@@ -8,7 +8,6 @@
         body { background: #000; color: #fff; font-family: sans-serif; }
         .oro { color: #D4AF37; }
         .card-ceo { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 20px; }
-        /* Estilo para los Switches */
         .form-check-input:checked { background-color: #D4AF37; border-color: #D4AF37; }
         .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
     </style>
@@ -19,47 +18,46 @@
         <h2 class="oro mt-2">BIENVENIDO, {{ u.nombre }}</h2>
         <p>ID DNA: <span class="badge bg-dark border border-warning">{{ u.id_dna }}</span></p>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-4"><div class="card-ceo"><h5>SALDO BOLÍVARES</h5><h3 class="oro">{{ "{:,.2f}".format(u.saldo_bs) }} BS</h3></div></div>
-            <div class="col-md-4"><div class="card-ceo"><h5>SALDO DÓLARES</h5><h3 class="oro">{{ "{:,.2f}".format(u.saldo_usd) }} USD</h3></div></div>
-            <div class="col-md-4"><div class="card-ceo"><h5>WILL-PAY COINS</h5><h3 class="oro">{{ "{:,.2f}".format(u.saldo_wpc) }} WPC</h3></div></div>
-        </div>
-
         <div class="card-ceo mb-4 text-start">
-            <h4 class="oro mb-3">CONFIGURACIÓN DE SEGURIDAD Y PAGOS</h4>
+            <h4 class="oro mb-3">CONFIGURACIÓN EN VIVO</h4>
             <div class="row">
                 <div class="col-6 mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="swPagos" checked>
-                        <label class="form-check-label ms-2" for="swPagos">Pagos Móviles Activos</label>
+                    <div class="form-switch">
+                        <input class="form-check-input" type="checkbox" id="sw_pagos" onclick="guardar(this)" {% if u.sw_pagos %}checked{% endif %}>
+                        <label class="ms-2">Pagos Móviles</label>
                     </div>
                 </div>
                 <div class="col-6 mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="swNotif" checked>
-                        <label class="form-check-label ms-2" for="swNotif">Notificaciones SMS</label>
+                    <div class="form-switch">
+                        <input class="form-check-input" type="checkbox" id="sw_sms" onclick="guardar(this)" {% if u.sw_sms %}checked{% endif %}>
+                        <label class="ms-2">Notificaciones SMS</label>
                     </div>
                 </div>
                 <div class="col-6">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="swBio">
-                        <label class="form-check-label ms-2" for="swBio">Acceso Biométrico DNA</label>
+                    <div class="form-switch">
+                        <input class="form-check-input" type="checkbox" id="sw_bio" onclick="guardar(this)" {% if u.sw_bio %}checked{% endif %}>
+                        <label class="ms-2">Acceso Biométrico</label>
                     </div>
                 </div>
                 <div class="col-6">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="swLegacy">
-                        <label class="form-check-label ms-2" for="swLegacy">Modo Legado Wilyanny</label>
+                    <div class="form-switch">
+                        <input class="form-check-input" type="checkbox" id="sw_legado" onclick="guardar(this)" {% if u.sw_legado %}checked{% endif %}>
+                        <label class="ms-2">Modo Legado</label>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="d-flex justify-content-center gap-2">
-            <button class="btn btn-warning fw-bold px-4">ENVIAR PAGO</button>
-            <button class="btn btn-outline-warning fw-bold px-4">RECIBIR PAGO</button>
-            <a href="/acceso" class="btn btn-danger px-4">SALIR</a>
-        </div>
+        <a href="/acceso" class="btn btn-danger px-4">SALIR</a>
     </div>
+
+    <script>
+    function guardar(el) {
+        fetch('/actualizar_config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({campo: el.id, estado: el.checked})
+        });
+    }
+    </script>
 </body>
 </html>
