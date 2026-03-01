@@ -28,13 +28,15 @@ def procesar_registro():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc) 
-                     VALUES (%s, %s, %s, %s, %s, 0.0, 0.0)""", 
+        # CORRECCIÓN: Añadimos saldo_usd para que coincida con la estructura
+        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc, saldo_usd) 
+                     VALUES (%s, %s, %s, %s, %s, 0.0, 0.0, 0.0)""", 
                      (nombre, cedula, telefono, pin, rol))
         conn.commit()
         return redirect(url_for('acceso'))
-    except:
-        return "<h1>⚠️ Error</h1><p>Cédula ya registrada.</p><a href='/registro'>Volver</a>"
+    except Exception as e:
+        print(f"Error en registro: {e}")
+        return "<h1>⚠️ Error</h1><p>Cédula ya registrada o error de datos.</p><a href='/registro'>Volver</a>"
     finally:
         cur.close()
         conn.close()
@@ -61,10 +63,15 @@ def dashboard():
     cur = conn.cursor(cursor_factory=DictCursor)
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
+    
+    # IMPORTANTE: Para que la 'Actividad en Vivo' de tu diseño no de error:
+    cur.execute("SELECT * FROM usuarios ORDER BY id DESC LIMIT 5")
+    usuarios_recientes = cur.fetchall()
+    
     cur.close()
     conn.close()
     if u['cedula'] == '13496133':
-        return render_template('ceo_panel.html', u=u)
+        return render_template('ceo_panel.html', u=u, usuarios=usuarios_recientes)
     return render_template('dashboard.html', u=u)
 
 @app.route('/instalar')
@@ -72,14 +79,16 @@ def instalar():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("DROP TABLE IF EXISTS usuarios CASCADE")
-    # Agregamos saldo_wpc y saldo_usd para que tu diseño no de error
     cur.execute("""CREATE TABLE usuarios (
         id SERIAL PRIMARY KEY, nombre TEXT, cedula TEXT UNIQUE, 
         telefono TEXT, pin TEXT, rol TEXT, 
-        saldo_bs FLOAT DEFAULT 0.0, saldo_wpc FLOAT DEFAULT 0.0, saldo_usd FLOAT DEFAULT 0.0)""")
+        saldo_bs FLOAT DEFAULT 0.0, 
+        saldo_wpc FLOAT DEFAULT 0.0, 
+        saldo_usd FLOAT DEFAULT 0.0)""")
     
-    cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc) 
-                VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0, 50.0)""")
+    # CORRECCIÓN: Insertar los 3 valores de saldo para Wilfredo
+    cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc, saldo_usd) 
+                VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0, 50.0, 10.0)""")
     
     for i in range(1, 6):
         cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol) VALUES (%s, %s, '0000', 'SOCIO')", 
