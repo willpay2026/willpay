@@ -35,10 +35,11 @@ def instalar():
             saldo_bs FLOAT DEFAULT 0,
             saldo_wpc FLOAT DEFAULT 0,
             saldo_usd FLOAT DEFAULT 0,
+            comision_acumulada FLOAT DEFAULT 0,
             es_ceo BOOLEAN DEFAULT FALSE
         )
     """, commit=True)
-    return "<h1>🏛️ Bóveda Will-Pay Reiniciada con Éxito</h1>"
+    return "<h1>🏛️ Bóveda Will-Pay Reiniciada</h1>"
 
 @app.route('/')
 def index(): return render_template('splash.html')
@@ -55,19 +56,19 @@ def procesar_registro():
     t = request.form.get('telefono').strip().replace(" ", "").replace("+58", "")
     c = request.form.get('cedula').strip()
     p = request.form.get('pin').strip()
-    act = request.form.get('actividad')
-    lin = request.form.get('nombre_linea') or "RUTA PRINCIPAL"
+    act = request.form.get('actividad') or "usuario"
+    lin = request.form.get('nombre_linea') or "N/A"
     
     if "WILFREDO" in n:
-        u_id, s_bs, s_wpc, s_usd, es_ceo = "CEO-0001-FOUNDER", 100000.0, 100000.0, 1000.0, True
+        u_id, s_bs, s_wpc, s_usd, com, es_ceo = "CEO-0001-FOUNDER", 100000.0, 100000.0, 1000.0, 1000.0, True
     else:
-        u_id, s_bs, s_wpc, s_usd, es_ceo = f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}", 0.0, 0.0, 0.0, False
+        u_id, s_bs, s_wpc, s_usd, com, es_ceo = f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}", 0.0, 0.0, 0.0, 0.0, False
 
     try:
         query_db("""
-            INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad, nombre_linea, saldo_bs, saldo_wpc, saldo_usd, es_ceo) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """, (u_id, n, t, c, p, act, lin, s_bs, s_wpc, s_usd, es_ceo), commit=True)
+            INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad, nombre_linea, saldo_bs, saldo_wpc, saldo_usd, comision_acumulada, es_ceo) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (u_id, n, t, c, p, act, lin, s_bs, s_wpc, s_usd, com, es_ceo), commit=True)
         return redirect('/acceso')
     except:
         return "<h1>Error de Datos</h1>"
@@ -86,7 +87,6 @@ def login():
 def dashboard():
     if 'user_id' not in session: return redirect('/acceso')
     user = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
-    # Pasamos el objeto 'u' completo al template detallado
     return render_template('dashboard.html', u=user)
 
 if __name__ == '__main__':
