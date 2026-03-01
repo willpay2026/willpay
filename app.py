@@ -3,7 +3,6 @@ import psycopg2, os
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__)
-# El legado blindado para Wilyanny
 app.secret_key = 'willpay_2026_oficial'
 DB_URL = os.environ.get('DATABASE_URL')
 
@@ -19,43 +18,38 @@ def acceso(): return render_template('acceso.html')
 @app.route('/registro')
 def registro(): return render_template('registro.html')
 
-# --- ESTA ES LA RUTA QUE TU HTML NECESITA ---
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
-    # Recibimos los datos exactos de tu formulario
     nombre = request.form.get('nombre', '').upper()
     cedula = request.form.get('cedula', '').strip()
     telefono = request.form.get('telefono', '').strip()
-    actividad = request.form.get('actividad', 'usuario')
-    pin = request.form.get('pin', '').strip() # Tu formulario pide 6 dígitos
+    rol = request.form.get('actividad', 'USUARIO')
+    pin = request.form.get('pin', '').strip()
     
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs) 
                      VALUES (%s, %s, %s, %s, %s, 0.0)""", 
-                     (nombre, cedula, telefono, pin, actividad))
+                     (nombre, cedula, telefono, pin, rol))
         conn.commit()
         return redirect(url_for('acceso'))
-    except Exception as e:
-        return f"<h1>⚠️ Error</h1><p>La cédula ya existe en la bóveda.</p><a href='/registro'>Volver</a>"
+    except:
+        return "<h1>⚠️ Error</h1><p>Cédula ya registrada.</p><a href='/registro'>Volver</a>"
     finally:
         cur.close()
         conn.close()
 
 @app.route('/login', methods=['POST'])
 def login():
-    # Sincronizado con acceso.html
     dato = request.form.get('telefono_login', '').strip()
     pin = request.form.get('pin_login', '').strip()
-    
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
     cur.execute("SELECT * FROM usuarios WHERE (cedula=%s OR telefono=%s) AND pin=%s", (dato, dato, pin))
     user = cur.fetchone()
     cur.close()
     conn.close()
-
     if user:
         session['user_id'] = user['id']
         return redirect(url_for('dashboard'))
@@ -70,8 +64,7 @@ def dashboard():
     u = cur.fetchone()
     cur.close()
     conn.close()
-    
-    # Wilfredo, aquí entras a tu panel de oro
+    # Wilfredo, aquí está el truco: usamos los nombres de columna que instalamos
     if u['cedula'] == '13496133':
         return render_template('ceo_panel.html', u=u)
     return render_template('dashboard.html', u=u)
@@ -84,15 +77,11 @@ def instalar():
     cur.execute("""CREATE TABLE usuarios (
         id SERIAL PRIMARY KEY, nombre TEXT, cedula TEXT UNIQUE, 
         telefono TEXT, pin TEXT, rol TEXT, saldo_bs FLOAT DEFAULT 0.0)""")
-    # Te insertamos como CEO de una vez
     cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs) 
                 VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0)""")
-    
-    # Reservamos los 5 espacios para tus socios
     for i in range(1, 6):
         cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol) VALUES (%s, %s, '0000', 'SOCIO')", 
                     (f"SOCIO RESERVADO {i}", f"SOCIO-{i}"))
-        
     conn.commit()
     cur.close()
     conn.close()
