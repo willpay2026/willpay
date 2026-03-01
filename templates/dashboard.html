@@ -2,62 +2,91 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Will-Pay | Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay | Mi Billetera</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; }
+        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; }
         .oro { color: #D4AF37; }
-        .card-will { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
-        .btn-will { background: #D4AF37; color: #000; font-weight: bold; border: none; }
-        .form-switch .form-check-input:checked { background-color: #D4AF37; border-color: #D4AF37; }
+        .contenedor-principal { 
+            background: #000; 
+            border: 2px solid #D4AF37; 
+            border-radius: 40px; 
+            padding: 30px; 
+            margin-top: 15px;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .saldo-texto { color: #888; font-size: 0.9rem; }
+        .saldo-monto { font-size: 2.5rem; font-weight: bold; color: #D4AF37; }
+        .btn-recargar { 
+            border: 1px solid #D4AF37; 
+            background: transparent; 
+            color: #D4AF37; 
+            width: 100%; 
+            border-radius: 10px; 
+            padding: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .btn-pagar { background: #D4AF37; color: #000; font-weight: bold; border-radius: 10px 0 0 10px; border: none; }
+        .btn-cobrar { background: #222; color: #888; border-radius: 0 10px 10px 0; border: none; }
+        .qr-placeholder { 
+            background: #fff; 
+            width: 30px; 
+            height: 50px; 
+            border-radius: 10px; 
+            margin: 20px auto;
+        }
+        .movimiento-item { 
+            background: #111; 
+            border-radius: 15px; 
+            padding: 15px; 
+            margin-top: 15px;
+            border-left: 5px solid #D4AF37;
+        }
     </style>
 </head>
-<body class="p-4">
-    <div class="container">
-        <h2 class="oro">HOLA, {{ u.nombre }}</h2>
-        <p class="small">ID DNA: <span class="badge bg-dark border border-warning">{{ u.id_dna }}</span></p>
-
-        <div class="row text-center mb-4">
-            <div class="col-12 card-will">
-                <h5 class="text-secondary">SALDO DISPONIBLE</h5>
-                <h1 class="oro">{{ u.saldo_bs }} Bs.</h1>
+<body>
+    <div class="container text-center py-3">
+        <img src="/static/logowillpay.png" alt="Will-Pay" style="width: 200px; margin-bottom: 10px;">
+        
+        <div class="contenedor-principal">
+            <div class="saldo-texto">Saldo Disponible</div>
+            <div class="saldo-monto">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
+            
+            <button class="btn-recargar mt-3">RECARGAR</button>
+            
+            <div class="btn-group w-100 mb-3" role="group">
+                <button type="button" class="btn btn-pagar p-2">PAGAR</button>
+                <button type="button" class="btn btn-cobrar p-2">COBRAR</button>
             </div>
+            
+            <div class="card bg-dark border-secondary p-3 mb-2" style="border-radius: 15px;">
+                <h2 class="m-0">0.00</h2>
+            </div>
+            
+            <div class="qr-placeholder"></div>
+            <p class="small text-secondary">Muestra este QR al chofer</p>
+            
+            <div class="text-start mt-4">
+                <h6>Últimos Movimientos</h6>
+                {% for mov in m %}
+                <div class="movimiento-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small fw-bold">Recarga Aprobada</div>
+                        <div class="text-secondary" style="font-size: 0.7rem;">{{ mov.fecha }}</div>
+                    </div>
+                    <div class="text-success fw-bold">+ Bs. {{ mov.monto_bs }}</div>
+                </div>
+                {% else %}
+                <p class="text-muted small text-center">Sin movimientos aún</p>
+                {% endfor %}
+            </div>
+            
+            <a href="/acceso" class="d-block mt-4 text-danger text-decoration-none small">Cerrar Sesión</a>
         </div>
-
-        <div class="card-will">
-            <h5 class="oro">📥 RECARGAR CUENTA</h5>
-            <p class="small text-secondary">Realiza tu Pago Móvil para activar saldo:</p>
-            <div class="p-2 border border-secondary rounded">
-                <p class="mb-1"><strong>Banco:</strong> {{ m.banco }}</p>
-                <p class="mb-1"><strong>Tel:</strong> {{ m.pago_movil }}</p>
-                <p class="mb-1"><strong>CI:</strong> {{ m.cedula }}</p>
-            </div>
-            <p class="mt-2 small">Una vez realizado, notifica al soporte con tu captura.</p>
-        </div>
-
-        <div class="card-will">
-            <h5 class="oro">SEGURIDAD Y LEGADO</h5>
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="sw_pagos" onclick="guardar(this)" {% if u.sw_pagos %}checked{% endif %}>
-                <label class="ms-2">Sistema de Pagos</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="sw_legado" onclick="guardar(this)" {% if u.sw_legado %}checked{% endif %}>
-                <label class="ms-2">Modo Legado Wilyanny</label>
-            </div>
-        </div>
-
-        <a href="/logout" class="btn btn-outline-danger w-100">CERRAR SESIÓN</a>
     </div>
-
-    <script>
-    function guardar(el) {
-        fetch('/actualizar_config', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({campo: el.id, estado: el.checked})
-        });
-    }
-    </script>
 </body>
 </html>
