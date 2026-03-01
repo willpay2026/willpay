@@ -18,7 +18,7 @@ def dashboard():
     u = cur.fetchone()
     
     # 🦅 OJO DE ÁGUILA: Tú ves las recargas pendientes para aprobar
-    cur.execute("SELECT * FROM recargas WHERE estatus = 'PENDIENTE' ORDER BY id DESC")
+    cur.execute("SELECT * FROM recargas WHERE estado = 'PENDIENTE' ORDER BY id DESC")
     recargas_pendientes = cur.fetchall()
     
     cur.close()
@@ -74,3 +74,4 @@ def instalar():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
