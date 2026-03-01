@@ -2,76 +2,63 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control | Will-Pay</title>
+    <title>Will-Pay CEO Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; }
+        body { background: #000; color: #fff; font-family: sans-serif; }
         .oro { color: #D4AF37; }
-        .card-will { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 20px; margin-bottom: 20px; transition: 0.3s; }
-        .card-will:hover { box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
-        .btn-accion { background: #D4AF37; color: black; font-weight: bold; border-radius: 10px; border: none; padding: 10px 20px; width: 100%; }
-        .dna-tag { font-family: monospace; background: #222; padding: 5px 10px; border-radius: 5px; color: #D4AF37; }
+        .card-ceo { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 20px; }
+        /* Estilo para los Switches */
+        .form-check-input:checked { background-color: #D4AF37; border-color: #D4AF37; }
+        .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="container py-4">
-        <div class="text-center mb-4">
-            <img src="{{ url_for('static', filename='logonuevo.png') }}" width="120" class="mb-2">
-            <h2 class="oro">BIENVENIDO, {{ u.nombre }}</h2>
-            <p>ID DNA: <span class="dna-tag">{{ u.id_dna }}</span></p>
+    <div class="container py-4 text-center">
+        <img src="/static/logonuevo.png" width="100">
+        <h2 class="oro mt-2">BIENVENIDO, {{ u.nombre }}</h2>
+        <p>ID DNA: <span class="badge bg-dark border border-warning">{{ u.id_dna }}</span></p>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4"><div class="card-ceo"><h5>SALDO BOLÍVARES</h5><h3 class="oro">{{ "{:,.2f}".format(u.saldo_bs) }} BS</h3></div></div>
+            <div class="col-md-4"><div class="card-ceo"><h5>SALDO DÓLARES</h5><h3 class="oro">{{ "{:,.2f}".format(u.saldo_usd) }} USD</h3></div></div>
+            <div class="col-md-4"><div class="card-ceo"><h5>WILL-PAY COINS</h5><h3 class="oro">{{ "{:,.2f}".format(u.saldo_wpc) }} WPC</h3></div></div>
         </div>
 
-        <div class="row text-center">
-            <div class="col-md-4">
-                <div class="card-will">
-                    <h5 class="text-muted">SALDO BOLÍVARES</h5>
-                    <h2 class="oro">{{ "{:,.2f}".format(u.saldo_bs) }} BS</h2>
+        <div class="card-ceo mb-4 text-start">
+            <h4 class="oro mb-3">CONFIGURACIÓN DE SEGURIDAD Y PAGOS</h4>
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="swPagos" checked>
+                        <label class="form-check-label ms-2" for="swPagos">Pagos Móviles Activos</label>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card-will">
-                    <h5 class="text-muted">SALDO DÓLARES</h5>
-                    <h2 class="oro">{{ "{:,.2f}".format(u.saldo_usd) }} USD</h2>
+                <div class="col-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="swNotif" checked>
+                        <label class="form-check-label ms-2" for="swNotif">Notificaciones SMS</label>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card-will">
-                    <h5 class="text-muted">WILL-PAY COINS</h5>
-                    <h2 class="oro">{{ "{:,.2f}".format(u.saldo_wpc) }} WPC</h2>
+                <div class="col-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="swBio">
+                        <label class="form-check-label ms-2" for="swBio">Acceso Biométrico DNA</label>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="card-will">
-            <h4 class="oro mb-3">MI PANEL DE COMISIÓN</h4>
-            <div class="table-responsive">
-                <table class="table table-dark table-hover">
-                    <thead>
-                        <tr>
-                            <th>Actividad</th>
-                            <th>Línea/Ruta</th>
-                            <th>Estatus</th>
-                            <th>Comisión Acumulada</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ u.actividad }}</td>
-                            <td>{{ u.nombre_linea }}</td>
-                            <td><span class="badge bg-success">ACTIVO</span></td>
-                            <td class="oro">{{ "{:,.2f}".format(u.saldo_bs * 0.01) }} BS</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="col-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="swLegacy">
+                        <label class="form-check-label ms-2" for="swLegacy">Modo Legado Wilyanny</label>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="row mt-4">
-            <div class="col-6 col-md-3 mb-2"><button class="btn-accion">ENVIAR PAGO</button></div>
-            <div class="col-6 col-md-3 mb-2"><button class="btn-accion">RECIBIR PAGO</button></div>
-            <div class="col-6 col-md-3 mb-2"><button class="btn-accion" style="background:#444; color:white;">VER EXPEDIENTE</button></div>
-            <div class="col-6 col-md-3 mb-2"><a href="/acceso" class="btn btn-danger w-100 py-2">CERRAR SESIÓN</a></div>
+        <div class="d-flex justify-content-center gap-2">
+            <button class="btn btn-warning fw-bold px-4">ENVIAR PAGO</button>
+            <button class="btn btn-outline-warning fw-bold px-4">RECIBIR PAGO</button>
+            <a href="/acceso" class="btn btn-danger px-4">SALIR</a>
         </div>
     </div>
 </body>
