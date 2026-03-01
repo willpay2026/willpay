@@ -28,9 +28,10 @@ def procesar_registro():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
+        # Registramos con estatus 'PENDIENTE' para que tú lo apruebes
         cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc, saldo_usd, ganancia_neta) 
-                     VALUES (%s, %s, %s, %s, %s, 0.0, 0.0, 0.0, 0.0)""", 
-                     (nombre, cedula, telefono, pin, rol))
+                     VALUES (%s, %s, %s, %s, 'PENDIENTE', 0.0, 0.0, 0.0, 0.0)""", 
+                     (nombre, cedula, telefono, pin))
         conn.commit()
         return redirect(url_for('acceso'))
     except Exception as e:
@@ -62,15 +63,27 @@ def dashboard():
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
     
-    # Buscamos usuarios para la "Actividad en Vivo" de tu diseño
-    cur.execute("SELECT * FROM usuarios ORDER BY id DESC LIMIT 5")
-    usuarios_recientes = cur.fetchall()
+    # Mostramos los últimos registros para que los apruebes en 'ACTIVIDAD EN VIVO'
+    cur.execute("SELECT * FROM usuarios WHERE rol = 'PENDIENTE' ORDER BY id DESC LIMIT 5")
+    usuarios_pendientes = cur.fetchall()
     
     cur.close()
     conn.close()
     if u['cedula'] == '13496133':
-        return render_template('ceo_panel.html', u=u, usuarios=usuarios_recientes)
+        return render_template('ceo_panel.html', u=u, usuarios=usuarios_pendientes)
     return render_template('dashboard.html', u=u)
+
+@app.route('/aprobar_socio/<int:id>')
+def aprobar_socio(id):
+    if 'user_id' not in session: return redirect(url_for('acceso'))
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Al aprobar, le damos rango de SOCIO y un bono de bienvenida de 10 Bs
+    cur.execute("UPDATE usuarios SET rol = 'SOCIO', saldo_bs = 10.0 WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('dashboard'))
 
 @app.route('/instalar')
 def instalar():
@@ -85,13 +98,13 @@ def instalar():
         saldo_usd FLOAT DEFAULT 0.0,
         ganancia_neta FLOAT DEFAULT 0.0)""")
     
-    # Insertamos a Wilfredo con su ganancia inicial para que el panel brille
     cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc, saldo_usd, ganancia_neta) 
                 VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0, 50.0, 10.0, 5.0)""")
     
+    # Reservamos los 5 espacios para partners futuros
     for i in range(1, 6):
-        cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol) VALUES (%s, %s, '0000', 'SOCIO')", 
-                    (f"SOCIO RESERVADO {i}", f"SOCIO-{i}"))
+        cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol) VALUES (%s, %s, '0000', 'SOCIO_RESERVADO')", 
+                    (f"SOCIO RESERVADO {i}", f"PARTNER-{i}"))
     conn.commit()
     cur.close()
     conn.close()
