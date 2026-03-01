@@ -3,51 +3,49 @@ import psycopg2, os
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__)
-# El secreto del legado para Wilyanny
-app.secret_key = 'willpay_2026_original'
+# El legado blindado para Wilyanny
+app.secret_key = 'willpay_2026_oficial'
 DB_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
     return psycopg2.connect(DB_URL, sslmode='require')
 
-# --- RUTAS DE NAVEGACIÓN (TU DISEÑO) ---
 @app.route('/')
-def index(): 
-    return render_template('splash.html')
+def index(): return render_template('splash.html')
 
 @app.route('/acceso')
-def acceso(): 
-    return render_template('acceso.html')
+def acceso(): return render_template('acceso.html')
 
 @app.route('/registro')
-def registro(): 
-    return render_template('registro.html')
+def registro(): return render_template('registro.html')
 
-# --- PROCESO DE REGISTRO (SIN ERRORES 404) ---
-@app.route('/procesar_register', methods=['POST'])
-def procesar_register():
+# --- ESTA ES LA RUTA QUE TU HTML NECESITA ---
+@app.route('/procesar_registro', methods=['POST'])
+def procesar_registro():
+    # Recibimos los datos exactos de tu formulario
     nombre = request.form.get('nombre', '').upper()
     cedula = request.form.get('cedula', '').strip()
     telefono = request.form.get('telefono', '').strip()
-    pin = request.form.get('pin', '').strip()[:4]
+    actividad = request.form.get('actividad', 'usuario')
+    pin = request.form.get('pin', '').strip() # Tu formulario pide 6 dígitos
     
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, saldo_bs) 
-                     VALUES (%s, %s, %s, %s, 0.0)""", 
-                     (nombre, cedula, telefono, pin))
+        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs) 
+                     VALUES (%s, %s, %s, %s, %s, 0.0)""", 
+                     (nombre, cedula, telefono, pin, actividad))
         conn.commit()
         return redirect(url_for('acceso'))
-    except:
-        return "<h1>⚠️ Error</h1><p>Cédula ya registrada.</p><a href='/registro'>Volver</a>"
+    except Exception as e:
+        return f"<h1>⚠️ Error</h1><p>La cédula ya existe en la bóveda.</p><a href='/registro'>Volver</a>"
     finally:
         cur.close()
         conn.close()
 
-# --- LOGIN ---
 @app.route('/login', methods=['POST'])
 def login():
+    # Sincronizado con acceso.html
     dato = request.form.get('telefono_login', '').strip()
     pin = request.form.get('pin_login', '').strip()
     
@@ -73,11 +71,11 @@ def dashboard():
     cur.close()
     conn.close()
     
-    if u['cedula'] == '13496133': # Tu panel de CEO
+    # Wilfredo, aquí entras a tu panel de oro
+    if u['cedula'] == '13496133':
         return render_template('ceo_panel.html', u=u)
     return render_template('dashboard.html', u=u)
 
-# --- INSTALACIÓN LIMPIEZA ---
 @app.route('/instalar')
 def instalar():
     conn = get_db_connection()
@@ -85,15 +83,21 @@ def instalar():
     cur.execute("DROP TABLE IF EXISTS usuarios CASCADE")
     cur.execute("""CREATE TABLE usuarios (
         id SERIAL PRIMARY KEY, nombre TEXT, cedula TEXT UNIQUE, 
-        telefono TEXT, pin TEXT, saldo_bs FLOAT DEFAULT 0.0)""")
-    # Te creamos de una vez para que no sufras con el registro
-    cur.execute("INSERT INTO usuarios (nombre, cedula, pin, saldo_bs) VALUES ('WILFREDO DONQUIZ', '13496133', '1234', 100.0)")
+        telefono TEXT, pin TEXT, rol TEXT, saldo_bs FLOAT DEFAULT 0.0)""")
+    # Te insertamos como CEO de una vez
+    cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs) 
+                VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0)""")
+    
+    # Reservamos los 5 espacios para tus socios
+    for i in range(1, 6):
+        cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol) VALUES (%s, %s, '0000', 'SOCIO')", 
+                    (f"SOCIO RESERVADO {i}", f"SOCIO-{i}"))
+        
     conn.commit()
     cur.close()
     conn.close()
-    return "<h1>🏛️ Bóveda Lista</h1><p>Entra con 13496133 y PIN 1234</p>"
+    return "<h1>🏛️ Bóveda Reiniciada</h1><p>Entra con 13496133 y PIN 1234</p>"
 
 if __name__ == '__main__':
-    # Puerto dinámico para Render
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
