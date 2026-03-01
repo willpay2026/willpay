@@ -1,3 +1,28 @@
+<div class="container" style="background: black; color: gold; text-align: center; padding: 20px;">
+    <img src="/static/logowillpay.png" class="logo-willpay" style="width: 150px;">
+    
+    <h2>Saldo Disponible</h2>
+    <h1 style="font-size: 3em;">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h1>
+
+    <button onclick="toggleRecargas()" style="background: gold; color: black; padding: 10px 20px; border-radius: 10px; width: 100%; font-weight: bold;">RECARGAR</button>
+
+    <div id="seccion-recargas" style="display: none; border: 1px solid gold; margin-top: 10px; padding: 10px; border-radius: 10px;">
+        <p>PAGO MÓVIL A WILFREDO DONQUIZ</p>
+        <p><b>04126602555 | 13496133 | BANESCO</b></p>
+        <form action="/solicitar_recarga" method="POST">
+            <input type="number" name="monto" placeholder="Monto Bs." required style="width: 80%; margin: 5px;">
+            <input type="text" name="referencia" placeholder="Nro Referencia" required style="width: 80%; margin: 5px;">
+            <button type="submit" style="background: green; color: white; width: 80%;">ENVIAR CAPTURE</button>
+        </form>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button style="flex: 1; padding: 15px; background: gold;">PAGAR</button>
+        <button onclick="activarCamara()" style="flex: 1; padding: 15px; background: #333; color: white;">COBRAR</button>
+    </div>
+
+    <div id="reader" style="margin-top: 20px;"></div>
+</div>
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
