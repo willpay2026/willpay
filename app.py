@@ -6,6 +6,7 @@ app = Flask(__name__)
 app.secret_key = 'willpay_2026_legado_wilyanny'
 DB_URL = os.environ.get('DATABASE_URL')
 
+# Función de conexión a la Bóveda (Base de Datos)
 def query_db(query, args=(), one=False, commit=False):
     conn = psycopg2.connect(DB_URL, sslmode='require')
     cur = conn.cursor(cursor_factory=DictCursor)
@@ -19,10 +20,10 @@ def query_db(query, args=(), one=False, commit=False):
         cur.close()
         conn.close()
 
-# --- 1. INAUGURACIÓN Y LIMPIEZA ---
+# --- 1. RUTA DE REINICIO TOTAL (USA ESTO PRIMERO) ---
 @app.route('/instalar')
 def instalar():
-    # Borramos y recreamos para que el PIN y el KYC entren limpios
+    # Limpiamos todo para que no queden registros corruptos
     query_db("DROP TABLE IF EXISTS usuarios", commit=True)
     query_db("""
         CREATE TABLE usuarios (
@@ -40,7 +41,7 @@ def instalar():
             es_ceo BOOLEAN DEFAULT FALSE
         )
     """, commit=True)
-    return "<h1>🏛️ Bóveda Will-Pay Reiniciada</h1><p>Ve a /registro ahora.</p>"
+    return "<h1>🏛️ Bóveda Will-Pay Reiniciada con Éxito</h1><p>Ahora ve a /registro y crea tu cuenta de CEO.</p>"
 
 # --- 2. RUTAS DE NAVEGACIÓN ---
 @app.route('/')
@@ -55,8 +56,9 @@ def registro(): return render_template('registro.html')
 # --- 3. PROCESO DE REGISTRO KYC ---
 @app.route('/procesar_registro', methods=['POST'])
 def procesar_registro():
+    # Limpiamos los datos de entrada
     n = request.form.get('nombre').upper().strip()
-    t = request.form.get('telefono').strip().replace(" ", "") # Quitamos espacios
+    t = request.form.get('telefono').strip().replace(" ", "").replace("+58", "")
     c = request.form.get('cedula').strip()
     p = request.form.get('pin').strip()
     act = request.form.get('actividad')
@@ -78,36 +80,46 @@ def procesar_registro():
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
         """, (u_id, n, t, c, p, act, lin, s_bs, s_wpc, s_usd, es_ceo), commit=True)
         return redirect('/acceso')
-    except Exception as e:
-        return f"<h1>Error: El teléfono o cédula ya existen.</h1><a href='/registro'>Volver</a>"
+    except:
+        return "<h1>Error: Estos datos ya están registrados.</h1><a href='/registro'>Volver</a>"
 
-# --- 4. ACCESO SEGURO (EL BUSCADOR INTELIGENTE) ---
+# --- 4. ACCESO SEGURO (MÉTODO BLINDADO) ---
 @app.route('/login', methods=['POST'])
 def login():
-    n_in = request.form.get('nombre_login').upper().strip()
-    t_in = request.form.get('telefono_login').strip().replace(" ", "")
+    # Solo pedimos Teléfono y PIN para evitar errores de escritura en el nombre
+    t_in = request.form.get('telefono_login').strip().replace(" ", "").replace("+58", "")
     p_in = request.form.get('pin_login').strip()
     
-    # Buscamos por nombre y teléfono (flexible con el +58)
-    user = query_db("""
-        SELECT * FROM usuarios 
-        WHERE nombre LIKE %s 
-        AND (telefono = %s OR telefono LIKE %s) 
-        AND pin = %s
-    """, ('%'+n_in+'%', t_in, '%'+t_in, p_in), one=True)
+    # Buscamos al usuario por su "llave" única (Teléfono + PIN)
+    user = query_db("SELECT * FROM usuarios WHERE telefono=%s AND pin=%s", (t_in, p_in), one=True)
     
     if user:
         session['user_id'] = user['id']
         return redirect('/dashboard')
     
-    return "<h1>Acceso Denegado</h1><p>Verifica tu Nombre, Teléfono y PIN.</p><a href='/acceso'>Reintentar</a>"
+    return "<h1>Acceso Denegado</h1><p>Verifica que el teléfono y el PIN sean los mismos del registro.</p><a href='/acceso'>Intentar de nuevo</a>"
 
-# --- 5. PANEL DE CONTROL ---
+# --- 5. PANEL DE CONTROL (EL LEGADO) ---
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect('/acceso')
     user = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
-    return render_template('dashboard.html', u=user)
+    
+    # Aquí es donde ocurre la magia que Wilfredo diseñó
+    return f"""
+    <html>
+    <body style="background:#000; color:#D4AF37; font-family:sans-serif; text-align:center; padding:50px;">
+        <img src="/static/logonuevo.png" width="150">
+        <h1>BIENVENIDO, {user['nombre']}</h1>
+        <hr border="1" color="#D4AF37">
+        <h2>SALDO BS: {user['saldo_bs']}</h2>
+        <h2>SALDO USD: {user['saldo_usd']}</h2>
+        <p>ID DNA: {user['id_dna']}</p>
+        <br>
+        <a href="/acceso" style="color:white;">Cerrar Sesión</a>
+    </body>
+    </html>
+    """
 
 if __name__ == '__main__':
     app.run(debug=True)
