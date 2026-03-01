@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 import psycopg2, os
 from psycopg2.extras import DictCursor
 
@@ -39,35 +39,39 @@ def login():
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
-    # Buscamos movimientos de prueba para que la tabla no esté vacía
-    m = query_db("SELECT * FROM movimientos WHERE usuario_id=%s LIMIT 5", (u['id'],))
-    
+    m = query_db("SELECT * FROM movimientos WHERE usuario_id=%s ORDER BY id DESC LIMIT 5", (u['id'],))
     if u['cedula'] == '13496133':
         return render_template('ceo_panel.html', u=u, m=m)
     return render_template('dashboard.html', u=u)
+
+# --- CONTROL DE TASAS DESDE EL PANEL ---
+@app.route('/actualizar_tasa', methods=['POST'])
+def actualizar_tasa():
+    if 'user_id' not in session: return jsonify({"status": "error"}), 403
+    data = request.json
+    campo = data.get('campo') # porcentaje_pago o porcentaje_retiro
+    valor = data.get('valor')
+    query_db(f"UPDATE usuarios SET {campo} = %s WHERE id = %s", (valor, session['user_id']), commit=True)
+    return jsonify({"status": "ok"})
 
 @app.route('/instalar')
 def instalar():
     query_db("DROP TABLE IF EXISTS movimientos CASCADE", commit=True)
     query_db("DROP TABLE IF EXISTS usuarios CASCADE", commit=True)
-    # Creamos la tabla con TODOS los campos que pide tu HTML
     query_db("""CREATE TABLE usuarios (
         id SERIAL PRIMARY KEY, id_dna TEXT, nombre TEXT, telefono TEXT UNIQUE, 
         cedula TEXT UNIQUE, pin TEXT, actividad_economica TEXT,
         saldo_bs FLOAT DEFAULT 0.0, saldo_wpc FLOAT DEFAULT 0.0, 
         saldo_usd FLOAT DEFAULT 0.0, ganancia_neta FLOAT DEFAULT 0.0,
+        porcentaje_pago FLOAT DEFAULT 1.5, porcentaje_retiro FLOAT DEFAULT 2.1,
         auto_recargas BOOLEAN DEFAULT FALSE)""", commit=True)
     
-    # Creamos la tabla de movimientos para que el HTML no de error al buscar 'm'
     query_db("""CREATE TABLE movimientos (
         id SERIAL PRIMARY KEY, usuario_id INTEGER, 
         correlativo TEXT, monto_bs FLOAT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""", commit=True)
     
-    # Te insertamos como CEO con saldos iniciales
     query_db("""INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad_economica, saldo_bs, saldo_wpc, saldo_usd) 
         VALUES ('CEO-001', 'WILFREDO DONQUIZ', '04126602555', '13496133', '1234', 'FUNDADOR', 100.0, 50.0, 10.0)""", commit=True)
-    
-    return "<h1>🏛️ Bóveda Sincronizada</h1><p>Entra a /acceso con 13496133 y PIN 1234</p>"
+    return "<h1>🏛️ Bóveda Sincronizada V4</h1><p>Entra a /acceso con 13496133 y PIN 1234</p>"
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == '__main__': app.run(debug=True)
