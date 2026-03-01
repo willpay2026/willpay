@@ -3,14 +3,14 @@ import psycopg2, os
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__)
-# El legado de Wilyanny Donquiz blindado
-app.secret_key = 'willpay_2026_reinicio_maestro'
+# El secreto del legado para Wilyanny
+app.secret_key = 'willpay_2026_original'
 DB_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
     return psycopg2.connect(DB_URL, sslmode='require')
 
-# --- RUTAS DE NAVEGACIÓN (TU DISEÑO ORIGINAL) ---
+# --- RUTAS DE NAVEGACIÓN (TU DISEÑO) ---
 @app.route('/')
 def index(): 
     return render_template('splash.html')
@@ -19,9 +19,35 @@ def index():
 def acceso(): 
     return render_template('acceso.html')
 
+@app.route('/registro')
+def registro(): 
+    return render_template('registro.html')
+
+# --- PROCESO DE REGISTRO (SIN ERRORES 404) ---
+@app.route('/procesar_register', methods=['POST'])
+def procesar_register():
+    nombre = request.form.get('nombre', '').upper()
+    cedula = request.form.get('cedula', '').strip()
+    telefono = request.form.get('telefono', '').strip()
+    pin = request.form.get('pin', '').strip()[:4]
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, saldo_bs) 
+                     VALUES (%s, %s, %s, %s, 0.0)""", 
+                     (nombre, cedula, telefono, pin))
+        conn.commit()
+        return redirect(url_for('acceso'))
+    except:
+        return "<h1>⚠️ Error</h1><p>Cédula ya registrada.</p><a href='/registro'>Volver</a>"
+    finally:
+        cur.close()
+        conn.close()
+
+# --- LOGIN ---
 @app.route('/login', methods=['POST'])
 def login():
-    # Usamos los campos exactos de tu acceso.html
     dato = request.form.get('telefono_login', '').strip()
     pin = request.form.get('pin_login', '').strip()
     
@@ -35,12 +61,11 @@ def login():
     if user:
         session['user_id'] = user['id']
         return redirect(url_for('dashboard'))
-    return "<h1>❌ Acceso Incorrecto</h1><a href='/acceso'>Volver a intentar</a>"
+    return "<h1>❌ Datos Incorrectos</h1><a href='/acceso'>Volver</a>"
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
-    
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
@@ -48,39 +73,27 @@ def dashboard():
     cur.close()
     conn.close()
     
-    # Si eres tú, entras al panel de CEO para ver tu comisión
-    if u['cedula'] == '13496133':
+    if u['cedula'] == '13496133': # Tu panel de CEO
         return render_template('ceo_panel.html', u=u)
     return render_template('dashboard.html', u=u)
 
-# --- EL REINICIO MAESTRO (BORRÓN Y CUENTA NUEVA) ---
+# --- INSTALACIÓN LIMPIEZA ---
 @app.route('/instalar')
 def instalar():
     conn = get_db_connection()
     cur = conn.cursor()
-    # Limpiamos todo para que no haya errores de la 8va vez
     cur.execute("DROP TABLE IF EXISTS usuarios CASCADE")
     cur.execute("""CREATE TABLE usuarios (
         id SERIAL PRIMARY KEY, nombre TEXT, cedula TEXT UNIQUE, 
-        telefono TEXT, pin TEXT, saldo_bs FLOAT DEFAULT 0.0, 
-        rol TEXT DEFAULT 'SOCIO')""")
-    
-    # 1. Te insertamos a ti como CEO (Wilfredo Donquiz)
-    cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs) 
-                VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 1000.0)""")
-    
-    # 2. Reservamos los 5 espacios para futuros socios
-    for i in range(1, 6):
-        cur.execute("""INSERT INTO usuarios (nombre, cedula, pin, rol) 
-                    VALUES (%s, %s, '0000', 'SOCIO_RESERVADO')""", 
-                    (f"SOCIO FUTURO {i}", f"RES-00{i}"))
-    
+        telefono TEXT, pin TEXT, saldo_bs FLOAT DEFAULT 0.0)""")
+    # Te creamos de una vez para que no sufras con el registro
+    cur.execute("INSERT INTO usuarios (nombre, cedula, pin, saldo_bs) VALUES ('WILFREDO DONQUIZ', '13496133', '1234', 100.0)")
     conn.commit()
     cur.close()
     conn.close()
-    return "<h1>🏛️ Bóveda Reiniciada Exitosamente</h1><p>Wilfredo, ya eres el CEO. Entra con tu cédula y PIN 1234.</p>"
+    return "<h1>🏛️ Bóveda Lista</h1><p>Entra con 13496133 y PIN 1234</p>"
 
 if __name__ == '__main__':
-    # PARCHE CRÍTICO PARA RENDER (Evita el error de puerto)
+    # Puerto dinámico para Render
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
