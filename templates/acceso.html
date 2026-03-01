@@ -1,5 +1,44 @@
-<form action="/login" method="POST">
-    <input type="text" name="nombre_login" placeholder="Nombre y Apellido" required>
-    <input type="password" name="pin_login" placeholder="PIN de 6 dígitos" required>
-    <button class="btn-gold" type="submit">ENTRAR SEGURO</button>
-</form>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Seguro | Will-Pay</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #000; color: white; height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-acceso { background: #111; border: 1px solid #D4AF37; border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); }
+        .oro { color: #D4AF37; }
+        .logo-will { width: 120px; margin-bottom: 20px; }
+        .input-will { background: #222 !important; color: white !important; border: 1px solid #444 !important; text-align: center; border-radius: 10px; margin-bottom: 15px; padding: 12px; }
+        .input-will:focus { border-color: #D4AF37 !important; box-shadow: 0 0 5px #D4AF37 !important; }
+        .btn-will { background: #D4AF37; color: black; font-weight: bold; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 1.1rem; transition: 0.3s; }
+        .btn-will:hover { background: #b8952e; transform: scale(1.02); }
+        .link-registro { color: #888; text-decoration: none; font-size: 0.9rem; margin-top: 20px; display: block; }
+        .link-registro:hover { color: #D4AF37; }
+    </style>
+</head>
+<body>
+    <div class="card-acceso">
+        <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Will-Pay Logo" class="logo-will">
+        
+        <h3 class="oro mb-4">ACCESO AL PANEL</h3>
+        
+        <form action="/login" method="POST">
+            <div class="mb-3">
+                <input type="text" name="nombre_login" class="form-control input-will" placeholder="Nombre y Apellido" required>
+            </div>
+            <div class="mb-3">
+                <input type="text" name="telefono_login" class="form-control input-will" placeholder="Número de Teléfono" required>
+            </div>
+            <div class="mb-4">
+                <input type="password" name="pin_login" class="form-control input-will" placeholder="••••••" maxlength="6" required>
+            </div>
+            
+            <button type="submit" class="btn-will">ENTRAR SEGURO</button>
+        </form>
+
+        <a href="/registro" class="link-registro">¿No tienes una cuenta? Regístrate aquí</a>
+    </div>
+</body>
+</html>
