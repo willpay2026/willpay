@@ -1,36 +1,5 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Acceso Seguro</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card-acceso { background: #0a0a0a; border: 1px solid #D4AF37; border-radius: 20px; padding: 30px; width: 360px; text-align: center; box-shadow: 0 0 15px rgba(212, 175, 55, 0.1); }
-        .form-control { background: rgba(255, 255, 255, 0.05); border: 1px solid #333; color: #fff; margin-bottom: 15px; text-align: center; border-radius: 10px; padding: 12px; }
-        .form-control:focus { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #ffcc00; box-shadow: none; }
-        .btn-gold { background: #D4AF37; color: #000; font-weight: bold; width: 100%; padding: 12px; border: none; border-radius: 10px; text-transform: uppercase; }
-    </style>
-</head>
-<body>
-<div class="card-acceso">
-    <img src="/static/logonuevo.png" style="width:160px; margin-bottom:20px;">
-    <h5 class="mb-4" style="color: #D4AF37;">ACCESO AL PANEL</h5>
-    
-    <form action="/procesar_acceso" method="POST">
-        <input type="text" name="nombre" class="form-control" placeholder="Nombre y Apellido" required>
-        
-        <input type="text" name="telefono" class="form-control" placeholder="Número de Teléfono" required>
-        
-        <input type="password" name="pin" class="form-control" placeholder="PIN de 6 dígitos" maxlength="6" pattern="\d{6}" required>
-        
-        <button type="submit" class="btn-gold">ENTRAR SEGURO</button>
-    </form>
-    
-    <div class="mt-4">
-        <a href="/registro" class="text-secondary small text-decoration-none">¿No tienes cuenta? Regístrate aquí</a>
-    </div>
-</div>
-</body>
-</html>
+<form action="/login" method="POST">
+    <input type="text" name="nombre_login" placeholder="Nombre y Apellido" required>
+    <input type="password" name="pin_login" placeholder="PIN de 6 dígitos" required>
+    <button class="btn-gold" type="submit">ENTRAR SEGURO</button>
+</form>
