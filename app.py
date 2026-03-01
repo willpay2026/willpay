@@ -3,7 +3,7 @@ import psycopg2, os
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__)
-app.secret_key = 'willpay_2026_oficial'
+app.secret_key = 'willpay_legado_final_2026'
 DB_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
@@ -25,12 +25,11 @@ def procesar_registro():
     telefono = request.form.get('telefono', '').strip()
     rol = request.form.get('actividad', 'USUARIO')
     pin = request.form.get('pin', '').strip()
-    
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs) 
-                     VALUES (%s, %s, %s, %s, %s, 0.0)""", 
+        cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc) 
+                     VALUES (%s, %s, %s, %s, %s, 0.0, 0.0)""", 
                      (nombre, cedula, telefono, pin, rol))
         conn.commit()
         return redirect(url_for('acceso'))
@@ -64,7 +63,6 @@ def dashboard():
     u = cur.fetchone()
     cur.close()
     conn.close()
-    # Wilfredo, aquí está el truco: usamos los nombres de columna que instalamos
     if u['cedula'] == '13496133':
         return render_template('ceo_panel.html', u=u)
     return render_template('dashboard.html', u=u)
@@ -74,18 +72,22 @@ def instalar():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("DROP TABLE IF EXISTS usuarios CASCADE")
+    # Agregamos saldo_wpc y saldo_usd para que tu diseño no de error
     cur.execute("""CREATE TABLE usuarios (
         id SERIAL PRIMARY KEY, nombre TEXT, cedula TEXT UNIQUE, 
-        telefono TEXT, pin TEXT, rol TEXT, saldo_bs FLOAT DEFAULT 0.0)""")
-    cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs) 
-                VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0)""")
+        telefono TEXT, pin TEXT, rol TEXT, 
+        saldo_bs FLOAT DEFAULT 0.0, saldo_wpc FLOAT DEFAULT 0.0, saldo_usd FLOAT DEFAULT 0.0)""")
+    
+    cur.execute("""INSERT INTO usuarios (nombre, cedula, telefono, pin, rol, saldo_bs, saldo_wpc) 
+                VALUES ('WILFREDO DONQUIZ', '13496133', '04126602555', '1234', 'CEO', 100.0, 50.0)""")
+    
     for i in range(1, 6):
         cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol) VALUES (%s, %s, '0000', 'SOCIO')", 
                     (f"SOCIO RESERVADO {i}", f"SOCIO-{i}"))
     conn.commit()
     cur.close()
     conn.close()
-    return "<h1>🏛️ Bóveda Reiniciada</h1><p>Entra con 13496133 y PIN 1234</p>"
+    return "<h1>🏛️ Bóveda Sincronizada</h1><p>Entra con 13496133 y PIN 1234</p>"
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
