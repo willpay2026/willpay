@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify
-import psycopg2, os
+import psycopg2, os, random
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__)
-app.secret_key = 'willpay_2026_legado_wilyanny'
+app.secret_key = 'willpay_2026_legado_wilyanny' # El legado para Wilyanny Donquiz
 DB_URL = os.environ.get('DATABASE_URL')
 
 def query_db(query, args=(), one=False, commit=False):
@@ -19,32 +19,61 @@ def query_db(query, args=(), one=False, commit=False):
         cur.close()
         conn.close()
 
+# --- RUTAS DE NAVEGACIÓN ---
 @app.route('/')
 def index(): return render_template('splash.html')
 
 @app.route('/acceso')
 def acceso(): return render_template('acceso.html')
 
+@app.route('/registro')
+def registro(): return render_template('registro.html')
+
+# --- SISTEMA DE REGISTRO AUTOMÁTICO ---
+@app.route('/procesar_registro', methods=['POST'])
+def procesar_registro():
+    nombre = request.form.get('nombre', '').upper()
+    cedula = request.form.get('cedula', '').strip()
+    telefono = request.form.get('telefono', '').strip()
+    pin = request.form.get('pin', '').strip()
+    
+    # ID DNA ÚNICO para cada usuario
+    id_dna = f"WP-26-{random.randint(1000, 9999)}"
+    
+    try:
+        query_db("""INSERT INTO usuarios (id_dna, nombre, cedula, telefono, pin, saldo_bs, saldo_usd, saldo_wpc) 
+                 VALUES (%s, %s, %s, %s, %s, 0.0, 0.0, 0.0)""", 
+                 (id_dna, nombre, cedula, telefono, pin), commit=True)
+        return render_template('ticket_bienvenida.html', nombre=nombre, id_dna=id_dna)
+    except:
+        return "<h1>⚠️ ERROR: Cédula o Teléfono ya registrados</h1><a href='/registro'>Volver</a>"
+
+# --- LOGIN DIFERENCIADO (JEFE VS CLIENTE) ---
 @app.route('/login', methods=['POST'])
 def login():
     dato = request.form.get('telefono_login', '').strip()
     pin = request.form.get('pin_login', '').strip()
     user = query_db("SELECT * FROM usuarios WHERE (telefono=%s OR cedula=%s) AND pin=%s", (dato, dato, pin), one=True)
+    
     if user:
         session['user_id'] = user['id']
         return redirect(url_for('dashboard'))
-    return "<h1>❌ Datos Incorrectos</h1><a href='/acceso'>Volver</a>"
+    return "<h1>❌ DATOS INCORRECTOS</h1><a href='/acceso'>Reintentar</a>"
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
     u = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
     m = query_db("SELECT * FROM movimientos WHERE usuario_id=%s ORDER BY id DESC LIMIT 5", (u['id'],))
+    
+    # Si eres Wilfredo, vas al panel de control total
     if u['cedula'] == '13496133':
         return render_template('ceo_panel.html', u=u, m=m)
-    return render_template('dashboard.html', u=u)
+    
+    # Si eres cliente, vas a tu billetera personal
+    return render_template('dashboard.html', u=u, m=m)
 
-# --- CONTROL MAESTRO (SWITCH Y TASAS) ---
+# --- CONTROL MAESTRO DESDE EL PANEL ---
 @app.route('/actualizar_ceo', methods=['POST'])
 def actualizar_ceo():
     if 'user_id' not in session: return jsonify({"status": "error"}), 403
@@ -54,6 +83,7 @@ def actualizar_ceo():
     query_db(f"UPDATE usuarios SET {campo} = %s WHERE id = %s", (valor, session['user_id']), commit=True)
     return jsonify({"status": "ok"})
 
+# --- INSTALACIÓN DE LA BÓVEDA ---
 @app.route('/instalar')
 def instalar():
     query_db("DROP TABLE IF EXISTS movimientos CASCADE", commit=True)
@@ -70,8 +100,9 @@ def instalar():
         id SERIAL PRIMARY KEY, usuario_id INTEGER, 
         correlativo TEXT, monto_bs FLOAT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""", commit=True)
     
+    # Registro del CEO Wilfredo Donquiz
     query_db("""INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad_economica, saldo_bs, saldo_wpc, saldo_usd) 
         VALUES ('CEO-001', 'WILFREDO DONQUIZ', '04126602555', '13496133', '1234', 'FUNDADOR', 100.0, 50.0, 10.0)""", commit=True)
-    return "<h1>🏛️ Bóveda Restaurada con Switch</h1><p>Entra a /acceso con 13496133 y 1234</p>"
+    return "<h1>🏛️ BÓVEDA SINCRONIZADA</h1><p>Usa 13496133 y PIN 1234 en /acceso</p>"
 
 if __name__ == '__main__': app.run(debug=True)
