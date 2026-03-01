@@ -42,15 +42,7 @@
                     <option value="chofer_ind">Chofer Independiente</option>
                     <option value="linea_transporte">Línea de Transporte</option>
                     <option value="transporte_urbano">Transporte Público Urbano</option>
-                    <option value="transporte_extra">Transporte Extra Urbano</option>
                     <option value="moto_taxi">Moto Taxista</option>
-                    <option value="taxi">Taxista</option>
-                    <option value="buhonero">Trabajador Informal (Buhonero)</option>
-                    <option value="delivery">Servicio de Delivery</option>
-                    <option value="comida_rapida">Comida Rápida</option>
-                    <option value="reposteria">Servicio de Repostería</option>
-                    <option value="reparaciones">Reparaciones en General</option>
-                    <option value="domestico">Trabajador Doméstico</option>
                     <option value="manualidades">Manualidades</option>
                 </select>
             </div>
@@ -58,6 +50,11 @@
             <div id="campoExtra" class="mb-3 hidden-field">
                 <label class="form-label oro">Nombre de la Línea / Empresa</label>
                 <input type="text" name="nombre_linea" class="form-control input-will" placeholder="Escriba el nombre aquí...">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label oro">Crea tu PIN de Seguridad (6 números)</label>
+                <input type="password" name="pin" class="form-control input-will" maxlength="6" placeholder="••••••" required>
             </div>
 
             <div class="mb-3">
@@ -73,7 +70,6 @@
         function checkActividad() {
             var select = document.getElementById("actividadSelect").value;
             var campoExtra = document.getElementById("campoExtra");
-            // Mostrar cuadro de texto si es Línea de Transporte o Taxi
             if (select === "linea_transporte" || select === "taxi") {
                 campoExtra.style.display = "block";
             } else {
