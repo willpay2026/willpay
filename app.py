@@ -19,7 +19,7 @@ def query_db(query, args=(), one=False, commit=False):
         cur.close()
         conn.close()
 
-# --- ARREGLO PARA EL 404: Ruta Raíz ---
+# --- SOLUCIÓN AL 404: Redirección Inteligente ---
 @app.route('/')
 def index():
     if 'user_id' in session:
@@ -42,7 +42,6 @@ def instalar():
             saldo_bs FLOAT DEFAULT 100000.0,
             saldo_wpc FLOAT DEFAULT 100000.0,
             saldo_usd FLOAT DEFAULT 1000.0,
-            comision_acumulada FLOAT DEFAULT 1000.0,
             sw_pagos BOOLEAN DEFAULT TRUE,
             sw_sms BOOLEAN DEFAULT TRUE,
             sw_bio BOOLEAN DEFAULT FALSE,
@@ -50,33 +49,13 @@ def instalar():
             es_ceo BOOLEAN DEFAULT FALSE
         )
     """, commit=True)
-    return "<h1>🏛️ Bóveda Reiniciada - Sistema Online</h1>"
+    return "<h1>🏛️ Bóveda Will-Pay Reiniciada con Memoria de Switches</h1>"
 
 @app.route('/acceso')
 def acceso(): return render_template('acceso.html')
 
 @app.route('/registro')
 def registro(): return render_template('registro.html')
-
-@app.route('/procesar_registro', methods=['POST'])
-def procesar_registro():
-    n = request.form.get('nombre').upper().strip()
-    t = request.form.get('telefono').strip().replace(" ", "").replace("+58", "")
-    c = request.form.get('cedula').strip()
-    p = request.form.get('pin').strip()
-    act = request.form.get('actividad') or "usuario"
-    lin = request.form.get('nombre_linea') or "RUTA PRINCIPAL"
-    
-    u_id = "CEO-0001-FOUNDER" if "WILFREDO" in n else f"US-{datetime.datetime.now().strftime('%y%m%d%H%M')}"
-    es_ceo = True if "WILFREDO" in n else False
-
-    try:
-        query_db("""
-            INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad, nombre_linea, es_ceo) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-        """, (u_id, n, t, c, p, act, lin, es_ceo), commit=True)
-        return redirect(url_for('acceso'))
-    except: return "<h1>Error en Registro</h1>"
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -86,7 +65,7 @@ def login():
     if user:
         session['user_id'] = user['id']
         return redirect(url_for('dashboard'))
-    return render_template('acceso.html', error="Datos Incorrectos")
+    return "<h1>Acceso Denegado</h1><a href='/acceso'>Volver</a>"
 
 @app.route('/dashboard')
 def dashboard():
@@ -94,6 +73,7 @@ def dashboard():
     user = query_db("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],), one=True)
     return render_template('dashboard.html', u=user)
 
+# RUTA PARA GUARDAR ESTADOS EN TIEMPO REAL
 @app.route('/actualizar_config', methods=['POST'])
 def actualizar_config():
     if 'user_id' not in session: return jsonify({"status": "error"}), 403
