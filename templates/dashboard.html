@@ -2,38 +2,52 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Will-Pay CEO Panel</title>
+    <title>Will-Pay | Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; }
+        body { background: #000; color: #fff; font-family: sans-serif; }
         .oro { color: #D4AF37; }
         .card-will { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
-        .form-switch .form-check-input { width: 3.5em; height: 1.8em; cursor: pointer; }
-        .form-check-input:checked { background-color: #D4AF37; border-color: #D4AF37; }
+        .btn-will { background: #D4AF37; color: #000; font-weight: bold; border: none; }
+        .form-switch .form-check-input:checked { background-color: #D4AF37; border-color: #D4AF37; }
     </style>
 </head>
-<body>
-    <div class="container py-4">
-        <img src="/static/logonuevo.png" width="100">
-        <h2 class="oro mt-2">BIENVENIDO, {{ u.nombre }}</h2>
-        <p>ID DNA: <span class="badge bg-dark border border-warning">{{ u.id_dna }}</span></p>
+<body class="p-4">
+    <div class="container">
+        <h2 class="oro">HOLA, {{ u.nombre }}</h2>
+        <p class="small">ID DNA: <span class="badge bg-dark border border-warning">{{ u.id_dna }}</span></p>
 
-        <div class="card-will text-start">
-            <h4 class="oro mb-4">INTERRUPTORES DE MANDO</h4>
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="sw_pagos" onclick="guardar(this)" {% if u.sw_pagos %}checked{% endif %}>
-                <label class="ms-3 h5">Sistema de Pagos Activo</label>
-            </div>
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="sw_legado" onclick="guardar(this)" {% if u.sw_legado %}checked{% endif %}>
-                <label class="ms-3 h5">Modo Legado Wilyanny</label>
-            </div>
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="sw_bio" onclick="guardar(this)" {% if u.sw_bio %}checked{% endif %}>
-                <label class="ms-3 h5">Seguridad Bio-DNA</label>
+        <div class="row text-center mb-4">
+            <div class="col-12 card-will">
+                <h5 class="text-secondary">SALDO DISPONIBLE</h5>
+                <h1 class="oro">{{ u.saldo_bs }} Bs.</h1>
             </div>
         </div>
-        <a href="/acceso" class="btn btn-danger w-100 py-3 fw-bold">SALIR DEL SISTEMA</a>
+
+        <div class="card-will">
+            <h5 class="oro">📥 RECARGAR CUENTA</h5>
+            <p class="small text-secondary">Realiza tu Pago Móvil para activar saldo:</p>
+            <div class="p-2 border border-secondary rounded">
+                <p class="mb-1"><strong>Banco:</strong> {{ m.banco }}</p>
+                <p class="mb-1"><strong>Tel:</strong> {{ m.pago_movil }}</p>
+                <p class="mb-1"><strong>CI:</strong> {{ m.cedula }}</p>
+            </div>
+            <p class="mt-2 small">Una vez realizado, notifica al soporte con tu captura.</p>
+        </div>
+
+        <div class="card-will">
+            <h5 class="oro">SEGURIDAD Y LEGADO</h5>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="sw_pagos" onclick="guardar(this)" {% if u.sw_pagos %}checked{% endif %}>
+                <label class="ms-2">Sistema de Pagos</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="sw_legado" onclick="guardar(this)" {% if u.sw_legado %}checked{% endif %}>
+                <label class="ms-2">Modo Legado Wilyanny</label>
+            </div>
+        </div>
+
+        <a href="/logout" class="btn btn-outline-danger w-100">CERRAR SESIÓN</a>
     </div>
 
     <script>
