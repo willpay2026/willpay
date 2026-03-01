@@ -44,12 +44,12 @@ def dashboard():
         return render_template('ceo_panel.html', u=u, m=m)
     return render_template('dashboard.html', u=u)
 
-# --- CONTROL DE TASAS DESDE EL PANEL ---
-@app.route('/actualizar_tasa', methods=['POST'])
-def actualizar_tasa():
+# --- CONTROL MAESTRO (SWITCH Y TASAS) ---
+@app.route('/actualizar_ceo', methods=['POST'])
+def actualizar_ceo():
     if 'user_id' not in session: return jsonify({"status": "error"}), 403
     data = request.json
-    campo = data.get('campo') # porcentaje_pago o porcentaje_retiro
+    campo = data.get('campo') # porcentaje_pago, porcentaje_retiro o auto_recargas
     valor = data.get('valor')
     query_db(f"UPDATE usuarios SET {campo} = %s WHERE id = %s", (valor, session['user_id']), commit=True)
     return jsonify({"status": "ok"})
@@ -72,6 +72,6 @@ def instalar():
     
     query_db("""INSERT INTO usuarios (id_dna, nombre, telefono, cedula, pin, actividad_economica, saldo_bs, saldo_wpc, saldo_usd) 
         VALUES ('CEO-001', 'WILFREDO DONQUIZ', '04126602555', '13496133', '1234', 'FUNDADOR', 100.0, 50.0, 10.0)""", commit=True)
-    return "<h1>🏛️ Bóveda Sincronizada V4</h1><p>Entra a /acceso con 13496133 y PIN 1234</p>"
+    return "<h1>🏛️ Bóveda Restaurada con Switch</h1><p>Entra a /acceso con 13496133 y 1234</p>"
 
 if __name__ == '__main__': app.run(debug=True)
