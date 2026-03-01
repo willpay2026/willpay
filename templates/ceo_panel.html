@@ -10,12 +10,17 @@
         .oro { color: #D4AF37; font-weight: bold; }
         .card-saldo { background: #000; border: 2px solid #D4AF37; border-radius: 15px; padding: 10px; margin-bottom: 10px; }
         .monto { font-size: 1.8rem; font-weight: 900; color: #fff; }
-        .card-controles { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 15px; margin-top: 10px; }
-        .btn-aprobar { background: #000; color: #00FF00; border: none; font-weight: bold; padding: 5px 15px; border-radius: 5px; }
-        .input-tasa { background: #000; color: #D4AF37; border: 1px solid #D4AF37; text-align: center; width: 65px; border-radius: 5px; font-weight: bold; }
+        
+        /* Barra de Recargas Mejorada */
+        .card-modulo { background: #D4AF37; color: #000; border-radius: 15px; padding: 12px 20px; margin-top: 15px; }
+        .btn-aprobar { background: #000; color: #00FF00; border: none; font-weight: bold; padding: 5px 15px; border-radius: 5px; margin-right: 15px; }
+        
         /* Estilo del Switch Maestro */
-        .form-switch .form-check-input { width: 3.5em; height: 1.8em; background-color: #333; border-color: #D4AF37; cursor: pointer; }
+        .form-check-input { width: 3em !important; height: 1.5em !important; cursor: pointer; border: 2px solid #000 !important; }
         .form-check-input:checked { background-color: #00FF00 !important; border-color: #00FF00 !important; }
+        .label-switch { font-size: 0.7rem; font-weight: bold; margin-left: 5px; }
+        
+        .input-tasa { background: #111; color: #D4AF37; border: 1px solid #D4AF37; text-align: center; width: 70px; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -30,43 +35,46 @@
             <div class="col-4"><div class="card-saldo"><small>$</small><div class="monto">{{ "%.2f"|format(u.saldo_usd) }}</div></div></div>
         </div>
 
-        <div class="card-controles">
-            <h6 class="oro mb-3">CONFIGURACIÓN DE RED</h6>
-            <div class="row align-items-center">
-                <div class="col-4">
-                    <small class="d-block text-secondary">PAGOS %</small>
+        <h5 class="mt-3">CONTROL DE COMISIONES</h5>
+        <div class="row mb-3 g-2">
+            <div class="col-6">
+                <div class="p-2 border border-warning rounded">
+                    <small class="d-block">PAGOS %</small>
                     <input type="number" step="0.1" id="porcentaje_pago" class="input-tasa" value="{{ u.porcentaje_pago }}" onchange="actualizarCEO(this.id, this.value)">
                 </div>
-                <div class="col-4">
-                    <div class="form-check form-switch d-flex flex-column align-items-center">
-                        <small class="text-secondary mb-1">RED ON/OFF</small>
-                        <input class="form-check-input" type="checkbox" id="auto_recargas" {% if u.auto_recargas %}checked{% endif %} onchange="actualizarCEO(this.id, this.checked)">
-                    </div>
-                </div>
-                <div class="col-4">
-                    <small class="d-block text-secondary">RETIROS %</small>
+            </div>
+            <div class="col-6">
+                <div class="p-2 border border-warning rounded">
+                    <small class="d-block">RETIROS %</small>
                     <input type="number" step="0.1" id="porcentaje_retiro" class="input-tasa" value="{{ u.porcentaje_retiro }}" onchange="actualizarCEO(this.id, this.value)">
                 </div>
             </div>
         </div>
 
-        <div class="card-saldo mt-3">
+        <div class="card-saldo">
             <small>GANANCIAS NETAS ACUMULADAS</small>
             <div class="monto" style="color: #00FF00;">Bs. {{ "%.2f"|format(u.ganancia_neta) }}</div>
         </div>
 
-        <h5 class="mt-4">COLA DE PROCESAMIENTO</h5>
-        <div style="background: #D4AF37; color: #000; border-radius: 10px; padding: 12px;" class="d-flex justify-content-between align-items-center mb-2">
-            <span style="font-family: monospace; font-weight: bold;">ID: 000025 | Bs. 7.500</span>
-            <button class="btn-aprobar">APROBAR</button>
+        <h5 class="mt-4">RECARGAS PENDIENTES</h5>
+        <div class="card-modulo d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <span style="font-family: monospace; font-weight: bold; margin-right: 15px;">ID: 000025 | Bs. 7.500</span>
+                <button class="btn-aprobar">APROBAR</button>
+            </div>
+            
+            <div class="form-check form-switch d-flex align-items-center">
+                <input class="form-check-input" type="checkbox" id="auto_recargas" {% if u.auto_recargas %}checked{% endif %} onchange="actualizarCEO(this.id, this.checked)">
+                <span class="label-switch">AUTO ON</span>
+            </div>
         </div>
 
-        <h5 class="mt-4 text-danger">HISTORIAL EN VIVO</h5>
+        <h5 class="mt-4 text-danger">ACTIVIDAD EN VIVO</h5>
         <table class="table table-dark table-striped small">
-            <thead><tr><th>ID</th><th>BS</th><th>ESTADO</th></tr></thead>
+            <thead><tr><th>ID</th><th>TEL</th><th>BS</th></tr></thead>
             <tbody>
                 {% for mov in m %}
-                <tr><td>{{ mov.correlativo }}</td><td>{{ mov.monto_bs }}</td><td>✅</td></tr>
+                <tr><td>{{ mov.correlativo }}</td><td>{{ u.telefono }}</td><td>{{ mov.monto_bs }}</td></tr>
                 {% endfor %}
             </tbody>
         </table>
