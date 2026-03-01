@@ -1,51 +1,78 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control | Will-Pay</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; padding: 20px; font-family: 'Segoe UI', sans-serif; }
-        .card-will { background: #0a0a0a; border: 1px solid #D4AF37; border-radius: 20px; padding: 25px; max-width: 450px; margin: auto; }
+        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; }
         .oro { color: #D4AF37; }
-        .btn-will { background: #D4AF37; color: #000; font-weight: bold; border-radius: 12px; }
+        .card-will { background: #111; border: 1px solid #D4AF37; border-radius: 15px; padding: 20px; margin-bottom: 20px; transition: 0.3s; }
+        .card-will:hover { box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+        .btn-accion { background: #D4AF37; color: black; font-weight: bold; border-radius: 10px; border: none; padding: 10px 20px; width: 100%; }
+        .dna-tag { font-family: monospace; background: #222; padding: 5px 10px; border-radius: 5px; color: #D4AF37; }
     </style>
 </head>
 <body>
-    <div class="card-will text-center">
-        <img src="/static/logonuevo.png" style="width:120px; margin-bottom:15px;">
-        <p class="small text-secondary mb-0">Bienvenido, {{ user.nombre }}</p>
-        <h2 class="oro">Bs. {{ "{:,.2f}".format(user.saldo_bs) }}</h2>
-        
-        <button class="btn btn-outline-warning btn-sm w-100 my-3" data-bs-toggle="collapse" data-bs-target="#recarga">
-            ➕ RECARGAR SALDO
-        </button>
-        <div class="collapse" id="recarga">
-            <form action="/solicitar_recarga" method="POST" enctype="multipart/form-data" class="p-3 border border-secondary rounded">
-                <input type="number" name="monto" step="0.01" class="form-control bg-dark text-white mb-2" placeholder="Monto Bs." required>
-                <input type="text" name="referencia" class="form-control bg-dark text-white mb-2" placeholder="Referencia" required>
-                <label class="small oro">Adjuntar Capture:</label>
-                <input type="file" name="capture" class="form-control bg-dark text-white mb-3" accept="image/*" required>
-                <button class="btn btn-will w-100">ENVIAR VALIDACIÓN</button>
-            </form>
+    <div class="container py-4">
+        <div class="text-center mb-4">
+            <img src="{{ url_for('static', filename='logonuevo.png') }}" width="120" class="mb-2">
+            <h2 class="oro">BIENVENIDO, {{ u.nombre }}</h2>
+            <p>ID DNA: <span class="dna-tag">{{ u.id_dna }}</span></p>
         </div>
 
-        <hr border-secondary>
-        
-        <h6 class="text-start oro">EXPEDIENTE DE MOVIMIENTOS</h6>
-        <div style="max-height: 200px; overflow-y: auto;">
-            <table class="table table-dark table-sm small text-start">
-                {% for t in transacciones %}
-                <tr>
-                    <td>{{ t.fecha.strftime('%d/%m') }}</td>
-                    <td>{{ t.tipo }}</td>
-                    <td class="oro">Bs. {{ t.monto }}</td>
-                    <td><span class="badge bg-{{ 'success' if t.estatus=='COMPLETADA' else 'warning' }}">{{ t.estatus }}</span></td>
-                </tr>
-                {% endfor %}
-            </table>
+        <div class="row text-center">
+            <div class="col-md-4">
+                <div class="card-will">
+                    <h5 class="text-muted">SALDO BOLÍVARES</h5>
+                    <h2 class="oro">{{ "{:,.2f}".format(u.saldo_bs) }} BS</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-will">
+                    <h5 class="text-muted">SALDO DÓLARES</h5>
+                    <h2 class="oro">{{ "{:,.2f}".format(u.saldo_usd) }} USD</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-will">
+                    <h5 class="text-muted">WILL-PAY COINS</h5>
+                    <h2 class="oro">{{ "{:,.2f}".format(u.saldo_wpc) }} WPC</h2>
+                </div>
+            </div>
         </div>
-        
-        <a href="/logout" class="btn btn-link text-danger btn-sm mt-3">Cerrar Sesión Segura</a>
+
+        <div class="card-will">
+            <h4 class="oro mb-3">MI PANEL DE COMISIÓN</h4>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Actividad</th>
+                            <th>Línea/Ruta</th>
+                            <th>Estatus</th>
+                            <th>Comisión Acumulada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ u.actividad }}</td>
+                            <td>{{ u.nombre_linea }}</td>
+                            <td><span class="badge bg-success">ACTIVO</span></td>
+                            <td class="oro">{{ "{:,.2f}".format(u.saldo_bs * 0.01) }} BS</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-6 col-md-3 mb-2"><button class="btn-accion">ENVIAR PAGO</button></div>
+            <div class="col-6 col-md-3 mb-2"><button class="btn-accion">RECIBIR PAGO</button></div>
+            <div class="col-6 col-md-3 mb-2"><button class="btn-accion" style="background:#444; color:white;">VER EXPEDIENTE</button></div>
+            <div class="col-6 col-md-3 mb-2"><a href="/acceso" class="btn btn-danger w-100 py-2">CERRAR SESIÓN</a></div>
+        </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
