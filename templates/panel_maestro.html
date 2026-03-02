@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Maestro - Will-Pay</title>
+    <style>
+        body { background-color: #000; color: #bfa141; font-family: sans-serif; text-align: center; padding: 20px; }
+        .admin-container { 
+            width: 95%; max-width: 600px; margin: auto; border: 2px solid #bfa141; 
+            border-radius: 40px; padding: 25px; background: #000;
+        }
+        h2 { border-bottom: 1px solid #bfa141; padding-bottom: 10px; }
+        
+        /* ESTILO DEL BUSCADOR DE USUARIOS */
+        .search-box { 
+            background: #111; border: 1px solid #bfa141; border-radius: 15px; 
+            padding: 20px; margin-top: 20px; text-align: left;
+        }
+        input, select { 
+            width: 90%; padding: 12px; margin: 10px 0; border-radius: 10px; 
+            border: 1px solid #bfa141; background: #000; color: gold; font-size: 16px;
+        }
+        .btn-recarga { 
+            background: gold; color: black; font-weight: bold; border: none; 
+            padding: 15px; width: 100%; border-radius: 10px; cursor: pointer; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <h2>Poder Maestro: Control de Saldo</h2>
+        
+        <div class="search-box">
+            <p style="margin: 0; font-size: 14px; opacity: 0.8;">Asignar Saldo Manualmente</p>
+            
+            <form action="/admin/recargar_manual" method="POST">
+                <input type="text" name="cedula_usuario" placeholder="Cédula del Usuario (Ej: 13496133)" required>
+                
+                <input type="number" step="0.01" name="monto" placeholder="Monto a asignar" required>
+                
+                <select name="moneda">
+                    <option value="BS">Bolívares (Bs.)</option>
+                    <option value="USD">Dólares ($)</option>
+                </select>
+                
+                <button type="submit" class="btn-recarga">ASIGNAR SALDO AHORA</button>
+            </form>
+        </div>
+
+        <p style="font-size: 12px; margin-top: 20px; opacity: 0.6;">
+            Nota: Al presionar el botón, el saldo se sumará instantáneamente a la cuenta del usuario.
+        </p>
+    </div>
+
+</body>
+</html>
