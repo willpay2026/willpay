@@ -2,45 +2,47 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Mi Billetera</title>
+    <title>Will-Pay | Exchange</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .container { border: 2px solid #bfa141; border-radius: 40px; padding: 30px; max-width: 400px; margin: auto; }
-        .saldo-txt { color: #888; font-size: 14px; margin-bottom: 5px; }
-        .saldo-val { color: #bfa141; font-size: 32px; font-weight: bold; margin-bottom: 20px; }
-        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        .btn-yellow { background: #e6b43c; color: #000; flex: 1; padding: 15px; border-radius: 15px; font-weight: bold; border: none; }
-        .btn-dark { background: #1a1a1a; color: #888; flex: 1; padding: 15px; border-radius: 15px; border: 1px solid #333; }
-        .id-box { border: 2px solid #fff; border-radius: 15px; padding: 10px; font-size: 30px; color: #e6b43c; margin-bottom: 20px; }
-        .recarga-box { border-top: 1px solid #222; margin-top: 20px; padding-top: 20px; }
-        .input-wp { background: #fff; color: #000; width: 80%; padding: 10px; border-radius: 5px; margin-bottom: 10px; border: none; }
-        .btn-verify { background: transparent; border: 2px solid #2ecc71; color: #2ecc71; width: 90%; padding: 12px; border-radius: 15px; font-weight: bold; }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
+        .exchange-card { border: 2px solid #bfa141; border-radius: 40px; padding: 25px; background: #050505; }
+        .wallets { display: flex; gap: 10px; margin: 20px 0; overflow-x: auto; padding-bottom: 10px; }
+        .wallet-box { border: 1px solid #333; border-radius: 15px; padding: 15px; min-width: 100px; background: #0a0a0a; }
+        .wpc-highlight { border-color: #bfa141; background: linear-gradient(145deg, #0a0a0a, #1a1505); }
+        .mining-status { color: #2ecc71; font-size: 11px; margin-top: 10px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        .btn-pay { background: #e6b43c; color: #000; width: 100%; padding: 18px; border-radius: 20px; font-weight: bold; border: none; font-size: 16px; margin-top: 15px; }
+        select { width: 100%; padding: 12px; border-radius: 12px; background: #1a1a1a; color: #fff; border: 1px solid #333; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="/static/logonuevo.png" width="140">
-        <div class="saldo-txt">Saldo Disponible</div>
-        <div class="saldo-val">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
-
-        <div class="btn-group">
-            <button class="btn-yellow">PAGAR</button>
-            <button class="btn-dark">COBRAR</button>
+    <div class="exchange-card">
+        <img src="/static/logonuevo.png" width="130">
+        <h4 style="color:#bfa141; margin: 5px 0;">MI BILLETERA GLOBAL</h4>
+        
+        <div class="wallets">
+            <div class="wallet-box"><small>Bolívares</small><br><b style="font-size:18px;">{{ "%.2f"|format(u.saldo_bs) }}</b></div>
+            <div class="wallet-box wpc-highlight"><small style="color:#bfa141;">WPC Coin</small><br><b style="font-size:18px; color:#bfa141;">{{ "%.4f"|format(u.saldo_wpc) }}</b></div>
+            <div class="wallet-box"><small>Dólares</small><br><b style="font-size:18px;">{{ "%.2f"|format(u.saldo_usd) }}</b></div>
         </div>
 
-        <div class="id-box">{{ u.id }}</div>
-        
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ u.id }}" style="border: 10px solid #fff; border-radius: 10px;">
+        <div class="mining-status">⛏️ MINERÍA ORGÁNICA ACTIVA: TRABAJANDO...</div>
 
-        <div class="recarga-box">
-            <p style="color:#e6b43c; font-size: 11px;">PAGO MÓVIL DIRECTO A:</p>
-            <p style="font-size: 12px; font-weight: bold;">04126602555 | 13496133 | BANESCO</p>
-            <input type="text" class="input-wp" placeholder="Monto Bs.">
-            <input type="text" class="input-wp" placeholder="Nro Referencia">
-            <button class="btn-verify">ENVIAR VERIFICACIÓN</button>
+        <div style="text-align: left; margin-top:20px;">
+            <label style="font-size: 12px; color: #888;">Seleccionar Divisa para Pago</label>
+            <select id="moneda">
+                <option value="BS">Bolívares (Venezuela)</option>
+                <option value="USD">Dólares (Internacional)</option>
+                <option value="WPC">Will-Pay Coin (Minería)</option>
+            </select>
         </div>
+
+        <button class="btn-pay" onclick="abrirScanner()">PAGAR / ESCANEAR QR</button>
         
-        <p style="color: #ff4d4d; font-size: 12px; margin-top: 20px;">Cerrar Sesión Segura</p>
+        <div style="margin-top:25px; border-top: 1px solid #222; padding-top:15px;">
+            <p style="font-size:12px; color:#bfa141;">PAGO MÓVIL DIRECTO (RECARGA)</p>
+            <p style="font-size:14px; font-weight:bold;">04126602555 | Banesco</p> [cite: 2026-03-01]
+        </div>
     </div>
 </body>
 </html>
