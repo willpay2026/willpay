@@ -4,34 +4,49 @@ from psycopg2.extras import DictCursor
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'willpay_legado_estable_2026'
+app.secret_key = 'willpay_legado_final_v2'
 DB_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
     return psycopg2.connect(DB_URL, sslmode='require')
 
 @app.route('/')
-def index(): 
+def splash():
     return render_template('splash.html')
 
 @app.route('/acceso', methods=['GET', 'POST'])
 def acceso():
     if request.method == 'POST':
-        cedula = request.form.get('cedula')
+        user_input = request.form.get('nombre') # Usamos nombre/cédula según tu captura
         pin = request.form.get('pin')
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=DictCursor)
-        cur.execute("SELECT * FROM usuarios WHERE cedula=%s AND pin=%s", (cedula, pin))
+        cur.execute("SELECT * FROM usuarios WHERE (nombre=%s OR cedula=%s) AND pin=%s", (user_input, user_input, pin))
         user = cur.fetchone()
         cur.close()
         conn.close()
         if user:
             session['user_id'] = user['id']
-            session['nombre'] = user['nombre']
-            return redirect(url_for('dashboard'))
-        else:
-            return "<h1>❌ Error</h1><p>Datos incorrectos. <a href='/acceso'>Volver</a></p>"
+            session['rol'] = user['rol']
+            return redirect(url_for('dashboard') if user['rol'] == 'SOCIO' else url_for('tablero_maestro'))
     return render_template('acceso.html')
+
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        cedula = request.form.get('cedula')
+        tel = request.form.get('telefono')
+        pin = request.form.get('pin')
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO usuarios (nombre, cedula, telefono, pin, rol) VALUES (%s, %s, %s, %s, 'SOCIO')", 
+                    (nombre, cedula, tel, pin))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return redirect(url_for('acceso'))
+    return render_template('registro.html')
 
 @app.route('/dashboard')
 def dashboard():
@@ -40,51 +55,24 @@ def dashboard():
     cur = conn.cursor(cursor_factory=DictCursor)
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
-    # Historial simplificado
-    cur.execute("""
-        SELECT p.*, u2.nombre as receptor_n 
-        FROM pagos p 
-        JOIN usuarios u2 ON p.receptor_id = u2.id 
-        WHERE p.emisor_id = %s ORDER BY p.fecha DESC LIMIT 10
-    """, (session['user_id'],))
-    movimientos = cur.fetchall()
+    cur.execute("SELECT * FROM pagos WHERE emisor_id=%s OR receptor_id=%s ORDER BY fecha DESC LIMIT 5", (u['id'], u['id']))
+    movs = cur.fetchall()
     cur.close()
     conn.close()
-    return render_template('dashboard.html', u=u, movimientos=movimientos)
+    return render_template('dashboard.html', u=u, movimientos=movs)
 
-@app.route('/ejecutar_pago_qr', methods=['POST'])
-def ejecutar_pago_qr():
-    if 'user_id' not in session: return jsonify({"status": "error"})
-    datos = request.get_json()
-    receptor_id = datos.get('receptor_id')
-    monto = float(datos.get('monto'))
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, session['user_id']))
-    cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto, receptor_id))
-    cur.execute("INSERT INTO pagos (emisor_id, receptor_id, monto, moneda) VALUES (%s, %s, %s, 'BS') RETURNING id", 
-                 (session['user_id'], receptor_id, monto))
-    pago_id = cur.fetchone()[0]
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({"status": "ok", "pago_id": pago_id})
-
-@app.route('/comprobante/<int:id_pago>')
-def comprobante(id_pago):
+@app.route('/tablero_maestro')
+def tablero_maestro():
+    if 'user_id' not in session or session['rol'] != 'CEO': return redirect(url_for('acceso'))
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
-    cur.execute("""
-        SELECT p.*, u1.nombre as emisor, u2.nombre as receptor 
-        FROM pagos p 
-        JOIN usuarios u1 ON p.emisor_id = u1.id 
-        JOIN usuarios u2 ON p.receptor_id = u2.id 
-        WHERE p.id = %s
-    """, (id_pago,))
-    pago = cur.fetchone()
+    cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
+    u = cur.fetchone()
+    cur.execute("SELECT * FROM usuarios WHERE rol='SOCIO'")
+    socios = cur.fetchall()
     cur.close()
     conn.close()
-    return render_template('recibo.html', pago=pago)
+    return render_template('tablero_maestro.html', u=u, socios=socios)
 
 @app.route('/instalar')
 def instalar():
@@ -92,12 +80,12 @@ def instalar():
     cur = conn.cursor()
     cur.execute("DROP TABLE IF EXISTS usuarios, pagos CASCADE")
     cur.execute("""CREATE TABLE usuarios (
-        id SERIAL PRIMARY KEY, nombre TEXT, cedula TEXT UNIQUE, pin TEXT, 
-        saldo_bs FLOAT DEFAULT 1000.0, saldo_usd FLOAT DEFAULT 0.0)""")
+        id SERIAL PRIMARY KEY, nombre TEXT, cedula TEXT UNIQUE, telefono TEXT, 
+        pin TEXT, saldo_bs FLOAT DEFAULT 0.0, saldo_usd FLOAT DEFAULT 0.0, rol TEXT)""")
     cur.execute("""CREATE TABLE pagos (
         id SERIAL PRIMARY KEY, emisor_id INTEGER, receptor_id INTEGER, 
-        monto FLOAT, moneda TEXT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
-    cur.execute("INSERT INTO usuarios (nombre, cedula, pin) VALUES ('WILFREDO DONQUIZ', '13496133', '1234')")
+        monto FLOAT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
+    cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol, saldo_bs) VALUES ('WILFREDO DONQUIZ', '13496133', '1234', 'CEO', 100.00)")
     conn.commit()
     cur.close()
     conn.close()
