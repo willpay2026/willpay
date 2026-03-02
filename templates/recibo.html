@@ -1,62 +1,32 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comprobante Digital | Will-Pay</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay | Comprobante</title>
     <style>
-        body { background: #000; color: #fff; font-family: 'Courier New', Courier, monospace; display: flex; justify-content: center; padding: 20px; }
-        .ticket { 
-            background: #000; border: 2px solid #bfa141; border-radius: 40px; 
-            width: 100%; max-width: 360px; padding: 30px; text-align: center;
-            position: relative; overflow: hidden;
-        }
-        .ticket::before { 
-            content: "WILL-PAY"; position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%) rotate(-45deg); 
-            font-size: 60px; opacity: 0.05; pointer-events: none;
-        }
-        .logo-ticket { width: 120px; margin-bottom: 15px; }
-        .check-anim { width: 70px; margin-bottom: 10px; filter: drop-shadow(0 0 10px #2ecc71); }
-        .monto-display { font-size: 50px; color: #bfa141; font-weight: bold; margin: 15px 0; font-family: sans-serif; }
-        
-        .detalles { text-align: left; font-size: 14px; border-top: 1px dashed #444; padding-top: 20px; margin-top: 20px; }
-        .linea { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .valor { color: #bfa141; font-weight: bold; }
-        
-        .footer-ticket { margin-top: 30px; font-size: 11px; opacity: 0.5; font-family: sans-serif; }
-        .btn-ready { 
-            background: #bfa141; color: #000; border: none; padding: 18px; 
-            width: 100%; border-radius: 20px; font-weight: bold; cursor: pointer;
-            font-size: 16px; margin-top: 20px; font-family: sans-serif;
-        }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .ticket { border: 2px solid #bfa141; border-radius: 40px; padding: 30px; width: 320px; text-align: center; background: #050505; }
+        .success-icon { font-size: 50px; color: #2ecc71; margin-bottom: 10px; }
+        .monto { font-size: 32px; color: #bfa141; font-weight: bold; margin: 15px 0; }
+        .info { font-size: 13px; border-top: 1px solid #222; padding-top: 15px; text-align: left; }
+        .btn { background: #bfa141; color: #000; padding: 12px; border-radius: 15px; text-decoration: none; font-weight: bold; display: block; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <audio autoplay><source src="/static/beep.mp3" type="audio/mpeg"></audio>
-
     <div class="ticket">
-        <img src="/static/logonuevo.png" class="logo-ticket">
-        <br>
-        <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" class="check-anim">
-        <h2 style="margin:0; font-family: sans-serif;">PAGO EXITOSO</h2>
+        <div class="success-icon">✓</div>
+        <h3 style="margin:0;">PAGO EXITOSO</h3>
+        <div class="monto">Bs. {{ "%.2f"|format(pago.monto) }}</div>
         
-        <div class="monto-display">Bs. {{ "%.2f"|format(pago.monto) }}</div>
-
-        <div class="detalles">
-            <div class="linea"><span>REFERENCIA:</span> <span class="valor">WP-TX-{{ "%06d"|format(pago.id) }}</span></div>
-            <div class="linea"><span>FECHA:</span> <span class="valor">{{ pago.fecha.strftime('%d/%m/%Y %H:%M') }}</span></div>
-            <div class="linea"><span>EMISOR ID:</span> <span class="valor">{{ pago.emisor_id }}</span></div>
-            <div class="linea"><span>RECEPTOR ID:</span> <span class="valor">{{ pago.receptor_id }}</span></div>
-            <div class="linea"><span>ACTIVIDAD:</span> <span class="valor">AUDITABLE-WP</span></div>
+        <div class="info">
+            <p><strong>Referencia:</strong> WP-TX-{{ "%06d"|format(pago.id) }}</p>
+            <p><strong>Emisor:</strong> {{ pago.emisor }}</p>
+            <p><strong>Receptor:</strong> {{ pago.receptor }}</p>
+            <p><strong>Fecha:</strong> {{ pago.fecha.strftime('%d/%m/%Y %H:%M') }}</p>
         </div>
 
-        <button class="btn-ready" onclick="location.href='/dashboard'">FINALIZAR OPERACIÓN</button>
-
-        <div class="footer-ticket">
-            DOCUMENTO DIGITAL VÁLIDO PARA AUDITORÍA<br>
-            WILL-PAY LEGACY © 2026
-        </div>
+        <a href="/dashboard" class="btn">VOLVER AL INICIO</a>
+        <p style="font-size: 9px; opacity: 0.4; margin-top: 15px;">Will-Pay | Legado Wilfredo Donquiz</p>
     </div>
 </body>
 </html>
