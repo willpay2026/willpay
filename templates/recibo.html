@@ -1,32 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Comprobante</title>
+    <meta charset="UTF-8">
+    <title>Comprobante Will-Pay</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .ticket { border: 2px solid #bfa141; border-radius: 40px; padding: 30px; width: 320px; text-align: center; background: #050505; }
-        .success-icon { font-size: 50px; color: #2ecc71; margin-bottom: 10px; }
-        .monto { font-size: 32px; color: #bfa141; font-weight: bold; margin: 15px 0; }
-        .info { font-size: 13px; border-top: 1px solid #222; padding-top: 15px; text-align: left; }
-        .btn { background: #bfa141; color: #000; padding: 12px; border-radius: 15px; text-decoration: none; font-weight: bold; display: block; margin-top: 20px; }
+        .ticket { border: 2px solid #bfa141; padding: 30px; border-radius: 30px; text-align: center; width: 300px; }
+        .monto { font-size: 30px; color: #bfa141; margin: 20px 0; }
+        .btn { background: #bfa141; color: #000; padding: 12px; border-radius: 10px; text-decoration: none; display: block; margin-top: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="ticket">
-        <div class="success-icon">✓</div>
-        <h3 style="margin:0;">PAGO EXITOSO</h3>
+        <h3 style="color:#2ecc71;">PAGO EXITOSO</h3>
         <div class="monto">Bs. {{ "%.2f"|format(pago.monto) }}</div>
-        
-        <div class="info">
-            <p><strong>Referencia:</strong> WP-TX-{{ "%06d"|format(pago.id) }}</p>
-            <p><strong>Emisor:</strong> {{ pago.emisor }}</p>
-            <p><strong>Receptor:</strong> {{ pago.receptor }}</p>
-            <p><strong>Fecha:</strong> {{ pago.fecha.strftime('%d/%m/%Y %H:%M') }}</p>
-        </div>
-
-        <a href="/dashboard" class="btn">VOLVER AL INICIO</a>
-        <p style="font-size: 9px; opacity: 0.4; margin-top: 15px;">Will-Pay | Legado Wilfredo Donquiz</p>
+        <p style="font-size:12px; text-align:left;">
+            Ref: WP-TX-{{ pago.id }}<br>
+            De: {{ pago.emisor }}<br>
+            A: {{ pago.receptor }}<br>
+            Fecha: {{ pago.fecha.strftime('%d/%m/%Y %H:%M') }}
+        </p>
+        <a href="/dashboard" class="btn">VOLVER</a>
     </div>
 </body>
 </html>
