@@ -3,76 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Mi Billetera</title>
-    <script src="https://unpkg.com/html5-qrcode"></script> <style>
+    <title>Will-Pay | Mi Billetera Digital</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
         body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
         .card-willpay { 
-            background: #000; border: 2px solid #bfa141; border-radius: 40px; 
-            padding: 25px; max-width: 500px; margin: auto; 
+            background: #000; border: 2.5px solid #bfa141; border-radius: 40px; 
+            padding: 25px; max-width: 480px; margin: auto; text-align: center;
+            box-shadow: 0 0 25px rgba(191, 161, 65, 0.15);
         }
-        .saldo-box { text-align: center; background: #111; border-radius: 25px; padding: 20px; border: 1px solid #bfa141; margin: 20px 0; }
-        .monto-bs { font-size: 38px; color: #bfa141; font-weight: bold; }
+        .header-dash { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logo-dash { width: 100px; }
         
-        /* CÁMARA ESCÁNER */
-        #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-bottom: 20px; }
-        .btn-scan { background: #bfa141; color: #000; padding: 18px; width: 100%; border-radius: 20px; font-weight: bold; border: none; cursor: pointer; font-size: 16px; }
+        /* QR PERSONAL (TU PUNTO DE VENTA) */
+        .qr-area { background: #fff; padding: 15px; border-radius: 25px; display: inline-block; margin: 15px 0; border: 5px solid #bfa141; }
+        .qr-area img { width: 160px; height: 160px; }
         
-        /* MOVIMIENTOS */
-        .historial { margin-top: 30px; }
-        .item-mov { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; font-size: 13px; }
-        .ref { font-size: 10px; color: #666; display: block; }
-        .negativo { color: #ff4d4d; } .positivo { color: #2ecc71; }
+        /* CAJA DE SALDOS */
+        .balance-card { background: #0a0a0a; border-radius: 25px; padding: 20px; border: 1px solid #222; margin-bottom: 20px; }
+        .monto-principal { font-size: 36px; color: #bfa141; font-weight: bold; margin: 5px 0; }
+        .monto-secundario { color: #3498db; font-size: 18px; }
+
+        /* ACCIONES */
+        #reader { width: 100%; border-radius: 25px; overflow: hidden; display: none; margin-bottom: 15px; border: 2px solid #bfa141; }
+        .btn-pay { background: #bfa141; color: #000; padding: 18px; width: 100%; border-radius: 20px; font-weight: bold; font-size: 16px; border: none; cursor: pointer; transition: 0.3s; }
+        .btn-pay:hover { background: #fff; transform: translateY(-2px); }
+
+        /* HISTORIAL DE AUDITORÍA */
+        .audit-trail { text-align: left; margin-top: 35px; }
+        .audit-title { color: #bfa141; font-size: 12px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 10px; }
+        .mov-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #111; font-size: 13px; }
+        .ref-code { font-size: 9px; color: #555; display: block; }
+        .in { color: #2ecc71; font-weight: bold; }
+        .out { color: #ff4d4d; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="card-willpay">
-        <center><img src="/static/logonuevo.png" width="130"></center>
-        
-        <div class="saldo-box">
-            <small style="opacity:0.6">BALANCE TOTAL</small>
-            <div class="monto-bs">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
-            <div style="color:#3498db">$ {{ "%.2f"|format(u.saldo_usd) }}</div>
+        <div class="header-dash">
+            <img src="/static/logonuevo.png" class="logo-dash">
+            <div style="text-align: right;">
+                <span style="font-size: 12px; color: #bfa141;">{{ u.nombre }}</span><br>
+                <span style="font-size: 9px; opacity: 0.5;">ID Socio: {{ u.id }}</span>
+            </div>
+        </div>
+
+        <div class="qr-area">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ u.id }}&color=000000" alt="Punto de Venta Will-Pay">
+        </div>
+        <p style="font-size: 10px; opacity: 0.7; margin-top: 0;">MUESTRA ESTE QR PARA RECIBIR PAGOS</p>
+
+        <div class="balance-card">
+            <small style="font-size: 10px; letter-spacing: 1px;">DISPONIBLE</small>
+            <div class="monto-principal">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
+            <div class="monto-secundario">$ {{ "%.2f"|format(u.saldo_usd) }}</div>
         </div>
 
         <div id="reader"></div>
-        <button id="btnScan" class="btn-scan" onclick="iniciarEscaneo()">📷 ESCANEAR PARA PAGAR</button>
+        <button id="btnScanner" class="btn-pay" onclick="activarCamara()">📷 ESCANEAR Y PAGAR</button>
 
-        <div class="historial">
-            <p style="color:#bfa141; border-bottom:1px solid #bfa141; padding-bottom:5px">ACTIVIDAD RECIENTE</p>
+        <div class="audit-trail">
+            <div class="audit-title">HISTORIAL DE MOVIMIENTOS WP-TX</div>
             {% for m in movimientos %}
-            <div class="item-mov">
+            <div class="mov-row">
                 <div>
-                    <strong>{{ m.contraparte }}</strong>
-                    <span class="ref">WP-TX-{{ "%06d"|format(m.id) }}</span>
+                    {% if m.emisor_id == u.id %}
+                        <strong>Pago a {{ m.nombre_receptor }}</strong>
+                    {% else %}
+                        <strong>Recibido de {{ m.nombre_emisor }}</strong>
+                    {% endif %}
+                    <span class="ref-code">REF: WP-TX-{{ "%06d"|format(m.id) }} | {{ m.fecha.strftime('%d/%m %H:%M') }}</span>
                 </div>
-                <div class="{% if m.emisor_id == session['user_id'] %}negativo{% else %}positivo{% endif %}">
-                    {% if m.emisor_id == session['user_id'] %}-{% else %}+{% endif %} Bs. {{ m.monto }}
+                <div class="{% if m.emisor_id == u.id %}out{% else %}in{% endif %}">
+                    {% if m.emisor_id == u.id %}-{% else %}+{% endif %} Bs. {{ "%.2f"|format(m.monto) }}
                 </div>
             </div>
             {% endfor %}
         </div>
+
+        <a href="/logout" style="color: #444; font-size: 10px; text-decoration: none; margin-top: 25px; display: block;">Desconectar Sesión Segura</a>
     </div>
 
     <script>
-        function iniciarEscaneo() {
+        function activarCamara() {
             document.getElementById('reader').style.display = 'block';
-            document.getElementById('btnScan').style.display = 'none';
-            
-            const html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (decodedText) => {
-                    // El QR debe contener solo el ID del receptor
-                    const monto = prompt("¿Cuánto desea pagar (Bs.)?");
-                    if(monto && !isNaN(monto)) {
-                        html5QrCode.stop().then(() => {
-                            procesarPago(decodedText, monto);
-                        });
-                    }
+            document.getElementById('btnScanner').style.display = 'none';
+            const scanner = new Html5Qrcode("reader");
+            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (idLeido) => {
+                const monto = prompt("¿Monto a transferir en Bs.?");
+                if (monto && !isNaN(monto)) {
+                    scanner.stop().then(() => procesarPago(idLeido, monto));
                 }
-            );
+            });
         }
 
         function procesarPago(id, monto) {
@@ -83,12 +106,8 @@
             })
             .then(res => res.json())
             .then(data => {
-                if(data.status == 'ok') {
-                    window.location.href = '/comprobante/' + data.pago_id;
-                } else {
-                    alert(data.msg);
-                    location.reload();
-                }
+                if(data.status == 'ok') window.location.href = '/comprobante/' + data.pago_id;
+                else alert("Error: " + (data.msg || "No se pudo procesar"));
             });
         }
     </script>
