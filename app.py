@@ -4,13 +4,12 @@ from psycopg2.extras import DictCursor
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'willpay_legado_final_2026_donquiz'
+app.secret_key = 'willpay_legado_estable_2026'
 DB_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
     return psycopg2.connect(DB_URL, sslmode='require')
 
-# --- ACCESO Y SEGURIDAD ---
 @app.route('/')
 def index(): 
     return render_template('splash.html')
@@ -31,10 +30,9 @@ def acceso():
             session['nombre'] = user['nombre']
             return redirect(url_for('dashboard'))
         else:
-            return "<h1>❌ Datos incorrectos</h1><p><a href='/acceso'>Volver a intentar</a></p>"
+            return "<h1>❌ Error</h1><p>Datos incorrectos. <a href='/acceso'>Volver</a></p>"
     return render_template('acceso.html')
 
-# --- BILLETERA DEL USUARIO ---
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
@@ -42,39 +40,18 @@ def dashboard():
     cur = conn.cursor(cursor_factory=DictCursor)
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
-    # Historial de pagos para el usuario [cite: 2026-03-02]
+    # Historial simplificado
     cur.execute("""
-        SELECT p.*, u1.nombre as emisor_n, u2.nombre as receptor_n 
+        SELECT p.*, u2.nombre as receptor_n 
         FROM pagos p 
-        JOIN usuarios u1 ON p.emisor_id = u1.id 
         JOIN usuarios u2 ON p.receptor_id = u2.id 
-        WHERE p.emisor_id = %s OR p.receptor_id = %s 
-        ORDER BY p.fecha DESC LIMIT 10
-    """, (session['user_id'], session['user_id']))
+        WHERE p.emisor_id = %s ORDER BY p.fecha DESC LIMIT 10
+    """, (session['user_id'],))
     movimientos = cur.fetchall()
     cur.close()
     conn.close()
     return render_template('dashboard.html', u=u, movimientos=movimientos)
 
-# --- PANEL DEL CEO (WILFREDO) ---
-@app.route('/panel_maestro')
-def panel_maestro():
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=DictCursor)
-    cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
-    u = cur.fetchone()
-    if u['cedula'] != '13496133': return "Acceso Denegado", 403
-    
-    cur.execute("SELECT * FROM usuarios ORDER BY id DESC")
-    usuarios = cur.fetchall()
-    cur.execute("SELECT p.*, u1.nombre as emisor, u2.nombre as receptor FROM pagos p JOIN usuarios u1 ON p.emisor_id = u1.id JOIN usuarios u2 ON p.receptor_id = u2.id ORDER BY p.id DESC")
-    pagos = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template('panel_maestro.html', u=u, usuarios=usuarios, pagos=pagos)
-
-# --- PROCESAMIENTO QR Y RECARGAS ---
 @app.route('/ejecutar_pago_qr', methods=['POST'])
 def ejecutar_pago_qr():
     if 'user_id' not in session: return jsonify({"status": "error"})
@@ -82,40 +59,28 @@ def ejecutar_pago_qr():
     receptor_id = datos.get('receptor_id')
     monto = float(datos.get('monto'))
     conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=DictCursor)
-    cur.execute("SELECT saldo_bs FROM usuarios WHERE id=%s", (session['user_id'],))
-    emisor = cur.fetchone()
-    if emisor['saldo_bs'] >= monto:
-        cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, session['user_id']))
-        cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto, receptor_id))
-        cur.execute("INSERT INTO pagos (emisor_id, receptor_id, monto, moneda) VALUES (%s, %s, %s, 'BS') RETURNING id", 
-                     (session['user_id'], receptor_id, monto))
-        pago_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({"status": "ok", "pago_id": pago_id})
-    return jsonify({"status": "error", "msg": "Saldo insuficiente"})
-
-@app.route('/admin/recargar_manual', methods=['POST'])
-def recargar_manual():
-    cedula = request.form.get('cedula_usuario')
-    monto = float(request.form.get('monto'))
-    moneda = request.form.get('moneda')
-    conn = get_db_connection()
     cur = conn.cursor()
-    columna = "saldo_bs" if moneda == "BS" else "saldo_usd"
-    cur.execute(f"UPDATE usuarios SET {columna} = {columna} + %s WHERE cedula = %s", (monto, cedula))
+    cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, session['user_id']))
+    cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto, receptor_id))
+    cur.execute("INSERT INTO pagos (emisor_id, receptor_id, monto, moneda) VALUES (%s, %s, %s, 'BS') RETURNING id", 
+                 (session['user_id'], receptor_id, monto))
+    pago_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
-    return redirect(url_for('panel_maestro'))
+    return jsonify({"status": "ok", "pago_id": pago_id})
 
 @app.route('/comprobante/<int:id_pago>')
 def comprobante(id_pago):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
-    cur.execute("SELECT p.*, u1.nombre as emisor, u2.nombre as receptor FROM pagos p JOIN usuarios u1 ON p.emisor_id = u1.id JOIN usuarios u2 ON p.receptor_id = u2.id WHERE p.id = %s", (id_pago,))
+    cur.execute("""
+        SELECT p.*, u1.nombre as emisor, u2.nombre as receptor 
+        FROM pagos p 
+        JOIN usuarios u1 ON p.emisor_id = u1.id 
+        JOIN usuarios u2 ON p.receptor_id = u2.id 
+        WHERE p.id = %s
+    """, (id_pago,))
     pago = cur.fetchone()
     cur.close()
     conn.close()
@@ -128,20 +93,15 @@ def instalar():
     cur.execute("DROP TABLE IF EXISTS usuarios, pagos CASCADE")
     cur.execute("""CREATE TABLE usuarios (
         id SERIAL PRIMARY KEY, nombre TEXT, cedula TEXT UNIQUE, pin TEXT, 
-        saldo_bs FLOAT DEFAULT 0.0, saldo_usd FLOAT DEFAULT 0.0, rol TEXT DEFAULT 'SOCIO')""")
+        saldo_bs FLOAT DEFAULT 1000.0, saldo_usd FLOAT DEFAULT 0.0)""")
     cur.execute("""CREATE TABLE pagos (
         id SERIAL PRIMARY KEY, emisor_id INTEGER, receptor_id INTEGER, 
         monto FLOAT, moneda TEXT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
-    cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol, saldo_bs) VALUES ('WILFREDO DONQUIZ', '13496133', '1234', 'CEO', 1000.0)")
+    cur.execute("INSERT INTO usuarios (nombre, cedula, pin) VALUES ('WILFREDO DONQUIZ', '13496133', '1234')")
     conn.commit()
     cur.close()
     conn.close()
-    return "SISTEMA SINCRONIZADO EXITOSAMENTE"
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('acceso'))
+    return "SISTEMA SINCRONIZADO"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
