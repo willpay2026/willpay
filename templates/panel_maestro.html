@@ -3,56 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Maestro - Will-Pay</title>
+    <title>Will-Pay | PANEL MAESTRO</title>
     <style>
-        body { background-color: #000; color: #bfa141; font-family: sans-serif; text-align: center; padding: 20px; }
-        .admin-container { 
-            width: 95%; max-width: 600px; margin: auto; border: 2px solid #bfa141; 
-            border-radius: 40px; padding: 25px; background: #000;
+        /* ESTÉTICA WILL-PAY: NEGRO Y DORADO OFICIAL */
+        body { 
+            background-color: #000; color: #bfa141; 
+            font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
         }
-        h2 { border-bottom: 1px solid #bfa141; padding-bottom: 10px; }
         
-        /* ESTILO DEL BUSCADOR DE USUARIOS */
-        .search-box { 
-            background: #111; border: 1px solid #bfa141; border-radius: 15px; 
-            padding: 20px; margin-top: 20px; text-align: left;
+        .header-admin { text-align: center; margin-bottom: 30px; }
+        .logo-admin { width: 120px; margin-bottom: 10px; }
+        
+        /* CONTENEDOR CON CURVAS DE 40PX */
+        .maestro-container { 
+            width: 95%; max-width: 800px; background: #000; 
+            border: 2px solid #bfa141; border-radius: 40px; 
+            padding: 25px; box-shadow: 0 0 20px rgba(191, 161, 65, 0.2);
+        }
+
+        h2 { border-bottom: 1px solid #bfa141; padding-bottom: 10px; color: #fff; }
+
+        /* SECCIÓN DE RECARGA RÁPIDA */
+        .form-recarga {
+            background: #111; border-radius: 20px; padding: 20px;
+            margin-bottom: 30px; border: 1px dashed #bfa141;
         }
         input, select { 
             width: 90%; padding: 12px; margin: 10px 0; border-radius: 10px; 
-            border: 1px solid #bfa141; background: #000; color: gold; font-size: 16px;
+            border: 1px solid #bfa141; background: #000; color: #fff; font-size: 16px;
         }
-        .btn-recarga { 
-            background: gold; color: black; font-weight: bold; border: none; 
-            padding: 15px; width: 100%; border-radius: 10px; cursor: pointer; margin-top: 10px;
+        .btn-poder { 
+            background: #bfa141; color: #000; font-weight: bold; border: none; 
+            padding: 15px; width: 100%; border-radius: 10px; cursor: pointer;
+            transition: 0.3s; font-size: 16px;
         }
+        .btn-poder:hover { background: #fff; transform: scale(1.02); }
+
+        /* TABLA DE USUARIOS (EL OJO DE HALCÓN) */
+        .tabla-scroll { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        th { background: #bfa141; color: #000; padding: 12px; text-align: left; font-size: 13px; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; }
+        .monto-bs { color: #2ecc71; font-weight: bold; }
+        .monto-usd { color: #3498db; font-weight: bold; }
+        
+        .badge-rol { 
+            font-size: 10px; padding: 3px 8px; border-radius: 5px; 
+            background: #333; color: #fff; text-transform: uppercase;
+        }
+
+        .btn-volver { color: #bfa141; text-decoration: none; font-size: 14px; margin-top: 20px; display: inline-block; }
     </style>
 </head>
 <body>
 
-    <div class="admin-container">
-        <h2>Poder Maestro: Control de Saldo</h2>
+    <div class="header-admin">
+        <img src="/static/logonuevo.png" class="logo-admin" alt="Will-Pay">
+        <p style="font-size: 12px; letter-spacing: 2px;">SISTEMA MAESTRO ACTIVO</p>
+    </div>
+
+    <div class="maestro-container">
         
-        <div class="search-box">
-            <p style="margin: 0; font-size: 14px; opacity: 0.8;">Asignar Saldo Manualmente</p>
-            
+        <div class="form-recarga">
+            <h3 style="margin-top:0;">⚡ Recarga Manual Inmediata</h3>
             <form action="/admin/recargar_manual" method="POST">
                 <input type="text" name="cedula_usuario" placeholder="Cédula del Usuario (Ej: 13496133)" required>
-                
-                <input type="number" step="0.01" name="monto" placeholder="Monto a asignar" required>
-                
-                <select name="moneda">
-                    <option value="BS">Bolívares (Bs.)</option>
-                    <option value="USD">Dólares ($)</option>
-                </select>
-                
-                <button type="submit" class="btn-recarga">ASIGNAR SALDO AHORA</button>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" step="0.01" name="monto" placeholder="Monto" required style="flex: 2;">
+                    <select name="moneda" style="flex: 1;">
+                        <option value="BS">Bs.</option>
+                        <option value="USD">$ USD</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-poder">EJECUTAR RECARGA</button>
             </form>
         </div>
 
-        <p style="font-size: 12px; margin-top: 20px; opacity: 0.6;">
-            Nota: Al presionar el botón, el saldo se sumará instantáneamente a la cuenta del usuario.
-        </p>
+        <h2>Usuarios en el Sistema</h2>
+        <div class="tabla-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>NOMBRE</th>
+                        <th>CÉDULA</th>
+                        <th>SALDO BS.</th>
+                        <th>SALDO USD</th>
+                        <th>ESTADO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>{{ usuario.nombre }}</td>
+                        <td>{{ usuario.cedula }}</td>
+                        <td class="monto-bs">{{ "%.2f"|format(usuario.saldo_bs) }}</td>
+                        <td class="monto-usd">{{ "%.2f"|format(usuario.saldo_usd) }}</td>
+                        <td><span class="badge-rol">{{ usuario.rol }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="/dashboard" class="btn-volver">← Volver al Panel de Wilfredo</a>
+        </div>
     </div>
+
+    <p style="margin-top: 30px; font-size: 10px; opacity: 0.5;">Will-Pay Legacy © 2026 - Control Maestro</p>
 
 </body>
 </html>
