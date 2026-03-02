@@ -10,7 +10,7 @@ DB_URL = os.environ.get('DATABASE_URL')
 def get_db_connection():
     return psycopg2.connect(DB_URL, sslmode='require')
 
-# --- RUTAS DE ACCESO ---
+# --- ACCESO Y SEGURIDAD ---
 @app.route('/')
 def index(): 
     return render_template('splash.html')
@@ -34,35 +34,29 @@ def acceso():
             return "<h1>❌ Datos incorrectos</h1><p><a href='/acceso'>Volver a intentar</a></p>"
     return render_template('acceso.html')
 
-# --- DASHBOARD DEL USUARIO ---
+# --- BILLETERA DEL USUARIO ---
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
-    
-    # Datos del usuario
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
-    
-    # Historial de Movimientos Cruzado [cite: 2026-03-02]
+    # Historial de pagos para el usuario [cite: 2026-03-02]
     cur.execute("""
-        SELECT p.*, 
-               u_emisor.nombre as nombre_emisor, 
-               u_receptor.nombre as nombre_receptor
-        FROM pagos p
-        JOIN usuarios u_emisor ON p.emisor_id = u_emisor.id
-        JOIN usuarios u_receptor ON p.receptor_id = u_receptor.id
-        WHERE (p.emisor_id = %s OR p.receptor_id = %s)
-        ORDER BY p.fecha DESC LIMIT 15
+        SELECT p.*, u1.nombre as emisor_n, u2.nombre as receptor_n 
+        FROM pagos p 
+        JOIN usuarios u1 ON p.emisor_id = u1.id 
+        JOIN usuarios u2 ON p.receptor_id = u2.id 
+        WHERE p.emisor_id = %s OR p.receptor_id = %s 
+        ORDER BY p.fecha DESC LIMIT 10
     """, (session['user_id'], session['user_id']))
     movimientos = cur.fetchall()
-    
     cur.close()
     conn.close()
     return render_template('dashboard.html', u=u, movimientos=movimientos)
 
-# --- PANEL MAESTRO (CEO WILFREDO) ---
+# --- PANEL DEL CEO (WILFREDO) ---
 @app.route('/panel_maestro')
 def panel_maestro():
     if 'user_id' not in session: return redirect(url_for('acceso'))
@@ -70,38 +64,27 @@ def panel_maestro():
     cur = conn.cursor(cursor_factory=DictCursor)
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
-    
-    # Seguridad de Cédula Wilfredo [cite: 2026-03-01]
-    if u['cedula'] != '13496133': return "<h1>Acceso Denegado</h1>", 403
+    if u['cedula'] != '13496133': return "Acceso Denegado", 403
     
     cur.execute("SELECT * FROM usuarios ORDER BY id DESC")
     usuarios = cur.fetchall()
-    cur.execute("""
-        SELECT p.*, u1.nombre as emisor, u2.nombre as receptor 
-        FROM pagos p 
-        JOIN usuarios u1 ON p.emisor_id = u1.id 
-        JOIN usuarios u2 ON p.receptor_id = u2.id 
-        ORDER BY p.id DESC
-    """)
+    cur.execute("SELECT p.*, u1.nombre as emisor, u2.nombre as receptor FROM pagos p JOIN usuarios u1 ON p.emisor_id = u1.id JOIN usuarios u2 ON p.receptor_id = u2.id ORDER BY p.id DESC")
     pagos = cur.fetchall()
-    
     cur.close()
     conn.close()
     return render_template('panel_maestro.html', u=u, usuarios=usuarios, pagos=pagos)
 
-# --- SISTEMA DE PAGOS QR ---
+# --- PROCESAMIENTO QR Y RECARGAS ---
 @app.route('/ejecutar_pago_qr', methods=['POST'])
 def ejecutar_pago_qr():
     if 'user_id' not in session: return jsonify({"status": "error"})
     datos = request.get_json()
     receptor_id = datos.get('receptor_id')
     monto = float(datos.get('monto'))
-    
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
     cur.execute("SELECT saldo_bs FROM usuarios WHERE id=%s", (session['user_id'],))
     emisor = cur.fetchone()
-    
     if emisor['saldo_bs'] >= monto:
         cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (monto, session['user_id']))
         cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (monto, receptor_id))
@@ -132,13 +115,7 @@ def recargar_manual():
 def comprobante(id_pago):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
-    cur.execute("""
-        SELECT p.*, u1.nombre as emisor, u2.nombre as receptor 
-        FROM pagos p 
-        JOIN usuarios u1 ON p.emisor_id = u1.id 
-        JOIN usuarios u2 ON p.receptor_id = u2.id 
-        WHERE p.id = %s
-    """, (id_pago,))
+    cur.execute("SELECT p.*, u1.nombre as emisor, u2.nombre as receptor FROM pagos p JOIN usuarios u1 ON p.emisor_id = u1.id JOIN usuarios u2 ON p.receptor_id = u2.id WHERE p.id = %s", (id_pago,))
     pago = cur.fetchone()
     cur.close()
     conn.close()
@@ -155,7 +132,6 @@ def instalar():
     cur.execute("""CREATE TABLE pagos (
         id SERIAL PRIMARY KEY, emisor_id INTEGER, receptor_id INTEGER, 
         monto FLOAT, moneda TEXT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
-    # [cite: 2026-03-01]
     cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol, saldo_bs) VALUES ('WILFREDO DONQUIZ', '13496133', '1234', 'CEO', 1000.0)")
     conn.commit()
     cur.close()
