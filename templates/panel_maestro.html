@@ -3,103 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | PANEL MAESTRO</title>
+    <title>Will-Pay | CONTROL MAESTRO</title>
     <style>
         /* ESTÉTICA WILL-PAY: NEGRO Y DORADO OFICIAL */
         body { 
             background-color: #000; color: #bfa141; 
-            font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px;
-            display: flex; flex-direction: column; align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
         }
         
-        .header-admin { text-align: center; margin-bottom: 30px; }
-        .logo-admin { width: 120px; margin-bottom: 10px; }
-        
-        /* CONTENEDOR CON CURVAS DE 40PX */
+        .header-admin { text-align: center; margin-bottom: 25px; }
+        .logo-admin { width: 150px; filter: drop-shadow(0 0 5px #bfa141); }
+
+        /* CONTENEDOR MAESTRO CON BORDES DE 40PX */
         .maestro-container { 
-            width: 95%; max-width: 800px; background: #000; 
+            width: 95%; max-width: 850px; background: #000; 
             border: 2px solid #bfa141; border-radius: 40px; 
-            padding: 25px; box-shadow: 0 0 20px rgba(191, 161, 65, 0.2);
+            padding: 30px; box-shadow: 0 0 30px rgba(191, 161, 65, 0.1);
         }
 
-        h2 { border-bottom: 1px solid #bfa141; padding-bottom: 10px; color: #fff; }
-
-        /* SECCIÓN DE RECARGA RÁPIDA */
-        .form-recarga {
-            background: #111; border-radius: 20px; padding: 20px;
-            margin-bottom: 30px; border: 1px dashed #bfa141;
+        /* ⚡ SECCIÓN DE RECARGA MANUAL (EL PODER DE WILFREDO) */
+        .seccion-poder {
+            background: #0a0a0a; border: 1.5px solid #bfa141; border-radius: 25px;
+            padding: 20px; margin-bottom: 40px; text-align: center;
         }
-        input, select { 
-            width: 90%; padding: 12px; margin: 10px 0; border-radius: 10px; 
-            border: 1px solid #bfa141; background: #000; color: #fff; font-size: 16px;
-        }
-        .btn-poder { 
-            background: #bfa141; color: #000; font-weight: bold; border: none; 
-            padding: 15px; width: 100%; border-radius: 10px; cursor: pointer;
-            transition: 0.3s; font-size: 16px;
-        }
-        .btn-poder:hover { background: #fff; transform: scale(1.02); }
-
-        /* TABLA DE USUARIOS (EL OJO DE HALCÓN) */
-        .tabla-scroll { overflow-x: auto; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        th { background: #bfa141; color: #000; padding: 12px; text-align: left; font-size: 13px; }
-        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; }
-        .monto-bs { color: #2ecc71; font-weight: bold; }
-        .monto-usd { color: #3498db; font-weight: bold; }
+        .seccion-poder h3 { margin-top: 0; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
         
-        .badge-rol { 
-            font-size: 10px; padding: 3px 8px; border-radius: 5px; 
-            background: #333; color: #fff; text-transform: uppercase;
+        .grid-inputs {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;
         }
+        
+        input, select { 
+            padding: 15px; border-radius: 12px; border: 1px solid #444; 
+            background: #111; color: #fff; font-size: 16px; width: 100%; box-sizing: border-box;
+        }
+        input:focus { border-color: #bfa141; outline: none; }
 
-        .btn-volver { color: #bfa141; text-decoration: none; font-size: 14px; margin-top: 20px; display: inline-block; }
+        .btn-ejecutar { 
+            background: #bfa141; color: #000; font-weight: bold; border: none; 
+            padding: 18px; width: 100%; border-radius: 12px; cursor: pointer;
+            font-size: 18px; text-transform: uppercase; transition: 0.3s;
+        }
+        .btn-ejecutar:hover { background: #fff; transform: translateY(-2px); }
+
+        /* 👁️ TABLA DE USUARIOS (OJO DE HALCÓN) */
+        .tabla-area { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background: #bfa141; color: #000; padding: 15px; text-align: left; font-size: 14px; }
+        td { padding: 15px; border-bottom: 1px solid #222; font-size: 15px; color: #eee; }
+        
+        .saldo-bs { color: #2ecc71; font-weight: bold; }
+        .saldo-usd { color: #3498db; font-weight: bold; }
+        .user-id { opacity: 0.5; font-size: 12px; }
+
+        .btn-atras { 
+            display: inline-block; margin-top: 25px; color: #666; 
+            text-decoration: none; font-size: 14px; 
+        }
     </style>
 </head>
 <body>
 
     <div class="header-admin">
-        <img src="/static/logonuevo.png" class="logo-admin" alt="Will-Pay">
-        <p style="font-size: 12px; letter-spacing: 2px;">SISTEMA MAESTRO ACTIVO</p>
+        <img src="/static/logonuevo.png" class="logo-admin" alt="Will-Pay Maestro">
+        <p style="font-size: 11px; margin-top: 5px; opacity: 0.7;">LEGADO DE WILYANNY DONQUIZ</p>
     </div>
 
     <div class="maestro-container">
         
-        <div class="form-recarga">
-            <h3 style="margin-top:0;">⚡ Recarga Manual Inmediata</h3>
+        <div class="seccion-poder">
+            <h3>⚡ Asignar Saldo Manual</h3>
             <form action="/admin/recargar_manual" method="POST">
-                <input type="text" name="cedula_usuario" placeholder="Cédula del Usuario (Ej: 13496133)" required>
-                <div style="display: flex; gap: 10px;">
-                    <input type="number" step="0.01" name="monto" placeholder="Monto" required style="flex: 2;">
-                    <select name="moneda" style="flex: 1;">
-                        <option value="BS">Bs.</option>
-                        <option value="USD">$ USD</option>
+                <div class="grid-inputs">
+                    <input type="text" name="cedula_usuario" placeholder="Cédula del Cliente" required>
+                    <input type="number" step="0.01" name="monto" placeholder="Monto a Cargar" required>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <select name="moneda">
+                        <option value="BS">Recargar en Bolívares (Bs.)</option>
+                        <option value="USD">Recargar en Dólares ($)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-poder">EJECUTAR RECARGA</button>
+                <button type="submit" class="btn-ejecutar">CONSOLIDAR RECARGA</button>
             </form>
         </div>
 
-        <h2>Usuarios en el Sistema</h2>
-        <div class="tabla-scroll">
+        <h2 style="font-size: 18px; margin-left: 10px;">Usuarios Registrados</h2>
+        <div class="tabla-area">
             <table>
                 <thead>
                     <tr>
-                        <th>NOMBRE</th>
-                        <th>CÉDULA</th>
-                        <th>SALDO BS.</th>
-                        <th>SALDO USD</th>
-                        <th>ESTADO</th>
+                        <th>CLIENTE</th>
+                        <th>CÉDULA / TÉLEFONO</th>
+                        <th>BS. DISPONIBLE</th>
+                        <th>USD DISPONIBLE</th>
+                        <th>ROL</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for usuario in usuarios %}
                     <tr>
-                        <td>{{ usuario.nombre }}</td>
-                        <td>{{ usuario.cedula }}</td>
-                        <td class="monto-bs">{{ "%.2f"|format(usuario.saldo_bs) }}</td>
-                        <td class="monto-usd">{{ "%.2f"|format(usuario.saldo_usd) }}</td>
-                        <td><span class="badge-rol">{{ usuario.rol }}</span></td>
+                        <td>
+                            <div style="font-weight: bold;">{{ usuario.nombre }}</div>
+                            <div class="user-id">ID: {{ usuario.id }}</div>
+                        </td>
+                        <td>
+                            <div>C: {{ usuario.cedula }}</div>
+                            <div style="font-size: 12px; opacity: 0.6;">T: {{ usuario.telefono }}</div>
+                        </td>
+                        <td class="saldo-bs">Bs. {{ "%.2f"|format(usuario.saldo_bs) }}</td>
+                        <td class="saldo-usd">$ {{ "%.2f"|format(usuario.saldo_usd) }}</td>
+                        <td>
+                            <span style="background: #333; padding: 4px 8px; border-radius: 5px; font-size: 10px;">
+                                {{ usuario.rol }}
+                            </span>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -107,11 +125,11 @@
         </div>
 
         <div style="text-align: center;">
-            <a href="/dashboard" class="btn-volver">← Volver al Panel de Wilfredo</a>
+            <a href="/dashboard" class="btn-atras">← Volver al Dashboard Personal</a>
         </div>
     </div>
 
-    <p style="margin-top: 30px; font-size: 10px; opacity: 0.5;">Will-Pay Legacy © 2026 - Control Maestro</p>
+    <p style="margin-top: 40px; font-size: 11px; opacity: 0.4;">Will-Pay © 2026 | Wilfredo Donquiz CEO</p>
 
 </body>
 </html>
