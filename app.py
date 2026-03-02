@@ -1,44 +1,53 @@
 import hashlib
+from datetime import datetime
+# (Mantener importaciones previas de Flask y Psycopg2)
 
-# --- LÓGICA DE MONEDA ESTABLE Y TRAZABILIDAD ---
-def generar_trazabilidad(emisor_id, receptor_id, monto, moneda):
-    # Crea un hash único para que la minería sea auditable (ADN de la transacción)
-    bloque = f"{emisor_id}-{receptor_id}-{monto}-{moneda}-{datetime.now()}"
-    return hashlib.sha256(bloque.encode()).hexdigest()
+# --- ALGORITMO DE ESTABILIDAD Y MINERÍA ---
+def registrar_mineria_trazable(emisor_id, receptor_id, monto, moneda):
+    # Crea el ADN de la operación (Trazabilidad pura)
+    bloque_datos = f"{emisor_id}-{receptor_id}-{monto}-{moneda}-{datetime.now()}"
+    hash_operacion = hashlib.sha256(bloque_datos.encode()).hexdigest()
+    return hash_operacion
 
-@app.route('/procesar_operacion', methods=['POST'])
-def procesar_operacion():
+@app.route('/operacion_global', methods=['POST'])
+def operacion_global():
     if 'user_id' not in session: return jsonify({"status": "error"})
     
-    datos = request.get_json()
-    tipo = datos.get('tipo') # 'PAGO' o 'COBRO'
-    moneda = datos.get('moneda') # 'BS', 'USD', 'WPC'
-    monto = float(datos.get('monto'))
-    otra_parte_id = datos.get('otra_parte_id')
+    d = request.get_json()
+    tipo = d.get('tipo') # PAGAR o COBRAR
+    moneda = d.get('moneda') # BS, USD, WPC
+    monto = float(d.get('monto'))
+    destino_id = d.get('destino_id')
     
-    trazabilidad = generar_trazabilidad(session['user_id'], otra_parte_id, monto, moneda)
+    hash_id = registrar_mineria_trazable(session['user_id'], destino_id, monto, moneda)
     
     conn = get_db_connection()
     cur = conn.cursor()
-    
-    # Si es PAGO, descuenta al usuario. Si es COBRO, le suma tras validar.
     col = f"saldo_{moneda.lower()}"
-    
-    if tipo == 'PAGO':
-        # Aplicar comisión de red (1.5%) para estabilidad del fondo
-        comision = monto * 0.015
-        total = monto + comision
-        cur.execute(f"UPDATE usuarios SET {col} = {col} - %s WHERE id = %s", (total, session['user_id']))
-        cur.execute(f"UPDATE usuarios SET {col} = {col} + %s WHERE id = %s", (monto, otra_parte_id))
-        # MINERÍA: Emite moneda estable WPC como incentivo de red
-        cur.execute("UPDATE usuarios SET saldo_wpc = saldo_wpc + 0.05 WHERE id = %s", (session['user_id'],))
-    
-    # Registrar la huella digital de la operación para auditoría CEO
-    cur.execute("""INSERT INTO pagos (emisor_id, receptor_id, monto, moneda, hash_trazabilidad) 
-                   VALUES (%s, %s, %s, %s, %s)""", 
-                (session['user_id'], otra_parte_id, monto, moneda, trazabilidad))
-    
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({"status": "Operación Segura", "hash": trazabilidad})
+
+    try:
+        # Lógica de Moneda Estable: El WPC se mina con cada uso de red
+        if tipo == 'PAGAR':
+            # Cobro de comisión de red para el fondo de reserva del CEO
+            comision = monto * 0.015
+            total_cargo = monto + comision
+            
+            cur.execute(f"UPDATE usuarios SET {col} = {col} - %s WHERE id = %s", (total_cargo, session['user_id']))
+            cur.execute(f"UPDATE usuarios SET {col} = {col} + %s WHERE id = %s", (monto, destino_id))
+            
+            # Acreditar Ganancia al CEO
+            cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE rol = 'CEO'", (comision,))
+            
+            # MINERÍA ORGÁNICA: Emisión de Will-Pay Coin (WPC)
+            cur.execute("UPDATE usuarios SET saldo_wpc = saldo_wpc + 0.05 WHERE id = %s", (session['user_id'],))
+        
+        # Guardar en Historial con Hash de Trazabilidad
+        cur.execute("""INSERT INTO pagos (emisor_id, receptor_id, monto, moneda, hash_trazabilidad) 
+                       VALUES (%s, %s, %s, %s, %s)""", 
+                    (session['user_id'], destino_id, monto, moneda, hash_id))
+        
+        conn.commit()
+        return jsonify({"status": "Éxito", "trazabilidad": hash_id})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"status": "Error", "
