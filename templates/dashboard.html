@@ -7,213 +7,156 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* 1. ESTILO BASE: MINIMALISMO DORADO OFICIAL */
+        /* 1. ESTILO BASE: NEGRO Y DORADO (BORDES 40PX) */
         body { 
-            background-color: #000; 
-            color: #bfa141; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            display: flex; flex-direction: column; align-items: center; 
-            min-height: 100vh; margin: 0; padding-bottom: 20px;
+            background-color: #000; color: #bfa141; 
+            font-family: sans-serif; display: flex; flex-direction: column; 
+            align-items: center; min-height: 100vh; margin: 0; padding-top: 20px;
         }
-        
-        /* Contenedor principal con borde dorado y esquinas 40px */
         .container { 
-            width: 85%; max-width: 380px; padding: 30px; 
-            border: 1.5px solid #bfa141; 
-            border-radius: 40px; 
-            background-color: #000; text-align: center;
-            margin-top: 100px; /* Espacio para el logo fijo */
-            position: relative;
+            width: 90%; max-width: 400px; padding: 25px; 
+            border: 2px solid #bfa141; border-radius: 40px; 
+            background-color: #000; text-align: center; position: relative;
         }
         
-        /* 2. LOGO OFICIAL FIJO EN LA PARTE SUPERIOR */
-        .logo-container {
-            position: fixed; top: 10px; left: 50%;
-            transform: translateX(-50%); width: 100px;
-            z-index: 1000;
-        }
-        .logo-willpay { width: 100%; transition: 0.5s; }
+        .logo-willpay { width: 120px; margin-bottom: 10px; }
+        .monto-saldo { font-size: 42px; font-weight: bold; margin: 10px 0; color: #ffcc00; }
         
-        /* 3. SALDO Y TEXTO SUTIL */
-        .label-saldo { font-size: 13px; opacity: 0.7; margin-bottom: 0; }
-        .monto-saldo { font-size: 45px; font-weight: bold; margin: 5px 0; color: #bfa141; }
-        
-        /* 4. BOTONES OFICIALES (TRANSPARENTES CON CONTORNO) */
+        /* 2. BOTONES ESTILO OFICIAL */
         button { 
             width: 100%; padding: 14px; margin: 8px 0; 
-            border: 1.8px solid #bfa141; border-radius: 12px; 
+            border: 2px solid #bfa141; border-radius: 12px; 
             background: transparent; color: #bfa141; 
-            font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.3s;
+            font-weight: bold; cursor: pointer; font-size: 16px;
         }
-        .btn-lleno { background: #bfa141 !important; color: #000 !important; }
+        .btn-activo { background: #ffcc00; color: #000; border-color: #ffcc00; }
         
-        /* Fila de botones con separación oficial */
-        .row-botones { display: flex; gap: 10px; margin-top: 10px; }
-        .row-botones button { flex: 1; }
-
-        /* 5. SECCIONES DINÁMICAS (OCULTAS) */
-        #seccion-recargas, #reader, .qr-container { display: none; margin-top: 15px; }
+        /* 3. INPUTS Y QR */
+        .input-monto { 
+            width: 85%; padding: 15px; margin: 15px 0; 
+            border: 2px solid #fff; border-radius: 20px; 
+            background: #000; color: #bfa141; 
+            font-size: 35px; text-align: center; font-weight: bold;
+            display: none; 
+        }
+        .qr-area { display: none; background: white; padding: 15px; border-radius: 15px; margin: 20px auto; width: 200px; }
         
-        /* Estilos del QR y Lector */
-        #qrcode { padding: 10px; background: white; border-radius: 10px; display: inline-block; margin: 10px 0; }
-        #reader { width: 100%; border-radius: 20px; overflow: hidden; }
-
-        /* INPUTS PARA TABLERO NUMÉRICO */
-        input.input-pago { 
-            width: 85%; padding: 12px; margin: 8px 0; 
-            border: 1px solid rgba(191, 161, 65, 0.5); 
-            border-radius: 10px; background: #111; color: #fff; 
-            text-align: center; font-size: 18px; display: none;
+        /* 4. HISTORIAL Y OTROS */
+        #seccion-recargas, #reader { display: none; margin-top: 15px; }
+        .movimiento-card {
+            background: #1a1a1a; border-radius: 15px; padding: 15px;
+            margin-top: 20px; text-align: left; border-left: 5px solid #ffcc00;
         }
-
-        /* 6. HISTORIAL DE MOVIMIENTOS EN EL PIE DE PÁGINA */
-        .historial-container {
-            width: 85%; max-width: 380px; margin-top: 25px;
-            text-align: left;
-        }
-        .historial-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; }
-        .movimiento-item {
-            background: rgba(191, 161, 65, 0.05); padding: 12px; border-radius: 10px; margin-bottom: 8px;
-            border-left: 3px solid; display: flex; justify-content: space-between; align-items: center;
-        }
-        .movimiento-aprobada { border-left-color: #2ecc71; } /* Barra verde para recarga */
-        .movimiento-pago { border-left-color: #ff4d4d; }     /* Barra roja para pago */
-        .movimiento-details { font-size: 12px; }
-        .movimiento-date { font-size: 10px; opacity: 0.6; }
-        .movimiento-monto { font-size: 14px; font-weight: bold; }
-        
-        /* Enlace de cerrar sesión */
-        .logout-link { color: #ff4d4d; text-decoration: none; font-size: 11px; display: block; margin-top: 25px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div class="logo-container">
-        <img src="/static/Will-Pay-Logo.png" class="logo-willpay" id="logo" alt="Will-Pay Logo">
-    </div>
+    <img src="/static/Will-Pay-Logo.png" class="logo-willpay" alt="Will-Pay">
 
     <div class="container">
-        <p class="label-saldo">Saldo Disponible</p>
+        <p style="opacity: 0.8; font-size: 14px; margin-bottom: 0;">Saldo Disponible</p>
         <h1 class="monto-saldo">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h1>
 
         <button onclick="toggleRecargas()">RECARGAR</button>
 
         <div id="seccion-recargas">
-            <p style="font-size: 11px; margin-bottom: 5px;">PAGO MÓVIL DIRECTO A:</p>
-            <p style="font-size: 12px; font-weight: bold;">04126602555 | 13496133 | BANESCO</p>
+            <p style="font-size: 12px; font-weight: bold;">PAGO MÓVIL: 04126602555 | 13496133 | BANESCO</p>
             <form action="/solicitar_recarga" method="POST">
-                <input type="number" name="monto" placeholder="Monto Bs." required inputmode="decimal">
-                <input type="text" name="referencia" placeholder="Nro Referencia" required>
-                <button type="submit" style="border-color: #2ecc71; color: #2ecc71;">ENVIAR VERIFICACIÓN</button>
+                <input type="number" name="monto" placeholder="Monto Bs." required inputmode="decimal" style="width:80%; padding:10px; margin:5px; border-radius:10px;">
+                <input type="text" name="referencia" placeholder="Referencia" required style="width:80%; padding:10px; margin:5px; border-radius:10px;">
+                <button type="submit" style="border-color: #2ecc71; color: #2ecc71; width: 85%;">ENVIAR RECARGA</button>
             </form>
-            <hr style="border: 0.5px solid rgba(191, 161, 65, 0.2); margin: 15px 0;">
         </div>
 
-        <div class="row-botones">
-            <button id="btnPagar" onclick="togglePago()">PAGAR</button>
-            <button onclick="activarCamara()" style="border-color: #333; color: #333;">COBRAR</button>
+        <div style="display: flex; gap: 10px;">
+            <button id="btnPagar" onclick="abrirPago()">PAGAR</button>
+            <button onclick="activarCamara()" style="border-color: #444; color: #444;">COBRAR</button>
         </div>
 
-        <div id="seccion-pago">
-            <input type="number" id="montoInput" class="input-pago" placeholder="Monto" inputmode="decimal">
-            <button id="btnGenerarQR" onclick="generarQR Pago()" style="border-color: #fff; color: #fff; display: none;">GENERAR QR</button>
-        </div>
+        <input type="number" id="montoInput" class="input-monto" placeholder="0.00" inputmode="decimal" oninput="actualizarQR(this.value)">
 
-        <div class="qr-container" id="qrSeccion">
+        <div id="qrContenedor" class="qr-area">
             <div id="qrcode"></div>
-            <p style="font-size: 12px; opacity: 0.8; color: white;">Muestra este QR al chofer</p>
         </div>
+        <p id="msgQR" style="display:none; font-size: 12px; color: #fff; margin-top: 5px;">Muestra este QR al chofer</p>
 
         <div id="reader"></div>
 
-        <a href="/logout" class="logout-link">Cerrar Sesión Segura</a>
-    </div>
-
-    <div class="historial-container">
-        <div class="historial-title">Últimos Movimientos</div>
-        {% for mov in movimientos %}
-        <div class="movimiento-item movimiento-{{ mov.tipo }}">
-            <div>
-                <div class="movimiento-details">
-                    {% if mov.tipo == 'aprobada' %}Recarga Aprobada{% else %}Pago Realizado{% endif %}
+        <div style="margin-top: 30px; text-align: left;">
+            <p style="font-weight: bold; font-size: 18px;">Últimos Movimientos</p>
+            {% for mov in movimientos %}
+            <div class="movimiento-card">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-size: 14px;">{{ mov.tipo }}</span>
+                    <span style="color: #2ecc71; font-weight: bold;">+ Bs. {{ mov.monto }}</span>
                 </div>
-                <div class="movimiento-date">{{ mov.fecha }}</div>
+                <div style="font-size: 10px; opacity: 0.5; margin-top: 5px;">{{ mov.fecha }}</div>
             </div>
-            <div class="movimiento-monto {% if mov.tipo == 'aprobada' %}text-green{% else %}text-red{% endif %}">
-                {% if mov.tipo == 'aprobada' %}+ Bs. {% else %}- Bs. {% endif %}{{ "%.2f"|format(mov.monto) }}
-            </div>
+            {% else %}
+            <p style="font-size: 12px; opacity: 0.5;">No hay movimientos registrados.</p>
+            {% endfor %}
         </div>
-        {% else %}
-        <p style="font-size: 12px; opacity: 0.6; text-align: center;">Sin movimientos aún</p>
-        {% endfor %}
+
+        <a href="/logout" style="color: #ff4d4d; text-decoration: none; font-size: 13px; display: block; margin-top: 30px;">Cerrar Sesión</a>
     </div>
 
     <script>
-        // 1. GENERACIÓN DINÁMICA DE CÓDIGO QR
-        function generarQRPago() {
-            const monto = document.getElementById('montoInput').value;
-            const qrContainer = document.getElementById('qrcode');
-            qrContainer.innerHTML = ""; // Limpiar QR anterior
-            
-            if(monto > 0) {
-                const qrSeccion = document.getElementById('qrSeccion');
-                qrSeccion.style.display = 'block'; // Mostrar la sección del QR
+        // FUNCIÓN PARA MOSTRAR EL CAMPO DE MONTO
+        function abrirPago() {
+            const input = document.getElementById('montoInput');
+            const btn = document.getElementById('btnPagar');
+            const qrCont = document.getElementById('qrContenedor');
+            const msg = document.getElementById('msgQR');
 
-                // Lógica de QRCode oficial
-                new QRCode(qrContainer, {
-                    text: `willpay:pago?monto=${monto}&usuario={{ u.cedula }}`,
+            if (input.style.display === 'block') {
+                input.style.display = 'none';
+                qrCont.style.display = 'none';
+                msg.style.display = 'none';
+                btn.classList.remove('btn-activo');
+            } else {
+                input.style.display = 'block';
+                btn.classList.add('btn-activo');
+                input.focus();
+            }
+        }
+
+        // GENERACIÓN AUTOMÁTICA DE QR MIENTRAS ESCRIBES
+        let qrInstancia = null;
+        function actualizarQR(monto) {
+            const qrCont = document.getElementById('qrContenedor');
+            const msg = document.getElementById('msgQR');
+            const qrDiv = document.getElementById('qrcode');
+
+            if (monto > 0) {
+                qrCont.style.display = 'block';
+                msg.style.display = 'block';
+                qrDiv.innerHTML = ""; // Limpiar el anterior
+                
+                qrInstancia = new QRCode(qrDiv, {
+                    text: "willpay:pago?monto=" + monto + "&id={{ u.id }}",
                     width: 200,
                     height: 200,
                     colorDark : "#000000",
-                    colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H
+                    colorLight : "#ffffff"
                 });
-                
-                // Ocultar inputs después de generar
-                document.getElementById('montoInput').style.display = 'none';
-                document.getElementById('btnGenerarQR').style.display = 'none';
-                document.getElementById('btnPagar').classList.remove('btn-lleno');
-                
-                alert(`QR generado para cobro de Bs. ${monto}`);
             } else {
-                alert("Por favor ingrese un monto válido.");
+                qrCont.style.display = 'none';
+                msg.style.display = 'none';
             }
         }
 
-        // 2. FUNCIÓN PARA EL BOTÓN PAGAR (Muestra Inputs)
-        function togglePago() {
-            const inputMonto = document.getElementById('montoInput');
-            const btnGenerar = document.getElementById('btnGenerarQR');
-            const btnPagar = document.getElementById('btnPagar');
-            const qrSeccion = document.getElementById('qrSeccion');
-
-            if (inputMonto.style.display === 'block') {
-                inputMonto.style.display = 'none';
-                btnGenerar.style.display = 'none';
-                btnPagar.classList.remove('btn-lleno');
-            } else {
-                inputMonto.style.display = 'block';
-                btnGenerar.style.display = 'block';
-                btnPagar.classList.add('btn-lleno');
-                qrSeccion.style.display = 'none'; // Ocultar QR si se estaba mostrando
-                inputMonto.focus();
-            }
-        }
-
-        // 3. MOSTRAR RECARGAS
         function toggleRecargas() {
             const div = document.getElementById('seccion-recargas');
-            div.style.display = (div.style.display === 'block') ? 'none' : 'block';
+            div.style.display = (div.style.display === 'none') ? 'block' : 'none';
         }
 
-        // 4. ACTIVAR CÁMARA (Lector QR)
         function activarCamara() {
             const reader = document.getElementById('reader');
             reader.style.display = 'block';
-            const scanner = new Html5Qrcode("reader");
-            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                alert("QR detectado: " + text);
-                scanner.stop();
+            const html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+                alert("Pago detectado: " + text);
+                html5QrCode.stop();
                 reader.style.display = 'none';
             });
         }
