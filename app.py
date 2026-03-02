@@ -24,19 +24,30 @@ def dashboard():
     conn.close()
     return render_template('dashboard.html', u=u)
 
+# --- 🦅 PANEL MAESTRO CON AUDITORÍA ---
 @app.route('/panel_maestro')
 def panel_maestro():
     if 'user_id' not in session: return redirect(url_for('acceso'))
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
+    
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
-    if u['cedula'] != '13496133': return "Acceso Denegado", 403
+    
+    # Solo Wilfredo (CEO) entra aquí
+    if u['cedula'] != '13496133': 
+        return "Acceso Denegado", 403
+    
+    # Traemos todos los usuarios y todos los pagos para auditoría
     cur.execute("SELECT * FROM usuarios ORDER BY id DESC")
     usuarios = cur.fetchall()
+    
+    cur.execute("SELECT * FROM pagos ORDER BY id DESC")
+    pagos = cur.fetchall()
+    
     cur.close()
     conn.close()
-    return render_template('panel_maestro.html', u=u, usuarios=usuarios)
+    return render_template('panel_maestro.html', u=u, usuarios=usuarios, pagos=pagos)
 
 @app.route('/admin/recargar_manual', methods=['POST'])
 def recargar_manual():
@@ -50,6 +61,32 @@ def recargar_manual():
     else:
         cur.execute("UPDATE usuarios SET saldo_usd = saldo_usd + %s WHERE cedula = %s", (monto, cedula))
     conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('panel_maestro'))
+
+# --- 🛠️ RUTA DE ANULACIÓN (SÓLO CEO) ---
+@app.route('/admin/anular_pago/<int:id_pago>')
+def anular_pago(id_pago):
+    if 'user_id' not in session: return redirect(url_for('acceso'))
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=DictCursor)
+    
+    cur.execute("SELECT cedula FROM usuarios WHERE id=%s", (session['user_id'],))
+    admin = cur.fetchone()
+    if admin['cedula'] != '13496133': return "No autorizado", 403
+
+    cur.execute("SELECT * FROM pagos WHERE id = %s", (id_pago,))
+    pago = cur.fetchone()
+
+    if pago and pago['moneda'] != 'ANULADO':
+        # Reversión de saldo
+        cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs + %s WHERE id = %s", (pago['monto'], pago['emisor_id']))
+        cur.execute("UPDATE usuarios SET saldo_bs = saldo_bs - %s WHERE id = %s", (pago['monto'], pago['receptor_id']))
+        # Marcamos como ANULADO en el historial
+        cur.execute("UPDATE pagos SET moneda = 'ANULADO' WHERE id = %s", (id_pago,))
+        conn.commit()
+    
     cur.close()
     conn.close()
     return redirect(url_for('panel_maestro'))
