@@ -5,86 +5,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay Dashboard</title>
     <style>
-        body { background-color: #000; color: #bfa141; font-family: sans-serif; text-align: center; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { width: 90%; max-width: 400px; padding: 25px; border: 2px solid #bfa141; border-radius: 40px; background-color: #000; position: relative; }
-        .logo-willpay { width: 90px; margin-bottom: 15px; }
-        .monto-saldo { font-size: 42px; font-weight: bold; margin: 10px 0; }
+        /* 1. ESTILO BASE: NEGRO Y DORADO ORIGINAL */
+        body { 
+            background-color: #000; 
+            color: #bfa141; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; overflow-x: hidden;
+        }
+        .container { 
+            width: 85%; max-width: 380px; padding: 30px; 
+            border: 1.5px solid #bfa141; 
+            border-radius: 40px; /* Redondeo original de las fotos */
+            background-color: #000; text-align: center;
+        }
         
-        button { width: 100%; padding: 14px; margin: 8px 0; border: 2px solid #bfa141; border-radius: 12px; background: transparent; color: #bfa141; font-weight: bold; cursor: pointer; }
-        .btn-activo { background: #bfa141; color: #000; } /* Estilo para el botón PAGAR cuando se presiona */
+        /* 2. LOGO Y SALDO */
+        .logo-willpay { width: 100px; margin-bottom: 10px; transition: 0.5s; }
+        .monto-saldo { font-size: 45px; font-weight: bold; margin: 5px 0; color: #bfa141; }
         
-        /* 📱 ESTILO DEL INPUT PARA EL TABLERO NUMÉRICO */
-        .input-monto { 
-            width: 80%; padding: 15px; margin: 15px 0; border: 2px solid #fff; border-radius: 15px; 
-            background: #1a1a1a; color: #bfa141; font-size: 32px; text-align: center; font-weight: bold;
-            display: none; /* Oculto hasta que den click en PAGAR */
+        /* 3. BOTONES CON DISEÑO ORIGINAL (TRANSPARENTES) */
+        button { 
+            width: 100%; padding: 14px; margin: 8px 0; 
+            border: 1.8px solid #bfa141; border-radius: 12px; 
+            background: transparent; color: #bfa141; 
+            font-weight: bold; font-size: 15px; cursor: pointer;
+        }
+        .btn-lleno { background: #bfa141 !format; color: #000 !important; }
+
+        /* 4. INPUTS PARA TABLERO NUMÉRICO Y RECARGAS */
+        input { 
+            width: 85%; padding: 12px; margin: 8px 0; 
+            border: 1px solid rgba(191, 161, 65, 0.5); 
+            border-radius: 10px; background: #111; color: #fff; 
+            text-align: center; font-size: 18px;
+        }
+        .input-pago-grande { 
+            display: none; font-size: 35px; border: 2px solid #fff; 
+            margin: 15px 0; background: #000; color: #bfa141;
         }
 
+        /* 5. SECCIONES OCULTAS */
         #seccion-recargas, #reader { display: none; margin-top: 15px; }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <img src="/static/logowillpay.png" class="logo-willpay" alt="Will-Pay">
-        <p style="opacity: 0.7; font-size: 14px;">Saldo Disponible</p>
+        <img src="/static/logowillpay.png" class="logo-willpay" id="logo" alt="Will-Pay">
+        
+        <p style="font-size: 13px; opacity: 0.7; margin-bottom: 0;">Saldo Disponible</p>
         <h1 class="monto-saldo">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h1>
 
         <button onclick="toggleRecargas()">RECARGAR</button>
 
         <div id="seccion-recargas">
-            <p style="font-size: 11px;">PAGO MÓVIL: <b>04126602555 | 13496133 | BANESCO</b></p>
+            <p style="font-size: 11px; margin-bottom: 5px;">PAGO MÓVIL DIRECTO A:</p>
+            <p style="font-size: 12px; font-weight: bold;">04126602555 | 13496133 | BANESCO</p>
             <form action="/solicitar_recarga" method="POST">
-                <input type="number" name="monto" placeholder="Monto Bs." required inputmode="decimal" style="width:80%; padding:8px; margin:5px; border-radius:8px;">
-                <input type="text" name="referencia" placeholder="Referencia" required style="width:80%; padding:8px; margin:5px; border-radius:8px;">
-                <button type="submit" style="border-color: #2ecc71; color: #2ecc71; width: 85%;">ENVIAR RECARGA</button>
+                <input type="number" name="monto" placeholder="Monto Bs." required inputmode="decimal">
+                <input type="text" name="referencia" placeholder="Nro Referencia" required>
+                <button type="submit" style="border-color: #2ecc71; color: #2ecc71;">ENVIAR VERIFICACIÓN</button>
             </form>
+            <hr style="border: 0.5px solid rgba(191, 161, 65, 0.2); margin: 15px 0;">
         </div>
 
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button id="btnPagar" onclick="activarPago()" style="flex: 1;">PAGAR</button>
-            <button onclick="activarCamara()" style="flex: 1; border-color: #333; color: #333;">COBRAR</button>
+        <div style="display: flex; gap: 10px;">
+            <button id="btnPagar" onclick="activarTablero()">PAGAR</button>
+            <button onclick="activarCamara()" style="border-color: #333; color: #333;">COBRAR</button>
         </div>
 
-        <input type="number" id="montoPago" class="input-monto" placeholder="0.00" inputmode="decimal">
+        <input type="number" id="montoInput" class="input-pago-grande" placeholder="0.00" inputmode="decimal">
 
-        <div id="reader"></div>
+        <button onclick="abrirBanesco()" style="background: #004a32; color: #fff; border: none; margin-top: 20px; font-size: 12px;">
+            🏛️ ABRIR APP BANESCO (COPIAR DATOS)
+        </button>
 
-        <a href="/logout" style="color: #ff4d4d; text-decoration: none; font-size: 12px; margin-top: 20px; display: block;">Cerrar Sesión</a>
+        <div id="reader" style="width: 100%; border-radius: 20px; overflow: hidden; margin-top: 10px;"></div>
+
+        <a href="/logout" style="color: #ff4d4d; text-decoration: none; font-size: 11px; display: block; margin-top: 25px;">Cerrar Sesión Segura</a>
     </div>
 
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
-        function toggleRecargas() {
-            const p = document.getElementById('seccion-recargas');
-            p.style.display = (p.style.display === 'none') ? 'block' : 'none';
-        }
-
-        // 🚀 FUNCIÓN PARA ABRIR EL TABLERO DE NÚMEROS
-        function activarPago() {
-            const input = document.getElementById('montoPago');
+        // 1. FUNCIÓN PARA EL TABLERO NUMÉRICO (Botón PAGAR)
+        function activarTablero() {
+            const input = document.getElementById('montoInput');
             const btn = document.getElementById('btnPagar');
-            
-            // Alternar visibilidad
             if (input.style.display === 'block') {
                 input.style.display = 'none';
-                btn.classList.remove('btn-activo');
+                btn.classList.remove('btn-lleno');
             } else {
                 input.style.display = 'block';
-                btn.classList.add('btn-activo');
-                input.focus(); // Esto hace que el teclado suba solo
+                btn.classList.add('btn-lleno');
+                input.focus();
             }
         }
 
+        // 2. FUNCIÓN PARA COPIAR DATOS Y ABRIR BANESCO
+        function abrirBanesco() {
+            const datos = "04126602555, V-13496133, Banesco";
+            navigator.clipboard.writeText(datos).then(() => {
+                alert("✅ DATOS DE WILFREDO COPIADOS:\n04126602555 | 13496133\n\nPégalos ahora en tu App de Banesco.");
+                window.location.href = "banescomovil://"; // Intenta abrir App
+                setTimeout(() => { window.location.href = "https://www.banesconline.com"; }, 2500);
+            });
+        }
+
+        // 3. MOSTRAR RECARGAS
+        function toggleRecargas() {
+            const div = document.getElementById('seccion-recargas');
+            div.style.display = (div.style.display === 'block') ? 'none' : 'block';
+        }
+
+        // 4. ACTIVAR CÁMARA
         function activarCamara() {
             const reader = document.getElementById('reader');
             reader.style.display = 'block';
-            const html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                alert("Escaneado: " + text);
-                html5QrCode.stop();
+            const scanner = new Html5Qrcode("reader");
+            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+                alert("QR detectado: " + text);
+                scanner.stop();
                 reader.style.display = 'none';
             });
         }
+
+        // EFECTO DE LATIDO AL LOGO
+        setInterval(() => {
+            const logo = document.getElementById('logo');
+            logo.style.transform = "scale(1.05)";
+            setTimeout(() => { logo.style.transform = "scale(1)"; }, 500);
+        }, 3000);
     </script>
 </body>
 </html>
