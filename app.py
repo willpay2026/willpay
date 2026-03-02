@@ -30,20 +30,22 @@ def acceso():
             session['user_id'] = user['id']
             session['nombre'] = user['nombre']
             return redirect(url_for('dashboard'))
+        else:
+            return "<h1>❌ Datos incorrectos</h1><p><a href='/acceso'>Volver a intentar</a></p>"
     return render_template('acceso.html')
 
-# --- DASHBOARD DEL USUARIO (CON QR Y HISTORIAL) ---
+# --- DASHBOARD DEL USUARIO ---
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
     
-    # Datos del usuario [cite: 2026-03-01]
+    # Datos del usuario
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
     
-    # Historial Cruzado (Lo que pagué y lo que recibí) [cite: 2026-03-02]
+    # Historial de Movimientos Cruzado [cite: 2026-03-02]
     cur.execute("""
         SELECT p.*, 
                u_emisor.nombre as nombre_emisor, 
@@ -60,7 +62,7 @@ def dashboard():
     conn.close()
     return render_template('dashboard.html', u=u, movimientos=movimientos)
 
-# --- PANEL MAESTRO (SOLO WILFREDO) ---
+# --- PANEL MAESTRO (CEO WILFREDO) ---
 @app.route('/panel_maestro')
 def panel_maestro():
     if 'user_id' not in session: return redirect(url_for('acceso'))
@@ -69,18 +71,25 @@ def panel_maestro():
     cur.execute("SELECT * FROM usuarios WHERE id=%s", (session['user_id'],))
     u = cur.fetchone()
     
-    if u['cedula'] != '13496133': return "Acceso Denegado", 403
+    # Seguridad de Cédula Wilfredo [cite: 2026-03-01]
+    if u['cedula'] != '13496133': return "<h1>Acceso Denegado</h1>", 403
     
     cur.execute("SELECT * FROM usuarios ORDER BY id DESC")
     usuarios = cur.fetchall()
-    cur.execute("SELECT p.*, u1.nombre as emisor, u2.nombre as receptor FROM pagos p JOIN usuarios u1 ON p.emisor_id = u1.id JOIN usuarios u2 ON p.receptor_id = u2.id ORDER BY p.id DESC")
+    cur.execute("""
+        SELECT p.*, u1.nombre as emisor, u2.nombre as receptor 
+        FROM pagos p 
+        JOIN usuarios u1 ON p.emisor_id = u1.id 
+        JOIN usuarios u2 ON p.receptor_id = u2.id 
+        ORDER BY p.id DESC
+    """)
     pagos = cur.fetchall()
     
     cur.close()
     conn.close()
     return render_template('panel_maestro.html', u=u, usuarios=usuarios, pagos=pagos)
 
-# --- LÓGICA DE PAGOS Y RECARGAS ---
+# --- SISTEMA DE PAGOS QR ---
 @app.route('/ejecutar_pago_qr', methods=['POST'])
 def ejecutar_pago_qr():
     if 'user_id' not in session: return jsonify({"status": "error"})
@@ -123,7 +132,13 @@ def recargar_manual():
 def comprobante(id_pago):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=DictCursor)
-    cur.execute("SELECT p.*, u1.nombre as emisor, u2.nombre as receptor FROM pagos p JOIN usuarios u1 ON p.emisor_id = u1.id JOIN usuarios u2 ON p.receptor_id = u2.id WHERE p.id = %s", (id_pago,))
+    cur.execute("""
+        SELECT p.*, u1.nombre as emisor, u2.nombre as receptor 
+        FROM pagos p 
+        JOIN usuarios u1 ON p.emisor_id = u1.id 
+        JOIN usuarios u2 ON p.receptor_id = u2.id 
+        WHERE p.id = %s
+    """, (id_pago,))
     pago = cur.fetchone()
     cur.close()
     conn.close()
@@ -140,7 +155,8 @@ def instalar():
     cur.execute("""CREATE TABLE pagos (
         id SERIAL PRIMARY KEY, emisor_id INTEGER, receptor_id INTEGER, 
         monto FLOAT, moneda TEXT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
-    cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol) VALUES ('WILFREDO DONQUIZ', '13496133', '1234', 'CEO')")
+    # [cite: 2026-03-01]
+    cur.execute("INSERT INTO usuarios (nombre, cedula, pin, rol, saldo_bs) VALUES ('WILFREDO DONQUIZ', '13496133', '1234', 'CEO', 1000.0)")
     conn.commit()
     cur.close()
     conn.close()
