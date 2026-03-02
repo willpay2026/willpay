@@ -1,67 +1,60 @@
-<div class="container" style="background: black; color: gold; text-align: center; padding: 20px;">
-    <img src="/static/logowillpay.png" class="logo-willpay" style="width: 150px;">
-    
-    <h2>Saldo Disponible</h2>
-    <h1 style="font-size: 3em;">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h1>
-
-    <button onclick="toggleRecargas()" style="background: gold; color: black; padding: 10px 20px; border-radius: 10px; width: 100%; font-weight: bold;">RECARGAR</button>
-
-    <div id="seccion-recargas" style="display: none; border: 1px solid gold; margin-top: 10px; padding: 10px; border-radius: 10px;">
-        <p>PAGO MÓVIL A WILFREDO DONQUIZ</p>
-        <p><b>04126602555 | 13496133 | BANESCO</b></p>
-        <form action="/solicitar_recarga" method="POST">
-            <input type="number" name="monto" placeholder="Monto Bs." required style="width: 80%; margin: 5px;">
-            <input type="text" name="referencia" placeholder="Nro Referencia" required style="width: 80%; margin: 5px;">
-            <button type="submit" style="background: green; color: white; width: 80%;">ENVIAR CAPTURE</button>
-        </form>
-    </div>
-
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button style="flex: 1; padding: 15px; background: gold;">PAGAR</button>
-        <button onclick="activarCamara()" style="flex: 1; padding: 15px; background: #333; color: white;">COBRAR</button>
-    </div>
-
-    <div id="reader" style="margin-top: 20px;"></div>
-</div>
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<script>
-// 1. ACTIVAR EL TECLADO NUMÉRICO (Para Pagar/Cobrar)
-document.querySelectorAll('input').forEach(inp => {
-    inp.setAttribute('inputmode', 'decimal'); 
-});
-
-// 2. ACTIVAR LA CÁMARA (Para Escanear QR al Cobrar)
-function activarCamara() {
-    const html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-        { facingMode: "environment" }, 
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-            alert("Pago recibido de: " + decodedText);
-            html5QrCode.stop();
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay Dashboard</title>
+    <style>
+        body { background: black; color: gold; font-family: sans-serif; text-align: center; }
+        .container { padding: 20px; border: 2px solid gold; border-radius: 20px; margin: 10px; }
+        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        input { width: 90%; padding: 10px; margin: 5px; border-radius: 5px; }
+        @keyframes pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 0px #FFD700); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 10px #FFD700); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 0px #FFD700); }
         }
-    );
-}
+        .logo-willpay { width: 150px; animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/static/logowillpay.png" class="logo-willpay" alt="Will-Pay">
+        <h2>Saldo Disponible</h2>
+        <h1 style="font-size: 3em;">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h1>
 
-// 3. ABRIR/CERRAR PANEL DE RECARGAS
-function toggleRecargas() {
-    const panel = document.getElementById('seccion-recargas');
-    panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'block' : 'none';
-}
+        <button onclick="toggleRecargas()" style="background: gold; color: black;">RECARGAR</button>
 
-// 4. EL LOGO QUE "LATE" (Toque Mágico de Wilfredo)
-const logo = document.querySelector('.logo-willpay');
-if(logo) {
-    logo.style.animation = "pulse 2s infinite";
-}
-</script>
+        <div id="seccion-recargas" style="display: none; border: 1px dashed gold; padding: 10px;">
+            <p>PAGO MÓVIL: <b>04126602555 | 13496133 | BANESCO</b></p>
+            <form action="/solicitar_recarga" method="POST">
+                <input type="number" name="monto" placeholder="Monto Bs." required inputmode="decimal">
+                <input type="text" name="referencia" placeholder="Referencia" required>
+                <button type="submit" style="background: green; color: white;">ENVIAR RECARGA</button>
+            </form>
+        </div>
 
-<style>
-@keyframes pulse {
-    0% { transform: scale(1); filter: drop-shadow(0 0 0px #FFD700); }
-    50% { transform: scale(1.05); filter: drop-shadow(0 0 10px #FFD700); }
-    100% { transform: scale(1); filter: drop-shadow(0 0 0px #FFD700); }
-}
-#reader { width: 100%; border-radius: 15px; overflow: hidden; }
-</style>
+        <div style="display: flex; gap: 10px;">
+            <button style="background: gold; color: black;">PAGAR</button>
+            <button onclick="activarCamara()" style="background: #333; color: white;">COBRAR</button>
+        </div>
+        <div id="reader"></div>
+        <a href="/logout" style="color: red; text-decoration: none;">Cerrar Sesión</a>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script>
+        function toggleRecargas() {
+            const p = document.getElementById('seccion-recargas');
+            p.style.display = (p.style.display === 'none') ? 'block' : 'none';
+        }
+        function activarCamara() {
+            const html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+                alert("QR: " + text);
+                html5QrCode.stop();
+            });
+        }
+    </script>
+</body>
+</html>
