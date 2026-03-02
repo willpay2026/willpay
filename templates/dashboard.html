@@ -7,31 +7,40 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* 1. ESTILO BASE: NEGRO Y DORADO (BORDES 40PX) */
+        /* DISEÑO OFICIAL: NEGRO, DORADO Y BORDES 40PX */
         body { 
             background-color: #000; color: #bfa141; 
             font-family: sans-serif; display: flex; flex-direction: column; 
             align-items: center; min-height: 100vh; margin: 0; padding-top: 20px;
         }
+        
+        /* AJUSTE DEL LOGO: DESTACADO Y LIMPIO */
+        .logo-willpay { 
+            width: 180px; /* Tamaño aumentado para que destaque */
+            height: auto;
+            margin-bottom: 20px;
+            display: block;
+            /* Eliminamos cualquier efecto de degradado o sombra previo */
+            filter: none !important; 
+            box-shadow: none !important;
+        }
+
         .container { 
             width: 90%; max-width: 400px; padding: 25px; 
             border: 2px solid #bfa141; border-radius: 40px; 
-            background-color: #000; text-align: center; position: relative;
+            background-color: #000; text-align: center;
         }
         
-        .logo-willpay { width: 120px; margin-bottom: 10px; }
         .monto-saldo { font-size: 42px; font-weight: bold; margin: 10px 0; color: #ffcc00; }
         
-        /* 2. BOTONES ESTILO OFICIAL */
         button { 
             width: 100%; padding: 14px; margin: 8px 0; 
             border: 2px solid #bfa141; border-radius: 12px; 
             background: transparent; color: #bfa141; 
-            font-weight: bold; cursor: pointer; font-size: 16px;
+            font-weight: bold; cursor: pointer;
         }
         .btn-activo { background: #ffcc00; color: #000; border-color: #ffcc00; }
-        
-        /* 3. INPUTS Y QR */
+
         .input-monto { 
             width: 85%; padding: 15px; margin: 15px 0; 
             border: 2px solid #fff; border-radius: 20px; 
@@ -41,17 +50,12 @@
         }
         .qr-area { display: none; background: white; padding: 15px; border-radius: 15px; margin: 20px auto; width: 200px; }
         
-        /* 4. HISTORIAL Y OTROS */
         #seccion-recargas, #reader { display: none; margin-top: 15px; }
-        .movimiento-card {
-            background: #1a1a1a; border-radius: 15px; padding: 15px;
-            margin-top: 20px; text-align: left; border-left: 5px solid #ffcc00;
-        }
     </style>
 </head>
 <body>
 
-    <img src="/static/Will-Pay-Logo.png" class="logo-willpay" alt="Will-Pay">
+    <img src="/static/logonuevo.png" class="logo-willpay" alt="Will-Pay Logo">
 
     <div class="container">
         <p style="opacity: 0.8; font-size: 14px; margin-bottom: 0;">Saldo Disponible</p>
@@ -60,11 +64,11 @@
         <button onclick="toggleRecargas()">RECARGAR</button>
 
         <div id="seccion-recargas">
-            <p style="font-size: 12px; font-weight: bold;">PAGO MÓVIL: 04126602555 | 13496133 | BANESCO</p>
+            <p style="font-size: 11px;">PAGO MÓVIL: 04126602555 | 13496133 | BANESCO</p>
             <form action="/solicitar_recarga" method="POST">
-                <input type="number" name="monto" placeholder="Monto Bs." required inputmode="decimal" style="width:80%; padding:10px; margin:5px; border-radius:10px;">
-                <input type="text" name="referencia" placeholder="Referencia" required style="width:80%; padding:10px; margin:5px; border-radius:10px;">
-                <button type="submit" style="border-color: #2ecc71; color: #2ecc71; width: 85%;">ENVIAR RECARGA</button>
+                <input type="number" name="monto" placeholder="Monto Bs." required inputmode="decimal" style="width:80%; padding:10px; margin:5px;">
+                <input type="text" name="referencia" placeholder="Referencia" required style="width:80%; padding:10px; margin:5px;">
+                <button type="submit" style="border-color: #2ecc71; color: #2ecc71;">ENVIAR</button>
             </form>
         </div>
 
@@ -78,40 +82,21 @@
         <div id="qrContenedor" class="qr-area">
             <div id="qrcode"></div>
         </div>
-        <p id="msgQR" style="display:none; font-size: 12px; color: #fff; margin-top: 5px;">Muestra este QR al chofer</p>
+        <p id="msgQR" style="display:none; font-size: 12px; color: #fff;">Muestra este QR al chofer</p>
 
         <div id="reader"></div>
 
-        <div style="margin-top: 30px; text-align: left;">
-            <p style="font-weight: bold; font-size: 18px;">Últimos Movimientos</p>
-            {% for mov in movimientos %}
-            <div class="movimiento-card">
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="font-size: 14px;">{{ mov.tipo }}</span>
-                    <span style="color: #2ecc71; font-weight: bold;">+ Bs. {{ mov.monto }}</span>
-                </div>
-                <div style="font-size: 10px; opacity: 0.5; margin-top: 5px;">{{ mov.fecha }}</div>
-            </div>
-            {% else %}
-            <p style="font-size: 12px; opacity: 0.5;">No hay movimientos registrados.</p>
-            {% endfor %}
-        </div>
-
-        <a href="/logout" style="color: #ff4d4d; text-decoration: none; font-size: 13px; display: block; margin-top: 30px;">Cerrar Sesión</a>
+        <a href="/logout" style="color: #ff4d4d; text-decoration: none; font-size: 12px; display: block; margin-top: 20px;">Cerrar Sesión</a>
     </div>
 
     <script>
-        // FUNCIÓN PARA MOSTRAR EL CAMPO DE MONTO
         function abrirPago() {
             const input = document.getElementById('montoInput');
             const btn = document.getElementById('btnPagar');
-            const qrCont = document.getElementById('qrContenedor');
-            const msg = document.getElementById('msgQR');
-
             if (input.style.display === 'block') {
                 input.style.display = 'none';
-                qrCont.style.display = 'none';
-                msg.style.display = 'none';
+                document.getElementById('qrContenedor').style.display = 'none';
+                document.getElementById('msgQR').style.display = 'none';
                 btn.classList.remove('btn-activo');
             } else {
                 input.style.display = 'block';
@@ -120,8 +105,6 @@
             }
         }
 
-        // GENERACIÓN AUTOMÁTICA DE QR MIENTRAS ESCRIBES
-        let qrInstancia = null;
         function actualizarQR(monto) {
             const qrCont = document.getElementById('qrContenedor');
             const msg = document.getElementById('msgQR');
@@ -130,14 +113,11 @@
             if (monto > 0) {
                 qrCont.style.display = 'block';
                 msg.style.display = 'block';
-                qrDiv.innerHTML = ""; // Limpiar el anterior
-                
-                qrInstancia = new QRCode(qrDiv, {
+                qrDiv.innerHTML = ""; 
+                new QRCode(qrDiv, {
                     text: "willpay:pago?monto=" + monto + "&id={{ u.id }}",
                     width: 200,
-                    height: 200,
-                    colorDark : "#000000",
-                    colorLight : "#ffffff"
+                    height: 200
                 });
             } else {
                 qrCont.style.display = 'none';
@@ -155,7 +135,7 @@
             reader.style.display = 'block';
             const html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                alert("Pago detectado: " + text);
+                alert("Escaneado: " + text);
                 html5QrCode.stop();
                 reader.style.display = 'none';
             });
