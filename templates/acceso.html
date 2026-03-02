@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay | Acceso</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { border: 2px solid #bfa141; border-radius: 40px; padding: 30px; width: 300px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; }
-        .btn { background: #bfa141; color: #000; width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+        .card { border: 2px solid #bfa141; border-radius: 40px; padding: 35px; width: 300px; text-align: center; background: #050505; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; font-size: 16px; }
+        .btn { background: #bfa141; color: #000; width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn:hover { background: #fff; }
     </style>
 </head>
 <body>
     <div class="card">
-        <img src="/static/logonuevo.png" width="120">
-        <h3>ACCESO SEGURO</h3>
+        <img src="/static/logonuevo.png" width="100">
+        <h3 style="color: #bfa141;">INICIAR SESIÓN</h3>
         <form action="/acceso" method="POST">
-            <input type="text" name="cedula" placeholder="Cédula" required>
-            <input type="password" name="pin" placeholder="PIN" required>
-            <button class="btn">ENTRAR</button>
+            <input type="text" name="cedula" placeholder="Cédula de Identidad" required>
+            <input type="password" name="pin" placeholder="PIN de Seguridad" required>
+            <button type="submit" class="btn">ACCEDER</button>
         </form>
+        <p style="font-size: 10px; opacity: 0.4; margin-top: 20px;">Will-Pay V.1 Estable</p>
     </div>
 </body>
 </html>
