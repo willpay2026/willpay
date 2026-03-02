@@ -1,61 +1,48 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay | Dashboard</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 10px; }
-        .card { border: 2px solid #bfa141; border-radius: 40px; padding: 20px; max-width: 450px; margin: auto; text-align: center; }
-        .balance { background: #111; border-radius: 20px; padding: 15px; margin: 15px 0; border: 1px solid #333; }
-        .qr-box { background: #fff; padding: 10px; border-radius: 20px; display: inline-block; border: 4px solid #bfa141; }
-        .btn { background: #bfa141; color: #000; padding: 15px; width: 100%; border-radius: 20px; font-weight: bold; border: none; margin-top: 10px; cursor: pointer; }
-        .historial { text-align: left; margin-top: 20px; font-size: 12px; }
-        .mov { border-bottom: 1px solid #222; padding: 8px 0; display: flex; justify-content: space-between; }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .box { border: 2px solid #bfa141; border-radius: 30px; padding: 25px; max-width: 400px; margin: auto; }
+        .monto { font-size: 35px; color: #bfa141; margin: 15px 0; font-weight: bold; }
+        .btn { background: #bfa141; color: #000; padding: 15px; width: 100%; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; }
+        #reader { width: 100%; margin-top: 15px; border-radius: 15px; overflow: hidden; display: none; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <img src="/static/logonuevo.png" width="100">
-        <div class="qr-box">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ u.id }}">
-        </div>
-        <p style="color:#bfa141; font-size: 10px;">MI PUNTO DE VENTA (ID: {{ u.id }})</p>
+    <div class="box">
+        <img src="/static/logonuevo.png" width="120">
+        <h2>Hola, {{ u.nombre }}</h2>
+        <div class="monto">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
         
-        <div class="balance">
-            <small>DISPONIBLE</small>
-            <div style="font-size: 30px; color: #bfa141; font-weight: bold;">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
-        </div>
+        <div id="reader"></div>
+        <button id="btn" class="btn" onclick="escanear()">📷 ESCANEAR QR</button>
 
-        <div id="reader" style="display:none;"></div>
-        <button id="btnScan" class="btn" onclick="startScan()">📷 ESCANEAR PARA PAGAR</button>
-
-        <div class="historial">
-            <p style="border-bottom: 1px solid #bfa141; color: #bfa141;">MOVIMIENTOS WP-TX</p>
-            {% for m in movimientos %}
-            <div class="mov">
-                <span>{% if m.emisor_id == u.id %}A: {{ m.receptor_n }}{% else %}De: {{ m.emisor_n }}{% endif %}</span>
-                <span style="color: {% if m.emisor_id == u.id %}#ff4d4d{% else %}#2ecc71{% endif %};">
-                    {% if m.emisor_id == u.id %}-{% else %}+{% endif %} Bs. {{ m.monto }}
-                </span>
-            </div>
-            {% endfor %}
+        <h4 style="margin-top:30px; color:#bfa141; border-bottom:1px solid #333;">Últimos Pagos</h4>
+        {% for m in movimientos %}
+        <div style="text-align:left; font-size:12px; padding:10px 0; border-bottom:1px solid #111;">
+            A: {{ m.receptor_n }} <span style="float:right; color:#ff4d4d;">-Bs. {{ m.monto }}</span>
         </div>
+        {% endfor %}
     </div>
+
     <script>
-        function startScan() {
+        function escanear() {
             document.getElementById('reader').style.display = 'block';
-            const html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (id) => {
-                const monto = prompt("Monto a pagar (Bs.):");
-                if (monto) {
-                    html5QrCode.stop().then(() => {
+            const scanner = new Html5Qrcode("reader");
+            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (id) => {
+                let monto = prompt("Monto a pagar:");
+                if(monto) {
+                    scanner.stop().then(() => {
                         fetch('/ejecutar_pago_qr', {
                             method: 'POST', headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({receptor_id: id, monto: monto})
                         }).then(res => res.json()).then(data => {
                             if(data.status == 'ok') window.location.href = '/comprobante/' + data.pago_id;
-                            else alert("Error en pago");
                         });
                     });
                 }
