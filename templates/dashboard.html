@@ -10,36 +10,22 @@
         .card-willpay { 
             background: #000; border: 2.5px solid #bfa141; border-radius: 40px; 
             padding: 25px; max-width: 480px; margin: auto; text-align: center;
-            box-shadow: 0 0 25px rgba(191, 161, 65, 0.15);
         }
         .header-dash { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .logo-dash { width: 100px; }
-        
-        /* QR PERSONAL (TU PUNTO DE VENTA) */
         .qr-area { background: #fff; padding: 15px; border-radius: 25px; display: inline-block; margin: 15px 0; border: 5px solid #bfa141; }
-        .qr-area img { width: 160px; height: 160px; }
-        
-        /* CAJA DE SALDOS */
         .balance-card { background: #0a0a0a; border-radius: 25px; padding: 20px; border: 1px solid #222; margin-bottom: 20px; }
-        .monto-principal { font-size: 36px; color: #bfa141; font-weight: bold; margin: 5px 0; }
-        .monto-secundario { color: #3498db; font-size: 18px; }
-
-        /* ACCIONES */
+        .monto-principal { font-size: 36px; color: #bfa141; font-weight: bold; }
         #reader { width: 100%; border-radius: 25px; overflow: hidden; display: none; margin-bottom: 15px; border: 2px solid #bfa141; }
-        .btn-pay { background: #bfa141; color: #000; padding: 18px; width: 100%; border-radius: 20px; font-weight: bold; font-size: 16px; border: none; cursor: pointer; transition: 0.3s; }
-        .btn-pay:hover { background: #fff; transform: translateY(-2px); }
-
-        /* HISTORIAL DE AUDITORÍA */
+        .btn-pay { background: #bfa141; color: #000; padding: 18px; width: 100%; border-radius: 20px; font-weight: bold; border: none; cursor: pointer; }
         .audit-trail { text-align: left; margin-top: 35px; }
-        .audit-title { color: #bfa141; font-size: 12px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 10px; }
+        .audit-title { color: #bfa141; font-size: 12px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 5px; }
         .mov-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #111; font-size: 13px; }
-        .ref-code { font-size: 9px; color: #555; display: block; }
         .in { color: #2ecc71; font-weight: bold; }
         .out { color: #ff4d4d; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="card-willpay">
         <div class="header-dash">
             <img src="/static/logonuevo.png" class="logo-dash">
@@ -50,39 +36,32 @@
         </div>
 
         <div class="qr-area">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ u.id }}&color=000000" alt="Punto de Venta Will-Pay">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ u.id }}&color=000000">
         </div>
-        <p style="font-size: 10px; opacity: 0.7; margin-top: 0;">MUESTRA ESTE QR PARA RECIBIR PAGOS</p>
+        <p style="font-size: 10px; opacity: 0.7;">PUNTO DE VENTA PERSONAL</p>
 
         <div class="balance-card">
-            <small style="font-size: 10px; letter-spacing: 1px;">DISPONIBLE</small>
             <div class="monto-principal">Bs. {{ "%.2f"|format(u.saldo_bs) }}</div>
-            <div class="monto-secundario">$ {{ "%.2f"|format(u.saldo_usd) }}</div>
+            <div style="color: #3498db;">$ {{ "%.2f"|format(u.saldo_usd) }}</div>
         </div>
 
         <div id="reader"></div>
-        <button id="btnScanner" class="btn-pay" onclick="activarCamara()">📷 ESCANEAR Y PAGAR</button>
+        <button id="btnScanner" class="btn-pay" onclick="activarCamara()">📷 PAGAR A OTRO SOCIO</button>
 
         <div class="audit-trail">
-            <div class="audit-title">HISTORIAL DE MOVIMIENTOS WP-TX</div>
+            <div class="audit-title">ÚLTIMOS MOVIMIENTOS</div>
             {% for m in movimientos %}
             <div class="mov-row">
                 <div>
-                    {% if m.emisor_id == u.id %}
-                        <strong>Pago a {{ m.nombre_receptor }}</strong>
-                    {% else %}
-                        <strong>Recibido de {{ m.nombre_emisor }}</strong>
-                    {% endif %}
-                    <span class="ref-code">REF: WP-TX-{{ "%06d"|format(m.id) }} | {{ m.fecha.strftime('%d/%m %H:%M') }}</span>
+                    <strong>{% if m.emisor_id == u.id %}A: {{ m.nombre_receptor }}{% else %}De: {{ m.nombre_emisor }}{% endif %}</strong>
+                    <span style="font-size: 9px; color:#555; display:block;">REF: WP-TX-{{ "%06d"|format(m.id) }}</span>
                 </div>
                 <div class="{% if m.emisor_id == u.id %}out{% else %}in{% endif %}">
-                    {% if m.emisor_id == u.id %}-{% else %}+{% endif %} Bs. {{ "%.2f"|format(m.monto) }}
+                    {% if m.emisor_id == u.id %}-{% else %}+{% endif %} Bs. {{ m.monto }}
                 </div>
             </div>
             {% endfor %}
         </div>
-
-        <a href="/logout" style="color: #444; font-size: 10px; text-decoration: none; margin-top: 25px; display: block;">Desconectar Sesión Segura</a>
     </div>
 
     <script>
@@ -91,23 +70,19 @@
             document.getElementById('btnScanner').style.display = 'none';
             const scanner = new Html5Qrcode("reader");
             scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (idLeido) => {
-                const monto = prompt("¿Monto a transferir en Bs.?");
-                if (monto && !isNaN(monto)) {
-                    scanner.stop().then(() => procesarPago(idLeido, monto));
+                const monto = prompt("Monto en Bs.:");
+                if (monto) {
+                    scanner.stop().then(() => {
+                        fetch('/ejecutar_pago_qr', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({receptor_id: idLeido, monto: monto})
+                        }).then(res => res.json()).then(data => {
+                            if(data.status == 'ok') window.location.href = '/comprobante/' + data.pago_id;
+                            else alert("Saldo insuficiente o error.");
+                        });
+                    });
                 }
-            });
-        }
-
-        function procesarPago(id, monto) {
-            fetch('/ejecutar_pago_qr', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({receptor_id: id, monto: monto})
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status == 'ok') window.location.href = '/comprobante/' + data.pago_id;
-                else alert("Error: " + (data.msg || "No se pudo procesar"));
             });
         }
     </script>
