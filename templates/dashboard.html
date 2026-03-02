@@ -5,56 +5,101 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay Dashboard</title>
     <style>
-        body { background: black; color: gold; font-family: sans-serif; text-align: center; }
-        .container { padding: 20px; border: 2px solid gold; border-radius: 20px; margin: 10px; }
-        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        input { width: 90%; padding: 10px; margin: 5px; border-radius: 5px; }
-        @keyframes pulse {
-            0% { transform: scale(1); filter: drop-shadow(0 0 0px #FFD700); }
-            50% { transform: scale(1.05); filter: drop-shadow(0 0 10px #FFD700); }
-            100% { transform: scale(1); filter: drop-shadow(0 0 0px #FFD700); }
+        /* 1. ESTILOS VISUALES ORIGINALES (Minimalistas) */
+        body { 
+            background-color: #000; 
+            color: #bfa141; /* Dorado más suave original */
+            font-family: 'Open Sans', sans-serif; 
+            text-align: center; 
+            display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;
         }
-        .logo-willpay { width: 150px; animation: pulse 2s infinite; }
+        .container { 
+            width: 90%; max-width: 400px; padding: 30px; 
+            border: 2px solid #bfa141; /* Borde dorado original */
+            border-radius: 40px; /* Esquinas muy redondeadas originales */
+            background-color: #000;
+        }
+        .logo-willpay { width: 100px; margin-bottom: 20px; }
+        .label-saldo { font-size: 14px; color: #bfa141; margin-bottom: 5px; opacity: 0.8; }
+        .monto-saldo { font-size: 40px; color: #bfa141; font-weight: bold; margin-top: 0; }
+        
+        /* 2. BOTONES ORIGINALES (Sin fondo, solo contorno dorado) */
+        button { 
+            width: 100%; padding: 15px; margin: 10px 0; 
+            border: 2px solid #bfa141; /* Contorno dorado */
+            border-radius: 15px; /* Redondeado sutil */
+            background: transparent; /* Fondo transparente original */
+            color: #bfa141; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s;
+        }
+        button:hover { background: rgba(191, 161, 65, 0.1); }
+        .row-botones { display: flex; gap: 10px; margin-top: 20px; }
+        
+        /* 3. INPUTS ORIGINALES (Minimalistas) */
+        input { 
+            width: calc(100% - 20px); padding: 10px; margin: 5px 0; 
+            border: 1px solid rgba(191, 161, 65, 0.5); 
+            border-radius: 10px; background: rgba(255, 255, 255, 0.05); color: #bfa141; 
+        }
+        
+        /* Ocultar secciones para el Toggle */
+        #seccion-recargas, #reader { display: none; margin-top: 20px; }
+        #seccion-recargas { border-top: 1px solid rgba(191, 161, 65, 0.3); padding-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <img src="/static/logowillpay.png" class="logo-willpay" alt="Will-Pay">
-        <h2>Saldo Disponible</h2>
-        <h1 style="font-size: 3em;">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h1>
+        
+        <p class="label-saldo">Saldo Disponible</p>
+        <h1 class="monto-saldo">Bs. {{ "%.2f"|format(u.saldo_bs) }}</h1>
 
-        <button onclick="toggleRecargas()" style="background: gold; color: black;">RECARGAR</button>
+        <button onclick="toggleRecargas()">RECARGAR</button>
 
-        <div id="seccion-recargas" style="display: none; border: 1px dashed gold; padding: 10px;">
-            <p>PAGO MÓVIL: <b>04126602555 | 13496133 | BANESCO</b></p>
+        <div id="seccion-recargas">
+            <p style="font-size: 12px; opacity: 0.8;">PAGO MÓVIL: <b>04126602555 | 13496133 | BANESCO</b></p>
             <form action="/solicitar_recarga" method="POST">
                 <input type="number" name="monto" placeholder="Monto Bs." required inputmode="decimal">
-                <input type="text" name="referencia" placeholder="Referencia" required>
-                <button type="submit" style="background: green; color: white;">ENVIAR RECARGA</button>
+                <input type="text" name="referencia" placeholder="Nro Referencia" required>
+                <button type="submit" style="border-color: #2ecc71; color: #2ecc71;">ENVIAR CAPTURE</button>
             </form>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <button style="background: gold; color: black;">PAGAR</button>
-            <button onclick="activarCamara()" style="background: #333; color: white;">COBRAR</button>
+        <div class="row-botones">
+            <button style="border-color: #bfa141; color: #bfa141;">PAGAR</button>
+            <button onclick="activarCamara()" style="border-color: #333; color: #333; opacity: 0.6;">COBRAR</button>
         </div>
+
         <div id="reader"></div>
-        <a href="/logout" style="color: red; text-decoration: none;">Cerrar Sesión</a>
+
+        <a href="/logout" style="color: red; text-decoration: none; font-size: 12px; margin-top: 20px; display: block;">Cerrar Sesión</a>
     </div>
 
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
+        // 1. Mostrar/Ocultar Panel de Recargas
         function toggleRecargas() {
             const p = document.getElementById('seccion-recargas');
-            p.style.display = (p.style.display === 'none') ? 'block' : 'none';
+            p.style.display = (p.style.display === 'none' || p.style.display === '') ? 'block' : 'none';
         }
+        
+        // 2. Activar la Cámara (Cobrar)
         function activarCamara() {
+            const reader = document.getElementById('reader');
+            reader.style.display = 'block'; // Mostramos el contenedor
             const html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                alert("QR: " + text);
-                html5QrCode.stop();
-            });
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: 250 }, 
+                (decodedText) => {
+                    alert("Pago recibido: " + decodedText);
+                    html5QrCode.stop();
+                    reader.style.display = 'none'; // Ocultamos al terminar
+                }
+            );
         }
+        
+        // Teclado numérico automático en inputs
+        document.querySelectorAll('input').forEach(inp => inp.setAttribute('inputmode', 'decimal'));
     </script>
 </body>
 </html>
