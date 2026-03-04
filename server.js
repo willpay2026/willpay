@@ -1,76 +1,59 @@
 const express = require('express');
 const app = express();
+const path = require('path');
+
 app.use(express.json());
+// Esto permite que el servidor use las carpetas 'static' o 'public' que ya tienes
+app.use(express.static(path.join(__dirname, 'static')));
 
-// --- CONFIGURACIÓN DE SEGURIDAD ---
-const PORT = process.env.PORT || 10000; 
-const MASTER_PASSWORD = "WILL_PAY_BOSS"; // Tu clave para el panel
-
-let balanceTotal = 0;
-let comisionesGanadas = 0;
-let usedCaptures = []; // Búnker anti-fraude
-
-// TUS DATOS DE PAGO (Banesco)
-const paymentDetails = {
-    bank: "Banesco",
-    phone: "04126602555",
-    id: "13496133",
-    owner: "Wilfredo Donquiz"
-};
-
-// 1. VISTA PÚBLICA (Diseño limpio y directo)
+// 1. PÁGINA DE ENTRADA (EL COHETE 🚀)
 app.get('/', (req, res) => {
     res.send(`
-        <div style="text-align:center; font-family:sans-serif; margin-top:50px;">
-            <h1 style="color:#1a73e8;">🚀 Will-Pay Global 2026</h1>
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Will-Pay | El Legado</title>
+            <style>
+                body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+                .card { background: #1a1a1a; border: 2px solid #ffcf40; border-radius: 15px; padding: 20px; margin-top: 20px; }
+                .btn { background: #ffcf40; color: #000; border: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 10px; }
+                img { max-width: 150px; margin-bottom: 10px; }
+            </style>
+        </head>
+        <body>
+            <img src="https://raw.githubusercontent.com/willpay2026/willpay/main/static/logonuevo.jpg" alt="Will-Pay Logo">
+            <h1>🚀 Will-Pay Global 2026</h1>
             <p>El legado para <b>Wilyanny Donquiz</b> está en línea.</p>
-            <hr style="width:50%">
-            <div style="background:#f4f4f4; padding:20px; border-radius:10px; display:inline-block; border:1px solid #ccc;">
+            
+            <div class="card">
                 <h3>Datos para Recarga:</h3>
-                <p><b>Banco:</b> ${paymentDetails.bank}<br>
-                   <b>Pago Móvil:</b> ${paymentDetails.phone}<br>
-                   <b>C.I:</b> ${paymentDetails.id}</p>
+                <p><b>Banco:</b> Banesco</p>
+                <p><b>Pago Móvil:</b> 04126602555</p>
+                <p><b>C.I:</b> 13496133</p>
+                <p style="font-size: 0.8rem; color: #ffcf40;">Wilfredo aprobará tu saldo al verificar el capture.</p>
             </div>
-            <p style="color:gray; margin-top:20px;"><i>Wilfredo aprobará tu saldo al verificar el capture.</i></p>
-        </div>
+
+            <button class="btn" onclick="location.href='/registro'">REGISTRAR MI ADN DIGITAL</button>
+            <p><a href="/login" style="color: #888; text-decoration: none;">¿Ya tienes cuenta? Entrar a mi Bóveda</a></p>
+        </body>
+        </html>
     `);
 });
 
-// 2. PANEL DE CONTROL (Solo para ti y tus 5 socios reservados)
-app.get('/panel-control', (req, res) => {
-    const pass = req.query.pass;
-    if (pass !== MASTER_PASSWORD) {
-        return res.status(403).send("<h1>🚫 Acceso Denegado</h1>");
-    }
-
-    res.send(`
-        <div style="font-family:sans-serif; padding:20px;">
-            <h2>🛠️ Mi Panel - Wilfredo Donquiz</h2>
-            <div style="background:#e8f0fe; padding:15px; border-radius:10px;">
-                <p><b>Comisiones Acumuladas:</b> $${comisionesGanadas}</p>
-                <p><b>Espacios Reservados:</b> 5 Socios.</p>
-            </div>
-            <h3>Captures Procesados:</h3>
-            <p>${usedCaptures.length} transacciones verificadas.</p>
-        </div>
-    `);
+// 2. CORRECCIÓN DEL ERROR: RUTA DE REGISTRO
+app.get('/registro', (req, res) => {
+    // Esto busca el archivo en tu carpeta 'static'
+    res.sendFile(path.join(__dirname, 'static', 'registro.html'));
 });
 
-// 3. LÓGICA DE PROCESAMIENTO (Anti-fraude)
-app.post('/process-payment', (req, res) => {
-    const { captureId, amount } = req.body;
-
-    if (usedCaptures.includes(captureId)) {
-        return res.status(400).json({ error: "Capture ya usado." });
-    }
-
-    usedCaptures.push(captureId);
-    // Cálculo de comisión (Ejemplo: 1%)
-    comisionesGanadas += (amount * 0.01);
-    
-    res.json({ message: "Pago en revisión por el administrador." });
+// 3. RUTA PARA EL LOGIN / BÓVEDA
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'static', 'index.html'));
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log("Motor Will-Pay encendido 🚀");
+    console.log('El Búnker de Wilfredo está rugiendo en el puerto ' + PORT);
 });
