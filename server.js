@@ -2,85 +2,75 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
-// --- CONFIGURACIÓN DEL DUEÑO (Wilfredo Donquiz) ---
-const PORT = process.env.PORT || 10000; // Render usa el 10000
+// --- CONFIGURACIÓN DE SEGURIDAD ---
+const PORT = process.env.PORT || 10000; 
 const MASTER_PASSWORD = "WILL_PAY_BOSS"; // Tu clave para el panel
-const SOCIOS_PASSWORD = "WILL_PARTNER"; // Clave para tus 5 socios
 
 let balanceTotal = 0;
 let comisionesGanadas = 0;
-let solicitudesPendientes = [];
-let capturesUsados = []; // Búnker anti-fraude
+let usedCaptures = []; // Búnker anti-fraude
 
-// Datos de pago (Banesco)
-const misDatos = {
-    banco: "Banesco",
-    telefono: "04126602555",
-    cedula: "13496133",
-    titular: "Wilfredo Donquiz"
+// TUS DATOS DE PAGO (Banesco)
+const paymentDetails = {
+    bank: "Banesco",
+    phone: "04126602555",
+    id: "13496133",
+    owner: "Wilfredo Donquiz"
 };
 
-// 1. VISTA PÚBLICA (Lo que ve el cliente)
+// 1. VISTA PÚBLICA (Diseño limpio y directo)
 app.get('/', (req, res) => {
     res.send(`
-        <body style="font-family:sans-serif; text-align:center; padding:40px; background:#f0f2f5;">
+        <div style="text-align:center; font-family:sans-serif; margin-top:50px;">
             <h1 style="color:#1a73e8;">🚀 Will-Pay Global 2026</h1>
-            <p>El legado de <b>Wilyanny Donquiz</b> para el mundo.</p>
-            <div style="background:white; display:inline-block; padding:20px; border-radius:15px; border:2px solid #1a73e8;">
-                <h3>Recarga tu Billetera aquí:</h3>
-                <p><b>Banco:</b> ${misDatos.banco}</p>
-                <p><b>Pago Móvil:</b> ${misDatos.telefono}</p>
-                <p><b>C.I:</b> ${misDatos.cedula}</p>
+            <p>El legado para <b>Wilyanny Donquiz</b> está en línea.</p>
+            <hr style="width:50%">
+            <div style="background:#f4f4f4; padding:20px; border-radius:10px; display:inline-block; border:1px solid #ccc;">
+                <h3>Datos para Recarga:</h3>
+                <p><b>Banco:</b> ${paymentDetails.bank}<br>
+                   <b>Pago Móvil:</b> ${paymentDetails.phone}<br>
+                   <b>C.I:</b> ${paymentDetails.id}</p>
             </div>
-            <p><i>Envía tu capture al administrador para activar tu saldo.</i></p>
-        </body>
+            <p style="color:gray; margin-top:20px;"><i>Wilfredo aprobará tu saldo al verificar el capture.</i></p>
+        </div>
     `);
 });
 
-// 2. PANEL MAESTRO Y DE SOCIOS (Protegido)
+// 2. PANEL DE CONTROL (Solo para ti y tus 5 socios reservados)
 app.get('/panel-control', (req, res) => {
     const pass = req.query.pass;
-    
-    if (pass !== MASTER_PASSWORD && pass !== SOCIOS_PASSWORD) {
-        return res.send("<h1>🚫 Acceso Denegado</h1><p>El búnker está protegido.</p>");
+    if (pass !== MASTER_PASSWORD) {
+        return res.status(403).send("<h1>🚫 Acceso Denegado</h1>");
     }
 
-    const esDuenio = (pass === MASTER_PASSWORD);
-    
     res.send(`
-        <body style="font-family:sans-serif; padding:20px; background:#e8f0fe;">
-            <h2>🛠️ Panel de Control - ${esDuenio ? 'MODO DUEÑO' : 'MODO SOCIO'}</h2>
-            <div style="background:white; padding:15px; border-radius:10px; margin-bottom:20px;">
-                <h3>💰 Estado Financiero</h3>
-                <p><b>Balance del Sistema:</b> $${balanceTotal}</p>
-                ${esDuenio ? `<p style="color:green;"><b>Mis Comisiones:</b> $${comisionesGanadas}</p>` : ''}
+        <div style="font-family:sans-serif; padding:20px;">
+            <h2>🛠️ Mi Panel - Wilfredo Donquiz</h2>
+            <div style="background:#e8f0fe; padding:15px; border-radius:10px;">
+                <p><b>Comisiones Acumuladas:</b> $${comisionesGanadas}</p>
+                <p><b>Espacios Reservados:</b> 5 Socios.</p>
             </div>
-            <h3>📂 Solicitudes de Saldo (Aprobación Manual)</h3>
-            ${solicitudesPendientes.length === 0 ? '<p>No hay pagos pendientes.</p>' : '<ul>...lista de pagos...</ul>'}
-            <p><small>Espacios para socios reservados: 5 de 5.</small></p>
-        </body>
+            <h3>Captures Procesados:</h3>
+            <p>${usedCaptures.length} transacciones verificadas.</p>
+        </div>
     `);
 });
 
-// 3. RUTA PARA RECIBIR PAGOS (Anti-fraude)
-app.post('/enviar-pago', (req, res) => {
-    const { captureId, monto } = req.body;
+// 3. LÓGICA DE PROCESAMIENTO (Anti-fraude)
+app.post('/process-payment', (req, res) => {
+    const { captureId, amount } = req.body;
 
-    if (capturesUsados.includes(captureId)) {
-        return res.status(400).json({ error: "❌ Este comprobante ya fue usado." });
+    if (usedCaptures.includes(captureId)) {
+        return res.status(400).json({ error: "Capture ya usado." });
     }
 
-    capturesUsados.push(captureId);
-    solicitudesPendientes.push({ captureId, monto, status: 'Pendiente' });
+    usedCaptures.push(captureId);
+    // Cálculo de comisión (Ejemplo: 1%)
+    comisionesGanadas += (amount * 0.01);
     
-    // Aquí calculamos la comisión (ejemplo 1%)
-    const comision = monto * 0.01;
-    comisionesGanadas += comision;
-    balanceTotal += (monto - comision);
-
-    res.json({ message: "✅ Pago enviado. Wilfredo aprobará en breve." });
+    res.json({ message: "Pago en revisión por el administrador." });
 });
 
 app.listen(PORT, () => {
-    console.log(`Motor Will-Pay encendido en puerto ${PORT} 🚀`);
+    console.log("Motor Will-Pay encendido 🚀");
 });
