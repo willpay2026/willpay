@@ -3,120 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificado de Apertura | Will-Pay</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Certificado de Registro | Will-Pay</title>
     <style>
-        body { background: #000; color: white; font-family: 'Garamond', serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .ticket-container { 
-            background: #111; 
-            border: 2px solid #D4AF37; 
-            border-radius: 0; 
-            padding: 40px; 
-            max-width: 450px; 
-            width: 100%; 
-            position: relative;
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
-            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #111 100%);
-            overflow: hidden;
-        }
-        .ticket-header { border-bottom: 1px double #D4AF37; padding-bottom: 20px; margin-bottom: 20px; text-align: center; }
-        .oro { color: #D4AF37; text-transform: uppercase; letter-spacing: 2px; }
-        .qr-box { background: white; padding: 15px; border-radius: 10px; width: fit-content; margin: 20px auto; border: 3px solid #D4AF37; }
-        .datos-expediente { font-size: 0.9rem; border-top: 1px solid #333; padding-top: 20px; }
-        .btn-entrar { 
-            background: linear-gradient(45deg, #D4AF37, #F9E2AF); 
-            color: black; 
-            font-weight: bold; 
-            width: 100%; 
-            padding: 15px; 
-            border: none; 
-            margin-top: 30px; 
-            text-decoration: none; 
-            display: inline-block;
-            text-align: center;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-        .btn-entrar:hover { transform: scale(1.02); filter: brightness(1.1); }
+        body { background: #000; color: white; text-align: center; font-family: 'Courier New', Courier, monospace; padding: 20px; }
+        .oro { color: #D4AF37; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
         
-        /* Nuevo estilo para el botón de salida */
-        .btn-salir {
-            display: block;
-            text-align: center;
-            margin-top: 15px;
-            color: #D4AF37;
-            text-decoration: none;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-            border: 1px solid #D4AF37;
-            padding: 10px;
-            transition: 0.3s;
-        }
-        .btn-salir:hover {
-            background: rgba(212, 175, 55, 0.1);
+        /* Estilo Recibo Real */
+        .ticket-container { 
+            background: white; 
+            color: black; 
+            width: 100%; 
+            max-width: 350px; 
+            margin: 20px auto; 
+            padding: 25px; 
+            border-radius: 15px; 
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
         }
 
-        .sello-agua { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            opacity: 0.1; 
-            width: 120%; 
-            z-index: 0;
-            pointer-events: none;
+        .header-ticket { border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
+        .header-ticket h3 { margin: 5px 0; font-size: 18px; }
+        .rif { font-size: 10px; color: #555; }
+        .status-badge { background: #000; color: #D4AF37; padding: 5px 10px; font-size: 12px; font-weight: bold; }
+        
+        .info-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 13px; text-align: left; }
+        .label { font-weight: bold; text-transform: uppercase; }
+        
+        .divider { border-top: 1px solid #eee; margin: 15px 0; }
+        .footer-note { font-size: 9px; color: #777; font-style: italic; }
+
+        .btn-finalizar { 
+            background: #000; 
+            color: #D4AF37; 
+            text-decoration: none; 
+            display: block; 
+            padding: 15px; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            margin-top: 25px;
+            border: 2px solid #D4AF37;
         }
-        .content-wrap { position: relative; z-index: 1; }
     </style>
 </head>
 <body>
+    <h2 class="oro">¡Registro Exitoso!</h2>
+    
     <div class="ticket-container">
-        <img src="{{ url_for('static', filename='logonuevo.png') }}" class="sello-agua">
-        
-        <div class="content-wrap">
-            <div class="ticket-header">
-                <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Logo" style="height: 50px; margin-bottom: 10px;">
-                <h4 class="oro">Certificado de Registro</h4>
-                <p class="small text-secondary">Sistema Global de Pagos Will-Pay</p>
-            </div>
-
-            <div class="text-center">
-                <p class="mb-1 small">¡BIENVENIDO AL LEGADO!</p>
-                <h3 class="fw-bold" style="color: #fff; text-shadow: 0 0 10px rgba(212,175,55,0.3);">{{ user.nombre }}</h3>
-                
-                <div class="qr-box">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=WILLPAY-USER-{{ user.id }}" alt="QR Auditoría">
-                </div>
-                
-                <p class="oro fw-bold mb-0" style="font-size: 0.8rem;">ID DE EXPEDIENTE:</p>
-                <p class="h5" style="letter-spacing: 1px;">{{ user.id }}</p>
-            </div>
-
-            <div class="datos-expediente">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-secondary">Categoría:</span>
-                    <span>{{ user.actividad }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-secondary">Cédula:</span>
-                    <span>{{ user.cedula }}</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span class="text-secondary">Estatus:</span>
-                    <span class="text-success fw-bold">● ACTIVO / AUDITADO</span>
-                </div>
-            </div>
-
-            <a href="/dashboard" class="btn-entrar">INGRESAR A MI BILLETERA DIGITAL</a>
-            
-            <a href="/logout" class="btn-salir">CERRAR Y REGISTRAR OTRO USUARIO</a>
-            
-            <p class="text-center mt-4 small text-secondary" style="font-size: 0.65rem; line-height: 1.2;">
-                Este documento electrónico certifica la apertura de su cuenta en la red Will-Pay.<br>
-                Validado por la Dirección de Tecnología - Falcón, Venezuela.<br>
-                <strong>© 2026 Will-Pay Legado</strong>
-            </p>
+        <div class="header-ticket">
+            <img src="/logonuevo.png" width="60" alt="Logo">
+            <h3>WILL-PAY VENEZUELA</h3>
+            <div class="rif">RIF: V-13496133-0</div>
+            <div class="status-badge" style="margin-top: 10px;">CERTIFICADO ELECTRÓNICO</div>
         </div>
+
+        <div class="info-row">
+            <span class="label">ID OPERACIÓN:</span>
+            <span>WP-{{ u.id }}REG</span>
+        </div>
+        <div class="info-row">
+            <span class="label">SOCIO:</span>
+            <span>{{ u.nombre }}</span>
+        </div>
+        <div class="info-row">
+            <span class="label">ESTATUS:</span>
+            <span style="color: green; font-weight: bold;">CERTIFICADO ✅</span>
+        </div>
+
+        <div class="divider"></div>
+        <p class="footer-note">Este ticket sirve como respaldo para auditorías contables de la red Will-Pay.</p>
+
+        <a href="/acceso" class="btn-finalizar">FINALIZAR Y ENTRAR</a>
     </div>
 </body>
 </html>
