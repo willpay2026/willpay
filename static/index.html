@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay | Cargando...</title>
+    <style>
+        /* Fondo negro total para que resalte el escudo */
+        body { 
+            background: #000; 
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        .logo-container {
+            text-align: center;
+            animation: fadeInOut 5s ease-in-out forwards;
+        }
+
+        .logo {
+            width: 250px; /* Tamaño imponente para el escudo */
+            filter: drop-shadow(0 0 15px rgba(191, 161, 65, 0.5));
+        }
+
+        /* Efecto de aparecer y desaparecer suavemente */
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: scale(0.9); }
+            20% { opacity: 1; transform: scale(1); }
+            80% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.1); }
+        }
+    </style>
+    
+    <script>
+        setTimeout(function() {
+            window.location.href = "/acceso";
+        }, 5000); // 5000 milisegundos = 5 segundos
+    </script>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="logonuevo.png" alt="Will-Pay Logo" class="logo">
+    </div>
+</body>
+</html>
