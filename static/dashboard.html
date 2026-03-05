@@ -1,64 +1,61 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Exchange Global</title>
-    <script src="https://unpkg.com/html5-qrcode"></script> <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay | Bóveda Digital</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
-        .card { border: 2px solid #bfa141; border-radius: 40px; padding: 25px; background: #050505; max-width: 400px; margin: auto; }
-        .wallets { display: flex; gap: 10px; margin: 20px 0; overflow-x: auto; padding-bottom: 10px; }
-        .wallet-box { border: 1px solid #333; border-radius: 15px; padding: 12px; min-width: 90px; background: #0a0a0a; }
-        .wpc-glow { border-color: #bfa141; box-shadow: 0 0 10px rgba(191,161,65,0.2); }
-        .mining-bar { color: #2ecc71; font-size: 10px; margin: 10px 0; letter-spacing: 1px; }
-        input, select { width: 100%; padding: 15px; border-radius: 15px; background: #1a1a1a; color: #fff; border: 1px solid #333; margin-top: 10px; box-sizing: border-box; }
-        .btn-pay { background: #e6b43c; color: #000; width: 100%; padding: 20px; border-radius: 20px; font-weight: bold; border: none; font-size: 18px; margin-top: 20px; cursor: pointer; }
-        #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-top: 15px; }
+        .card { border: 2px solid #bfa141; border-radius: 40px; padding: 25px; background: #050505; max-width: 400px; margin: auto; box-shadow: 0 0 20px rgba(191,161,65,0.1); }
+        .saldo-section { margin: 20px 0; padding: 20px; border-radius: 25px; border: 1px solid #333; background: #0a0a0a; }
+        .saldo-label { color: #bfa141; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .saldo-monto { font-size: 38px; font-weight: bold; margin: 10px 0; display: block; }
+        
+        .btn-action { background: #bfa141; color: #000; width: 100%; padding: 18px; border-radius: 20px; font-weight: bold; border: none; font-size: 16px; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
+        .btn-recargar { background: transparent; color: #bfa141; border: 1px solid #bfa141; margin-bottom: 10px; }
+        
+        input { width: 100%; padding: 15px; border-radius: 15px; background: #1a1a1a; color: #fff; border: 1px solid #333; margin-top: 10px; box-sizing: border-box; text-align: center; font-size: 18px; }
+        #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-top: 15px; border: 2px solid #bfa141; }
+        
+        .footer-pm { margin-top: 25px; font-size: 11px; color: #666; border-top: 1px solid #222; padding-top: 15px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <img src="/static/logonuevo.png" width="120">
-        <p style="color:#888; font-size:12px;">ID SOCIO: <b>{{ u.id }}</b></p>
-
-        <div class="wallets">
-            <div class="wallet-box"><small>BS.</small><br><b>{{ "%.2f"|format(u.saldo_bs) }}</b></div>
-            <div class="wallet-box wpc-glow"><small style="color:#e6b43c;">WPC</small><br><b style="color:#e6b43c;">{{ "%.4f"|format(u.saldo_wpc) }}</b></div>
-            <div class="wallet-box"><small>USD</small><br><b>{{ "%.2f"|format(u.saldo_usd) }}</b></div>
+        <img src="/static/logonuevo.png" width="130" onerror="this.src='https://willpay.onrender.com/static/logonuevo.png'">
+        
+        <div class="saldo-section">
+            <span class="saldo-label">Saldo Disponible</span>
+            <span class="saldo-monto">Bs. {{ "%.2f"|format(u.saldo_bs) if u else '0.00' }}</span>
+            <button class="btn-action btn-recargar">RECARGAR SALDO</button>
         </div>
 
-        <div class="mining-bar">⛏️ SISTEMA DE MINERÍA ORGÁNICA: ACTIVO</div>
-
-        <div style="text-align: left;">
-            <label style="font-size:12px; color:#666;">MONEDA DE PAGO</label>
-            <select id="moneda">
-                <option value="BS">BOLÍVARES (VE)</option>
-                <option value="WPC">WILL-PAY COIN (ESTABLE)</option>
-                <option value="USD">DÓLARES (GLOBAL)</option>
-            </select>
-
-            <input type="number" id="monto" placeholder="Monto a enviar" step="0.01">
-            <input type="text" id="destino_id" placeholder="ID del receptor o escanea QR">
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-action" style="flex:1;">PAGAR</button>
+            <button class="btn-action" style="flex:1; background:#333; color:#fff;">COBRAR</button>
         </div>
+
+        <input type="number" id="monto" placeholder="Monto Bs." step="0.01">
+        <input type="text" id="destino_id" placeholder="ID del Receptor">
 
         <div id="reader"></div>
-        <button class="btn-pay" onclick="abrirScanner()" id="btn-scan">ESCANEAR PARA PAGAR</button>
-        <button class="btn-pay" style="background:#2ecc71; display:none;" id="btn-confirm" onclick="procesarPago()">CONFIRMAR ENVÍO</button>
+        <button class="btn-action" onclick="abrirScanner()" id="btn-scan" style="background:#fff;">ESCANEAR QR</button>
+        <button class="btn-action" style="background:#2ecc71; display:none;" id="btn-confirm" onclick="procesarPago()">CONFIRMAR ENVÍO</button>
 
-        <div style="margin-top:25px; border-top:1px solid #222; padding-top:15px; font-size:12px;">
-            <p style="color:#bfa141; margin:0;">RECARGA TU SALDO (PAGO MÓVIL)</p>
-            <b>04126602555 | 13496133 | BANESCO</b> [cite: 2026-03-01]
+        <div class="footer-pm">
+            <p style="color:#bfa141; margin:0;">PAGO MÓVIL OFICIAL</p>
+            <b>04126602555 | 13496133 | BANESCO</b>
         </div>
     </div>
 
     <script>
-        // LÓGICA DE CÁMARA
         function abrirScanner() {
             document.getElementById('reader').style.display = 'block';
-            document.getElementById('btn-scan').innerText = "Buscando QR...";
             const scanner = new Html5Qrcode("reader");
             scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-                (id_detectado) => {
-                    document.getElementById('destino_id').value = id_detectado;
+                (id) => {
+                    document.getElementById('destino_id').value = id;
                     scanner.stop();
                     document.getElementById('reader').style.display = 'none';
                     document.getElementById('btn-scan').style.display = 'none';
@@ -67,28 +64,20 @@
             );
         }
 
-        // ENVÍO DE DATOS AL MOTOR (PYTHON)
         async function procesarPago() {
             const data = {
-                tipo: 'PAGAR',
-                moneda: document.getElementById('moneda').value,
                 monto: document.getElementById('monto').value,
-                destino_id: document.getElementById('destino_id').value
+                destino: document.getElementById('destino_id').value
             };
-
-            const response = await fetch('/operacion_global', {
+            // Aquí el motor de Python aplicará el 1%, 3% o 5% automáticamente
+            const response = await fetch('/procesar_pago_bs', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             });
-
             const res = await response.json();
-            if(res.status === 'Éxito') {
-                alert("¡PAGO REALIZADO!\nHash: " + res.trazabilidad + "\nHas minado +0.05 WPC");
-                location.reload(); // Recarga para ver el nuevo saldo
-            } else {
-                alert("Error: " + res.msg);
-            }
+            alert(res.status === 'Éxito' ? "Pago Procesado con Éxito" : "Error: " + res.msg);
+            location.reload();
         }
     </script>
 </body>
