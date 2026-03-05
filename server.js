@@ -6,7 +6,7 @@ const path = require('path');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// LIGANDO LA CARPETA STATIC (Donde están tus diseños)
+// LIGANDO LA CARPETA STATIC (Donde están tus diseños y el boveda.html)
 app.use(express.static(path.join(__dirname, 'static')));
 
 // --- 1. RUTA DE BIENVENIDA (EL COHETE 🚀) ---
@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
             </style>
         </head>
         <body>
-            <img src="https://raw.githubusercontent.com/willpay2026/willpay/main/static/logonuevo.jpg" alt="Will-Pay Logo">
+            <img src="https://raw.githubusercontent.com/willpay2026/willpay/main/static/logonuevo.png" alt="Will-Pay Logo">
             <h1>🚀 Will-Pay Global 2026</h1>
             <p>El legado para <b>Wilyanny Donquiz</b> está en línea.</p>
             
@@ -52,17 +52,17 @@ app.get('/', (req, res) => {
 
 // --- 2. RUTA DE REGISTRO LEGAL (ADN DIGITAL) ---
 app.get('/registro', (req, res) => {
-    // Esto busca el archivo físico en tu carpeta 'static'
+    // IMPORTANTE: Asegúrate de que el archivo se llame registro.html en la carpeta static
     res.sendFile(path.join(__dirname, 'static', 'registro.html'));
 });
 
-// --- 3. RUTA DE LA BÓVEDA (APP EN SÍ / SALDO) ---
+// --- 3. RUTA DE LA BÓVEDA (CIRUGÍA AQUÍ 🛠️) ---
 app.get('/boveda', (req, res) => {
-    // Aquí es donde ven los Bs. 7.560,00 y el código QR
-    res.sendFile(path.join(__dirname, 'static', 'index.html'));
+    // Cambié 'index.html' por 'boveda.html' para que coincida con tu carpeta static
+    res.sendFile(path.join(__dirname, 'static', 'boveda.html'));
 });
 
-// --- 4. MANEJO DE REGISTROS (PARA QUE NO DÉ ERROR AL DARLE AL BOTÓN) ---
+// --- 4. MANEJO DE REGISTROS ---
 app.post('/guardar-registro', (req, res) => {
     console.log("Nuevo ADN Digital recibido");
     res.send("<h1>✅ Registro Exitoso</h1><p>Wilfredo está verificando tus datos. Pronto verás tu saldo disponible.</p><a href='/boveda'>Ir a mi Bóveda</a>");
