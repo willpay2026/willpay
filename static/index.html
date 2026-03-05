@@ -3,47 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Cargando...</title>
+    <title>Will-Pay | El Legado</title>
     <style>
-        /* Fondo negro total para que resalte el escudo */
-        body { 
-            background: #000; 
-            margin: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            overflow: hidden; 
-        }
+        body { background: #000; margin: 0; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        
+        /* 1. ESTILO DE LA CARGA (Tu Escudo) */
+        #splash { text-align: center; animation: fadeOut 1s ease-in-out 4s forwards; }
+        .logo-carga { width: 250px; filter: drop-shadow(0 0 15px rgba(191, 161, 65, 0.5)); animation: zoomIn 5s ease-in-out; }
+        
+        /* 2. ESTILO DEL ACCESO (El Formulario) */
+        #login-box { display: none; background: #000; border: 2px solid #ffcf40; border-radius: 20px; padding: 30px; width: 320px; text-align: center; animation: fadeIn 1s ease-in-out; }
+        input { width: 100%; padding: 12px; background: #e8f0fe; border: 1px solid #333; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
+        .btn-gold { width: 100%; padding: 15px; background: #d4ac4b; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        .logo-container {
-            text-align: center;
-            animation: fadeInOut 5s ease-in-out forwards;
-        }
-
-        .logo {
-            width: 250px; /* Tamaño imponente para el escudo */
-            filter: drop-shadow(0 0 15px rgba(191, 161, 65, 0.5));
-        }
-
-        /* Efecto de aparecer y desaparecer suavemente */
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: scale(0.9); }
-            20% { opacity: 1; transform: scale(1); }
-            80% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(1.1); }
-        }
+        @keyframes zoomIn { 0% { opacity: 0; transform: scale(0.9); } 20% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
+        @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
-    
-    <script>
-        setTimeout(function() {
-            window.location.href = "/acceso";
-        }, 5000); // 5000 milisegundos = 5 segundos
-    </script>
 </head>
 <body>
-    <div class="logo-container">
-        <img src="logonuevo.png" alt="Will-Pay Logo" class="logo">
+
+    <div id="splash">
+        <img src="logonuevo.jpg" alt="Will-Pay Logo" class="logo-carga">
     </div>
+
+    <div id="login-box">
+        <img src="logonuevo.jpg" style="width: 100px; margin-bottom: 10px;">
+        <h2 style="color: #ffcf40; font-size: 1.1rem;">INICIAR SESIÓN</h2>
+        <form onsubmit="event.preventDefault(); location.href='/boveda';">
+            <input type="text" placeholder="Cédula o Teléfono" required>
+            <input type="password" placeholder="PIN de 6 dígitos" maxlength="6" required>
+            <button type="submit" class="btn-gold">ACCEDER</button>
+        </form>
+        <p style="color: #666; font-size: 0.8rem; margin-top: 15px;">
+            ¿No tienes cuenta? <a href="/registro" style="color: #ffcf40; text-decoration: none;">Regístrate aquí</a>
+        </p>
+    </div>
+
+    <script>
+        // Después de 5 segundos, escondemos la carga y mostramos el login
+        setTimeout(() => {
+            document.getElementById('splash').style.display = 'none';
+            document.getElementById('login-box').style.display = 'block';
+        }, 5000);
+    </script>
 </body>
 </html>
