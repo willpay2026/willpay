@@ -1,9 +1,9 @@
 const express = require('express');
 const app = express();
 const path = require('path');
-const ejs = require('ejs'); // Motor para las plantillas doradas
+const ejs = require('ejs');
 
-// Configuración de Motores
+// Configuración de Motores para el Tablero Dorado
 app.set('views', path.join(__dirname, 'templates'));
 app.engine('html', ejs.renderFile);
 app.set('view engine', 'html');
@@ -17,34 +17,45 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'static', 'index.html'));
 });
 
-// --- 2. RUTAS DE NAVEGACIÓN (CONECTADAS AL ADN) ---
+// --- 2. RUTAS DE NAVEGACIÓN ---
 app.get('/acceso', (req, res) => res.sendFile(path.join(__dirname, 'static', 'acceso.html')));
 app.get('/registro', (req, res) => res.sendFile(path.join(__dirname, 'static', 'registro.html')));
 
-// ESTAS RUTAS AHORA BUSCAN EN TEMPLATES (EL TABLERO DEFINITIVO)
+// --- 3. PANEL MAESTRO CEO (EL BÚNKER) ---
 app.get('/ceo', (req, res) => {
-    // Esto activa el diseño de la barra roja y los datos del CEO
-    const datosSimulados = { 
+    // Definimos los datos reales para que no salgan códigos raros en pantalla
+    const u = { 
         nombre: "WILFREDO DONQUIZ", 
         capital_total: 0.00, 
         ganancia_neta: 0.00,
-        total_depositado: 0.00
+        total_depositado: 0.00,
+        porc: "0.0%",  // Para las casillas de comisión
+        auto_recargas: false,
+        auto_retiros: false
     };
-    res.render('ceo_panel.html', { u: datosSimulados, m: [] });
+
+    // 'm' es la lista de actividad; la enviamos vacía por ahora
+    res.render('ceo_panel.html', { u: u, m: [] });
 });
 
 app.get('/boveda', (req, res) => {
-    // Redirigimos a la oficina principal del CEO
     res.redirect('/ceo');
 });
 
-// --- 3. LÓGICA DE PROCESOS ---
+// --- 4. LÓGICA DE PROCESOS ---
 app.post('/acceso', (req, res) => {
-    console.log("Entrando al Búnker Dorado...");
+    console.log("Acceso autorizado al Búnker Dorado");
     res.redirect('/ceo'); 
+});
+
+// Ruta para la recarga directa desde el panel
+app.post('/admin_recarga', (req, res) => {
+    const { telefono, monto } = req.body;
+    console.log(`Recargando Bs. ${monto} al teléfono ${telefono}`);
+    res.redirect('/ceo');
 });
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-    console.log('--- SISTEMA WILL-PAY: TABLERO DEFINITIVO ACTIVADO EN PUERTO ' + PORT + ' ---');
+    console.log('--- SISTEMA WILL-PAY: TABLERO DEFINITIVO ACTIVADO ---');
 });
