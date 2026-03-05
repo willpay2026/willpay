@@ -4,7 +4,7 @@ const path = require('path');
 const ejs = require('ejs');
 const app = express();
 
-// 1. CONFIGURACIÓN DE INTERFAZ Y MOTORES
+// 1. CONFIGURACIÓN DE INTERFAZ
 app.set('views', path.join(__dirname, 'templates'));
 app.engine('html', ejs.renderFile);
 app.set('view engine', 'html');
@@ -12,94 +12,52 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'static')));
 
-// 2. CONEXIÓN A POSTGRESQL (LA LLAVE DEL BÚNKER)
+// 2. CONEXIÓN A POSTGRES (LLAVE DEL BÚNKER)
 const connectionString = 'postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a.oregon-postgres.render.com/willpay_db?ssl=true';
 const client = new Client({ connectionString });
-client.connect()
-    .then(() => console.log("--- CONECTADO A LA CAJA FUERTE DE POSTGRES ---"))
-    .catch(err => console.error("Error de conexión:", err));
+client.connect().catch(err => console.error("Error de conexión:", err));
 
-// 3. ASEGURAR QUE LA TABLA EXISTE
-const setupDB = async () => {
-    const query = `
-        CREATE TABLE IF NOT EXISTS socios_oficiales (
-            id SERIAL PRIMARY KEY,
-            nombre TEXT NOT NULL,
-            telefono TEXT UNIQUE NOT NULL,
-            pin TEXT NOT NULL,
-            saldo DECIMAL(15,2) DEFAULT 0.00,
-            rol TEXT DEFAULT 'SOCIO',
-            fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    `;
-    await client.query(query);
-    console.log("Tabla 'socios_oficiales' verificada.");
-};
-setupDB();
+// 3. RUTAS DE NAVEGACIÓN
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'static', 'index.html')));
+app.get('/acceso', (req, res) => res.render('acceso.html'));
+app.get('/registro', (req, res) => res.render('registro.html'));
 
-// --- 4. RUTAS DE NAVEGACIÓN ---
-
-// A. PANTALLA DE CARGA (Splash con logonuevo.png)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'static', 'index.html'));
-});
-
-// B. FORMULARIO DE ACCESO (Después de los 5 segundos)
-app.get('/acceso', (req, res) => {
-    res.render('login_form.html'); // Asegúrate de crear este archivo en /templates
-});
-
-// C. PROCESAR EL LOGIN REAL
-app.post('/login_process', async (req, res) => {
-    const { usuario, password } = req.body;
+// 4. MOTOR DE REGISTRO KYC
+app.post('/procesar_registro', async (req, res) => {
+    const { nombre, cedula, telefono, actividad, pin } = req.body;
     try {
-        const result = await client.query(
-            'SELECT * FROM socios_oficiales WHERE telefono = $1 AND pin = $2', 
-            [usuario, password]
-        );
-
-        if (result.rows.length > 0) {
-            const user = result.rows[0];
-            // Si eres tú o tiene rol ADMIN, vas al panel CEO
-            if (user.rol === 'ADMIN' || usuario === '04120000000') {
-                res.redirect('/ceo');
-            } else {
-                res.redirect('/boveda');
-            }
-        } else {
-            res.send("<script>alert('Datos incorrectos o ADN no registrado'); window.location='/acceso';</script>");
-        }
+        const query = `INSERT INTO socios_oficiales (nombre, telefono, pin, saldo, rol) 
+                       VALUES ($1, $2, $3, 0.00, 'SOCIO') RETURNING *`;
+        const result = await client.query(query, [nombre, telefono, pin]);
+        res.render('ticket_bienvenida.html', { u: result.rows[0] });
     } catch (err) {
-        console.error(err);
-        res.status(500).send("Error interno en el búnker");
+        res.send("<script>alert('Error: Datos ya registrados'); window.location='/registro';</script>");
     }
 });
 
-// D. RUTA DEL CEO (BÚNKER MASTER)
-app.get('/ceo', (req, res) => {
-    const u = { 
-        id_dna: "CEO-0001-FOUNDER",
-        nombre: "WILFREDO DONQUIZ", 
-        saldo_bs: 0.00,
-        ultimo_id_pendiente: "000000",
-        ultimo_monto_pendiente: 0.00
-    };
-    res.render('ceo_panel.html', { u: u, m: [] });
+// 5. MOTOR DE PAGOS Y COMISIÓN (TU GANANCIA)
+app.post('/procesar_pago_bs', async (req, res) => {
+    const { monto, destino_id, emisor_id } = req.body;
+    try {
+        await client.query('BEGIN');
+        const montoNum = parseFloat(monto);
+        const comision = montoNum * 0.015; // TU 1.5%
+        const total = montoNum + comision;
+
+        await client.query('UPDATE socios_oficiales SET saldo = saldo - $1 WHERE id = $2', [total, emisor_id]);
+        await client.query('UPDATE socios_oficiales SET saldo = saldo + $1 WHERE id = $2', [montoNum, destino_id]);
+        await client.query("UPDATE socios_oficiales SET saldo = saldo + $1 WHERE rol = 'ADMIN'", [comision]);
+
+        const op = await client.query('INSERT INTO pagos (emisor_id, receptor_id, monto, comision) VALUES ($1,$2,$3,$4) RETURNING id', 
+        [emisor_id, destino_id, montoNum, comision]);
+        
+        await client.query('COMMIT');
+        res.json({ status: 'Éxito', id_op: op.rows[0].id });
+    } catch (e) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ status: 'Error' });
+    }
 });
 
-// E. RUTA DE LA BÓVEDA (VISTA DEL SOCIO)
-app.get('/boveda', (req, res) => {
-    const usuario = {
-        nombre: "Socio Registrado",
-        id_adn: "WP-ADN-321",
-        saldo_disponible: 0.00,
-        qr_data: "WILL-PAY-SOCIO"
-    };
-    res.render('boveda.html', { u: usuario, m: [] });
-});
-
-// 5. ENCENDIDO EN PUERTO 10000
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log(`--- BORNKER VA A PAGAR: SISTEMA EN PUERTO ${PORT} ---`);
-});
+app.listen(PORT, () => console.log(`BÚNKER ONLINE EN PUERTO ${PORT}`));
