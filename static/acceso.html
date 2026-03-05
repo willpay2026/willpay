@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Acceso</title>
+    <title>Will-Pay | Acceso al Panel</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { border: 2px solid #bfa141; border-radius: 40px; padding: 35px; width: 300px; text-align: center; background: #050505; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; font-size: 16px; }
-        .btn { background: #bfa141; color: #000; width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn:hover { background: #fff; }
+        /* Bordes dorados y diseño curvo como el original */
+        .card { border: 2px solid #bfa141; border-radius: 40px; padding: 35px; width: 320px; text-align: center; background: #050505; box-shadow: 0 0 20px rgba(191, 161, 65, 0.2); }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #e8f0fe; color: #000; box-sizing: border-box; font-size: 16px; text-align: center; }
+        .btn { background: #bfa141; color: #000; width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; text-transform: uppercase; }
+        .btn:hover { background: #fff; transition: 0.3s; }
+        a { color: #888; text-decoration: none; font-size: 12px; display: block; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <img src="/static/logonuevo.png" width="100">
-        <h3 style="color: #bfa141;">INICIAR SESIÓN</h3>
+        <img src="logonuevo.png" alt="Will-Pay Logo" width="120" style="margin-bottom: 10px;">
+        
+        <h3 style="color: #bfa141; letter-spacing: 1px; margin-bottom: 20px;">ACCESO AL PANEL</h3>
+        
         <form action="/acceso" method="POST">
-            <input type="text" name="cedula" placeholder="Cédula de Identidad" required>
-            <input type="password" name="pin" placeholder="PIN de Seguridad" required>
-            <button type="submit" class="btn">ACCEDER</button>
+            <input type="text" name="nombre" placeholder="Nombre y Apellido">
+            <input type="text" name="cedula" placeholder="admin" required>
+            <input type="password" name="pin" placeholder="••••" required>
+            <button type="submit" class="btn">ENTRAR SEGURO</button>
         </form>
+        
+        <a href="/registro">¿No tienes cuenta? Regístrate aquí</a>
         <p style="font-size: 10px; opacity: 0.4; margin-top: 20px;">Will-Pay V.1 Estable</p>
     </div>
 </body>
