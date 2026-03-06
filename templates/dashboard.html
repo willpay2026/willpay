@@ -3,82 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Bóveda Digital</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>Will-Pay | Mi Bóveda</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
-        .card { border: 2px solid #bfa141; border-radius: 40px; padding: 25px; background: #050505; max-width: 400px; margin: auto; box-shadow: 0 0 20px rgba(191,161,65,0.1); }
-        .saldo-section { margin: 20px 0; padding: 20px; border-radius: 25px; border: 1px solid #333; background: #0a0a0a; }
-        .saldo-label { color: #bfa141; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-        .saldo-monto { font-size: 38px; font-weight: bold; margin: 10px 0; display: block; }
-        
-        .btn-action { background: #bfa141; color: #000; width: 100%; padding: 18px; border-radius: 20px; font-weight: bold; border: none; font-size: 16px; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
-        .btn-recargar { background: transparent; color: #bfa141; border: 1px solid #bfa141; margin-bottom: 10px; }
-        
-        input { width: 100%; padding: 15px; border-radius: 15px; background: #1a1a1a; color: #fff; border: 1px solid #333; margin-top: 10px; box-sizing: border-box; text-align: center; font-size: 18px; }
-        #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-top: 15px; border: 2px solid #bfa141; }
-        
-        .footer-pm { margin-top: 25px; font-size: 11px; color: #666; border-top: 1px solid #222; padding-top: 15px; }
+        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; }
+        .boveda-card { background: linear-gradient(145deg, #111, #000); border: 2px solid #D4AF37; border-radius: 30px; padding: 30px; margin-top: 50px; }
+        .oro { color: #D4AF37; }
+        .monto { font-size: 3rem; font-weight: bold; }
+        .btn-recarga { background: #D4AF37; color: #000; font-weight: bold; border-radius: 15px; border: none; padding: 12px; width: 100%; }
+        .info-pago { background: rgba(212, 175, 55, 0.1); border: 1px dashed #D4AF37; padding: 15px; border-radius: 15px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <img src="/static/logonuevo.png" width="130" onerror="this.src='https://willpay.onrender.com/static/logonuevo.png'">
-        
-        <div class="saldo-section">
-            <span class="saldo-label">Saldo Disponible</span>
-            <span class="saldo-monto">Bs. {{ "%.2f"|format(u.saldo_bs) if u else '0.00' }}</span>
-            <button class="btn-action btn-recargar">RECARGAR SALDO</button>
-        </div>
+    <div class="container">
+        <div class="boveda-card text-center">
+            <img src="{{ url_for('static', filename='logonuevo.png') }}" width="80" class="mb-3">
+            <h5 class="text-secondary">SALDO DISPONIBLE</h5>
+            <div class="monto oro">Bs. {{ "%.2f"|format(u.saldo) }}</div>
+            <p class="small">Socio: <strong>{{ u.nombre }}</strong></p>
 
-        <div style="display: flex; gap: 10px;">
-            <button class="btn-action" style="flex:1;">PAGAR</button>
-            <button class="btn-action" style="flex:1; background:#333; color:#fff;">COBRAR</button>
-        </div>
+            <hr class="border-secondary my-4">
 
-        <input type="number" id="monto" placeholder="Monto Bs." step="0.01">
-        <input type="text" id="destino_id" placeholder="ID del Receptor">
+            <div class="info-pago mb-4">
+                <p class="mb-1 oro">PARA RECARGAR SALDO:</p>
+                <p class="mb-0">Pago Móvil Banesco (0134)<br>
+                Tel: <strong>04126602555</strong><br>
+                C.I: <strong>13496133</strong></p>
+            </div>
 
-        <div id="reader"></div>
-        <button class="btn-action" onclick="abrirScanner()" id="btn-scan" style="background:#fff;">ESCANEAR QR</button>
-        <button class="btn-action" style="background:#2ecc71; display:none;" id="btn-confirm" onclick="procesarPago()">CONFIRMAR ENVÍO</button>
+            <form action="/reportar_pago" method="POST">
+                <input type="number" step="0.01" name="monto" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Monto transferido" required>
+                <input type="text" name="referencia" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Últimos 4 o 6 dígitos de referencia" required>
+                <button type="submit" class="btn-recarga">NOTIFICAR PAGO AL CEO</button>
+            </form>
 
-        <div class="footer-pm">
-            <p style="color:#bfa141; margin:0;">PAGO MÓVIL OFICIAL</p>
-            <b>04126602555 | 13496133 | BANESCO</b>
+            <div class="mt-4">
+                <a href="/expediente" class="text-secondary small text-decoration-none">📂 Ver mi Expediente ADN</a>
+            </div>
         </div>
     </div>
-
-    <script>
-        function abrirScanner() {
-            document.getElementById('reader').style.display = 'block';
-            const scanner = new Html5Qrcode("reader");
-            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-                (id) => {
-                    document.getElementById('destino_id').value = id;
-                    scanner.stop();
-                    document.getElementById('reader').style.display = 'none';
-                    document.getElementById('btn-scan').style.display = 'none';
-                    document.getElementById('btn-confirm').style.display = 'block';
-                }
-            );
-        }
-
-        async function procesarPago() {
-            const data = {
-                monto: document.getElementById('monto').value,
-                destino: document.getElementById('destino_id').value
-            };
-            // Aquí el motor de Python aplicará el 1%, 3% o 5% automáticamente
-            const response = await fetch('/procesar_pago_bs', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-            const res = await response.json();
-            alert(res.status === 'Éxito' ? "Pago Procesado con Éxito" : "Error: " + res.msg);
-            location.reload();
-        }
-    </script>
 </body>
 </html>
