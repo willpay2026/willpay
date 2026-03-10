@@ -3,51 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Registro</title>
     <style>
-        body { background-color: #000; color: white; font-family: sans-serif; padding: 20px; }
-        .register-card { background: #0a0a0a; border-radius: 20px; padding: 30px; max-width: 450px; margin: auto; }
-        h2 { color: #d4af37; text-align: center; margin-bottom: 30px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #eee; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: white; box-sizing: border-box; }
-        input[type="file"] { background: none; border: none; }
-        .btn-finalizar { width: 100%; padding: 15px; background: #d4af37; color: black; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .resaltado { background: #e8f0fe !important; color: #333 !important; }
+        body { background:#000; color:white; font-family:sans-serif; padding:20px; }
+        .card { background:#0a0a0a; border-radius:20px; padding:30px; max-width:480px; margin:auto; }
+        label { display:block; color:#d4af37; font-size:0.9rem; margin-top:15px; }
+        input, select { width:100%; padding:12px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333; box-sizing:border-box; }
+        .resaltado { background:#e8f0fe !important; color:#333 !important; font-weight:bold; }
+        .btn { width:100%; padding:15px; background:#d4af37; border:none; border-radius:10px; font-weight:bold; margin-top:20px; cursor:pointer; }
+        .hidden { display:none; }
     </style>
 </head>
 <body>
-    <div class="register-card">
-        <h2>Registro de Usuario Bancario</h2>
+    <div class="card">
+        <h2 style="text-align:center; color:#d4af37;">ADN DIGITAL WILL-PAY</h2>
         <form action="/registro_proceso" method="POST" enctype="multipart/form-data">
-            <label>Nombre Completo (Como en Cédula)</label>
-            <input type="text" name="nombre" placeholder="Ej: Wilyanny Donquiz" required>
+            <label>Nombre y Apellido</label>
+            <input type="text" name="nombre" required>
             
-            <div style="display: flex; gap: 10px;">
-                <div style="flex: 1;">
-                    <label>Cédula / RIF</label>
-                    <input type="text" name="cedula" placeholder="V-12345678" required>
-                </div>
-                <div style="flex: 1;">
-                    <label>Teléfono</label>
-                    <input type="text" name="telefono" class="resaltado" placeholder="04126602555" required>
-                </div>
-            </div>
+            <label>Cédula / RIF</label>
+            <input type="text" name="cedula" required>
 
-            <label>Tipo de Usuario / Actividad</label>
-            <select name="tipo">
-                <option>Usuario Particular (Pasajero/Cliente)</option>
-                <option>Comercio / Emprendedor</option>
-                <option>Chofer / Transporte</option>
+            <label>Tipo de Usuario</label>
+            <select name="tipo_usuario" id="tipo" onchange="checkTipo()" class="resaltado">
+                <option value="natural">Natural (1.5%)</option>
+                <option value="firma">Firma Personal (2.1%)</option>
+                <option value="juridico">Jurídico (3.1%)</option>
             </select>
 
-            <label style="color: #d4af37;">Crea tu PIN de Seguridad (6 números)</label>
-            <input type="password" name="pin" class="resaltado" maxlength="6" placeholder="••••••" required>
+            <div id="extra" class="hidden">
+                <label id="label_extra"></label>
+                <input type="text" name="extra_input">
+            </div>
 
-            <label>Foto de Cédula (Auditoría Visual)</label>
-            <input type="file" name="foto_cedula" required>
+            <label>Código de Invitación (Solo Socios)</label>
+            <input type="text" name="codigo_socio" placeholder="Opcional">
 
-            <button type="submit" class="btn-finalizar">FINALIZAR REGISTRO Y GENERAR EXPEDIENTE</button>
+            <label>PIN de Seguridad (6 dígitos)</label>
+            <input type="password" name="pin" class="resaltado" maxlength="6" required>
+
+            <label>Adjuntar Cédula y Selfie (ADN)</label>
+            <input type="file" name="foto_cedula" style="margin-bottom:10px;" required>
+            <input type="file" name="foto_selfie" required>
+
+            <button type="submit" class="btn">GENERAR ADN DIGITAL</button>
         </form>
     </div>
+    <script>
+        function checkTipo() {
+            const t = document.getElementById('tipo').value;
+            const ex = document.getElementById('extra');
+            const lbl = document.getElementById('label_extra');
+            ex.classList.add('hidden');
+            if(t === 'firma') { ex.classList.remove('hidden'); lbl.innerText = "Actividad / Oficio"; }
+            if(t === 'juridico') { ex.classList.remove('hidden'); lbl.innerText = "Nombre de Empresa"; }
+        }
+    </script>
 </body>
 </html>
