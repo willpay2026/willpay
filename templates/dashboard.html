@@ -3,111 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Billetera</title>
+    <title>Will-Pay | Mi Billetera</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        /* ESTILO BÚNKER ORIGINAL */
-        body { 
-            background: #000; 
-            margin: 0; 
-            padding: 0; 
-            color: white; 
+        /* ESTILO GENERAL OSCURO */
+        body {
+            background: #000;
+            color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; 
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
         }
 
-        /* EL MARCO DORADO QUE ENVUELVE TODO */
-        .bunker-frame {
-            border: 1px solid #d4af37;
-            height: 97vh;
-            margin: 1.5vh;
-            border-radius: 20px;
+        /* CONTENEDOR CURVO PREMIUM (Tal como en la foto) */
+        .premium-frame {
+            border: 2px solid #d4af37;
+            border-radius: 40px; /* Bordes muy curvos */
+            padding: 30px;
+            width: 100%;
+            max-width: 380px; /* Tamaño ideal para móvil */
+            min-height: 80vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 25px;
             box-sizing: border-box;
+            background: #000;
         }
 
-        .logo-top { margin-top: 10px; opacity: 0.9; }
-        
-        .saldo-display { text-align: center; margin-top: 50px; }
-        .label-gold { color: #d4af37; font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 8px; }
-        .monto-principal { font-size: 4.2rem; font-weight: bold; }
+        /* LOGO DEL ESCUDO */
+        .logo-premium {
+            width: 250px;
+            margin-bottom: 30px;
+        }
 
-        /* BOTÓN RECARGAR (MARCO FINO DORADO) */
-        .btn-recargar {
-            width: 100%;
-            border: 1px solid #d4af37;
-            background: transparent;
-            color: #d4af37;
-            padding: 12px;
-            border-radius: 10px;
-            margin-top: 50px;
-            font-weight: bold;
+        /* SECCIÓN DE SALDO */
+        .saldo-section {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .saldo-label {
+            color: #888;
             font-size: 0.9rem;
-            text-transform: uppercase;
-            cursor: pointer;
+            margin-bottom: 5px;
         }
-
-        /* BOTONES PAGAR Y COBRAR */
-        .btn-row {
-            display: flex;
-            width: 100%;
-            gap: 12px;
-            margin-top: 25px;
-        }
-        .btn-action {
-            flex: 1;
-            padding: 22px;
-            border-radius: 15px;
+        .saldo-monto {
+            font-size: 3rem;
             font-weight: bold;
-            font-size: 1.1rem;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        .btn-gold { background: #d4af37; color: #000; }
-        .btn-dark { background: #1a1a1a; color: #fff; border: 1px solid #222; }
-
-        .movimientos-titulo {
-            width: 100%;
-            text-align: left;
-            margin-top: 40px;
-            font-weight: bold;
-            font-size: 1.1rem;
             color: #fff;
         }
 
-        .btn-cerrar {
-            color: #ff3333;
-            text-decoration: none;
-            font-size: 0.95rem;
-            margin-top: auto;
+        /* BOTONES EN FILA */
+        .action-row {
+            display: flex;
+            width: 100%;
+            gap: 15px;
             margin-bottom: 25px;
+        }
+        .btn-action {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        /* Botón PAGAR Amarillo Cobrizo */
+        .btn-pagar {
+            background: #d4af37;
+            color: #000;
+        }
+
+        /* Botón COBRAR Oscuro con Borde */
+        .btn-cobrar {
+            background: #111;
+            color: #aaa;
+            border: 1px solid #333;
+        }
+
+        /* Área de Cobro Oculta (Monto + QR) */
+        #cobro-area {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Input para el Monto a Cobrar */
+        .input-monto {
+            width: 100%;
+            padding: 15px;
+            background: #000;
+            border: 2px solid #fff; /* Borde blanco */
+            border-radius: 15px;
+            color: #d4af37; /* Texto dorado */
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        /* Contenedor del Código QR */
+        #qrcode {
+            background: #fff; /* Fondo blanco para el QR */
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        /* Botón Salir Rojo */
+        .salir-red {
+            color: #ff4444;
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-top: auto;
+            text-align: center;
+            width: 100%;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="bunker-frame">
-        <div class="logo-top">
-            <img src="/static/logo_willpay.png" alt="Will-Pay" style="width: 130px;">
+    <div class="premium-frame">
+        <img src="/static/logo_shield.png" class="logo-premium" alt="Will-Pay">
+
+        <div class="saldo-section">
+            <div class="saldo-label">Mi Saldo</div>
+            <div class="saldo-monto">Bs. {{ user.saldo }}</div>
         </div>
 
-        <div class="saldo-display">
-            <div class="label-gold">Saldo Disponible</div>
-            <div class="monto-principal">Bs. {{ user.saldo }}</div>
+        <div class="action-row">
+            <button class="btn-action btn-pagar">PAGAR</button>
+            <button class="btn-action btn-cobrar" onclick="activarCobro()">COBRAR</button>
         </div>
 
-        <button class="btn-recargar">RECARGAR</button>
-
-        <div class="btn-row">
-            <button class="btn-action btn-gold">PAGAR</button>
-            <button class="btn-action btn-dark">COBRAR</button>
+        <div id="cobro-area">
+            <input type="number" id="monto-input" class="input-monto" placeholder="00" oninput="generarQR()">
+            
+            <div id="qrcode"></div>
+            
+            <p style="color: #666; font-size: 0.8rem; margin: 0;">Muestra este código para cobrar</p>
         </div>
 
-        <div class="movimientos-titulo">Últimos Movimientos</div>
-
-        <a href="#" class="btn-cerrar">Cerrar Sesión</a>
+        <a href="/logout" class="salir-red">Salir</a>
     </div>
+
+    <script>
+        // Función para mostrar el área de cobro
+        function activarCobro() {
+            document.getElementById('cobro-area').style.display = 'block';
+            document.getElementById('monto-input').focus();
+        }
+
+        // Función para generar el código QR dinámicamente
+        var qrcode = new QRCode(document.getElementById("qrcode"), {
+            width: 200,
+            height: 200
+        });
+
+        function generarQR() {
+            var monto = document.getElementById('monto-input').value;
+            var cedula = "{{ user.cedula_rif }}"; // Requerimos la cédula del usuario
+
+            if (monto) {
+                // Creamos los datos que irán en el QR (Cédula + Monto)
+                var qrData = cedula + "|" + monto;
+                qrcode.makeCode(qrData);
+            } else {
+                qrcode.clear(); // Limpia el QR si no hay monto
+            }
+        }
+    </script>
 </body>
 </html>
