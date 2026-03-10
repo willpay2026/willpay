@@ -3,85 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay CEO Búnker</title>
+    <title>Will-Pay CEO</title>
     <style>
-        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; }
-        .header { text-align: center; padding: 20px 0; }
-        .id-dna { color: #d4af37; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 5px; }
-        .logo-escudo { width: 100px; margin-bottom: 10px; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
+        .id-dna { color: #d4af37; font-size: 0.7rem; text-align: center; letter-spacing: 2px; }
+        .tasas-container { display: flex; gap: 10px; margin: 20px 0; }
+        .tasa-box { flex: 1; background: #0a0a0a; border: 1px solid #d4af37; border-radius: 10px; padding: 10px; text-align: center; }
+        .tasa-box label { font-size: 0.6rem; color: #888; display: block; }
+        .tasa-box input { background: transparent; border: none; color: #d4af37; font-size: 1.2rem; width: 50px; text-align: center; font-weight: bold; }
         
-        /* RECUADROS DE TASAS LIMPIOS */
-        .tasas-row { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tasa-box { flex: 1; background: #0a0a0a; border: 1px solid #d4af37; border-radius: 8px; padding: 10px; text-align: center; }
-        .tasa-box label { font-size: 0.6rem; color: #888; display: block; margin-bottom: 5px; }
-        .tasa-box input { background: transparent; border: none; color: #d4af37; font-size: 1.1rem; width: 40px; font-weight: bold; text-align: center; }
-
-        /* CARDS DE DINERO */
-        .card-dinero { background: #080808; border-left: 4px solid #d4af37; padding: 20px; border-radius: 8px; margin-bottom: 15px; }
-        .card-dinero.verde { border-left-color: #00ff00; }
-        .label-dinero { font-size: 0.75rem; color: #d4af37; text-transform: uppercase; }
-        .monto-dinero { font-size: 2.2rem; font-weight: bold; margin-top: 5px; }
-
-        /* TABLA ACTIVIDAD */
-        .tabla-actividad { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8rem; }
-        .tabla-actividad th { color: #d4af37; text-align: left; padding: 10px; border-bottom: 1px solid #222; }
-        .tabla-actividad td { padding: 12px 10px; border-bottom: 1px solid #111; }
+        .card { background: #080808; border-left: 4px solid #d4af37; padding: 20px; border-radius: 10px; margin-bottom: 15px; }
+        .monto { font-size: 2.5rem; font-weight: bold; color: #fff; }
         
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
-        input:checked + .slider { background-color: #d4af37; }
+        .btn-gold { width: 100%; background: #d4af37; color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.8rem; }
+        th { color: #d4af37; text-align: left; padding: 10px; border-bottom: 1px solid #222; }
+        td { padding: 10px; border-bottom: 1px solid #111; }
+        .btn-aprobar { background: #008f39; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="/static/escudo_oro.png" class="logo-escudo">
-        <div class="id-dna">ID DNA CEO-0001 - FUNDADOR</div>
-        <h2 style="margin: 0; font-size: 1.5rem;">BIENVENIDO CEO<br>WILFREDO DONQUIZ</h2>
-    </div>
+    <div class="id-dna">ID DNA CEO-0001 - FUNDADOR</div>
+    <h2 style="text-align:center;">PANEL CONTROL WILL-PAY</h2>
 
     <form action="/actualizar_tasas" method="POST">
-        <div class="tasas-row">
-            <div class="tasa-box"><label>% PAGOS</label><input type="text" name="tasa_pagos" value="0.0">%</div>
-            <div class="tasa-box"><label>% RETIROS</label><input type="text" name="tasa_retiros" value="0.0">%</div>
-            <div class="tasa-box"><label>% JURÍDICOS</label><input type="text" name="tasa_juridicos" value="0.0">%</div>
+        <div class="tasas-container">
+            <div class="tasa-box"><label>% PAGOS</label><input type="text" name="tasa_pagos" value="1.5"></div>
+            <div class="tasa-box"><label>% RETIROS</label><input type="text" name="tasa_retiros" value="2.0"></div>
+            <div class="tasa-box"><label>% JURÍDICOS</label><input type="text" name="tasa_juridicos" value="3.0"></div>
         </div>
-        <button type="submit" style="width:100%; background:#d4af37; border:none; padding:10px; border-radius:5px; font-weight:bold; margin-bottom:20px;">GUARDAR CAMBIOS EN RED</button>
+        <button type="submit" class="btn-gold">GUARDAR CAMBIOS EN RED</button>
     </form>
 
-    <div class="card-dinero">
-        <div class="label-dinero">Saldo en Bs.</div>
-        <div class="monto-dinero">{{ "{:,.2f}".format(capital) }}</div>
-        <div style="font-size: 0.6rem; color: #444;">CAPITAL TOTAL EN BÚNKER</div>
+    <div class="card">
+        <div style="color:#d4af37; font-size:0.8rem;">CAPITAL TOTAL BÚNKER</div>
+        <div class="monto">Bs. {{ "{:,.2f}".format(capital) }}</div>
     </div>
 
-    <div class="card-dinero verde">
-        <div class="label-dinero" style="color: #00ff00;">Neto Ganancias (Legado)</div>
-        <div class="monto-dinero">Bs. 0,00</div>
-    </div>
+    <h3 style="color:#d4af37;">🔔 PAGOS PENDIENTES POR APROBAR</h3>
+    <table>
+        <thead><tr><th>Usuario</th><th>Monto</th><th>Acción</th></tr></thead>
+        <tbody>
+            {% for p in pendientes %}
+            <tr>
+                <td>{{ p.nombre_completo }}</td>
+                <td>Bs. {{ p.monto }}</td>
+                <td>
+                    <form action="/aprobar_pago/{{ p.id }}" method="POST">
+                        <button type="submit" class="btn-aprobar">APROBAR</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-    <div style="background:#0a0a0a; padding:15px; border-radius:10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size: 0.9rem; font-weight:bold;">⚙️ AUTOMATIZACIÓN</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-top:15px; font-size:0.8rem;">
-            <span>Auto-Aprobación Saldo</span>
-            <label class="switch"><input type="checkbox"><span class="slider"></span></label>
-        </div>
-    </div>
-
-    <h3 style="margin-top:25px; font-size:0.9rem; color:#d4af37;">📊 ACTIVIDAD EN VIVO (10 en 10)</h3>
-    <table class="tabla-actividad">
-        <thead>
-            <tr><th>USUARIO ID</th><th>TELÉFONO</th><th>ACT. ECON.</th></tr>
-        </thead>
+    <h3 style="color:#d4af37; margin-top:30px;">📊 ACTIVIDAD EN VIVO</h3>
+    <table>
+        <thead><tr><th>ID</th><th>TELÉFONO</th><th>REGISTRO</th></tr></thead>
         <tbody>
             {% for u in usuarios %}
-            <tr>
-                <td>{{ u.id }}</td>
-                <td>{{ u.telefono }}</td>
-                <td>{{ u.actividad_economica or 'General' }}</td>
-            </tr>
+            <tr><td>{{ u.cedula_rif }}</td><td>{{ u.telefono }}</td><td>{{ u.fecha_registro.strftime('%d/%m/%Y') }}</td></tr>
             {% endfor %}
         </tbody>
     </table>
