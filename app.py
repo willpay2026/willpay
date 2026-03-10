@@ -3,7 +3,7 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-# --- INICIALIZACIÓN (Obligatorio primero) ---
+# --- INICIALIZACIÓN ---
 app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026'
 
@@ -13,45 +13,33 @@ DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea
 def get_db():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-# --- RUTA RAÍZ (Para evitar el Error 404) ---
+# --- RUTA PRINCIPAL (Solución al Not Found) ---
 @app.route('/')
 def index():
-    # Redirigimos al panel CEO por ahora para que Render vea actividad
-    return redirect(url_for('panel_ceo'))
+    # Esto hace que al entrar a la URL se vea tu diseño de una vez
+    return redirect(url_for('dashboard'))
 
-# --- PANEL CEO (DASHBOARD) ---
+@app.route('/dashboard')
+def dashboard():
+    # Datos de prueba para que el diseño no se rompa
+    user = {'saldo': '0.00'}
+    movimientos = [] 
+    return render_template('dashboard.html', user=user, movimientos=movimientos)
+
 @app.route('/panel_ceo')
 def panel_ceo():
     try:
         conn = get_db()
         cur = conn.cursor()
-        
-        # Capital Total
         cur.execute("SELECT SUM(saldo) as total FROM usuarios_willpay")
         res = cur.fetchone()
         capital = res['total'] if res and res['total'] else 0.00
-        
-        # Últimos 10 usuarios
-        cur.execute("""
-            SELECT cedula_rif, telefono, tipo_usuario 
-            FROM usuarios_willpay 
-            ORDER BY fecha_registro DESC LIMIT 10
-        """)
-        usuarios = cur.fetchall()
-        
         cur.close()
         conn.close()
-        return render_template('panel_ceo.html', capital=capital, usuarios=usuarios)
-    except Exception as e:
-        return f"Error en el búnker: {e}"
-
-# --- ACTUALIZACIÓN DE RED ---
-@app.route('/actualizar_tasas', methods=['POST'])
-def actualizar_tasas():
-    flash("Configuración de Red Actualizada")
-    return redirect(url_for('panel_ceo'))
+        return render_template('panel_ceo.html', capital=capital)
+    except:
+        return render_template('panel_ceo.html', capital=0.00)
 
 if __name__ == '__main__':
-    # Render usa el puerto 10000 por defecto
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
