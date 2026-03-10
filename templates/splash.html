@@ -3,26 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Cargando el Legado</title>
+    <title>Will-Pay | Billetera de Confianza</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-        .logo-shield { width: 150px; margin-bottom: 20px; animation: pulse 2s infinite; }
-        .oro { color: #D4AF37; letter-spacing: 3px; font-size: 12px; text-transform: uppercase; margin-top: 20px; }
-        .spinner { border: 3px solid rgba(212, 175, 55, 0.1); border-left-color: #D4AF37; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        /* Fondo Negro Búnker Minimalista */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000; display: flex;
+            justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+
+        #splash-container {
+            text-align: center;
+            transition: opacity 1s ease-out;
+            animation: initialFadeIn 1.5s ease-out; /* Aparición suave inicial */
+        }
+
+        /* Tu Logo Dorado Oficial */
+        .logo-willpay {
+            width: 280px; /* Un poco más grande para llenar el espacio */
+            max-width: 90vw; /* Asegurar que no se corte en móviles */
+            filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.4));
+        }
+
+        /* Aparición suave al inicio */
+        @keyframes initialFadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
-    <div>
-        <img src="{{ url_for('static', filename='logonuevo.png') }}" class="logo-shield">
-        <h2 style="margin:0; font-weight: bold;">WILL-PAY</h2>
-        <div class="spinner"></div>
-        <div class="oro">Iniciando Búnker Seguro...</div>
+
+    <div id="splash-container">
+        <img src="https://i.imgur.com/TuLogoDoradoCompleto.png" alt="Will-Pay" class="logo-willpay">
     </div>
+
     <script>
-        // Después de 3 segundos, salta al acceso automáticamente
-        setTimeout(() => { window.location.href = "/acceso"; }, 3000);
+        // CRONÓMETRO DE 4 SEGUNDOS EXACTOS
+        setTimeout(() => {
+            const container = document.getElementById('splash-container');
+            container.style.opacity = '0'; // Desvanecimiento suave al final
+            
+            setTimeout(() => {
+                // Después de los 4 segundos, saltamos al Acceso (Login)
+                window.location.href = "/acceso"; 
+            }, 1000); // Tiempo extra para el efecto de desvanecimiento
+        }, 4000); // 4000 milisegundos = 4 segundos
     </script>
 </body>
 </html>
