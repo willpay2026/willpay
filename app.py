@@ -12,51 +12,44 @@ DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea
 def get_db():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-# --- REGISTRO CON DATOS PARA REINTEGROS ---
-@app.route('/registro', methods=['POST'])
-def registro_usuario():
-    nombre = request.form.get('nombre')
-    cedula = request.form.get('cedula')
-    telefono = request.form.get('telefono')
-    # Datos obligatorios para que el usuario reciba sus retiros [cite: 2026-03-01]
-    banco = request.form.get('banco_pago_movil')
-    telf_pm = request.form.get('telf_pago_movil')
-    tipo_user = request.form.get('tipo_usuario') 
-
+@app.route('/panel_ceo')
+def panel_ceo():
     conn = get_db()
     cur = conn.cursor()
-    try:
-        cur.execute("""
-            INSERT INTO usuarios_willpay (nombre_completo, cedula_rif, telefono, banco_pago_movil, telf_pago_movil, tipo_usuario, saldo)
-            VALUES (%s, %s, %s, %s, %s, %s, 0.00)
-        """, (nombre, cedula, telefono, banco, telf_pm, tipo_user))
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        return f"Error: {e}"
-    finally:
-        cur.close()
-        conn.close()
-    return redirect(url_for('dashboard'))
+    
+    # 1. Capital Total y Ganancias
+    cur.execute("SELECT SUM(saldo) as total FROM usuarios_willpay")
+    capital = cur.fetchone()['total'] or 0.00
+    
+    # 2. Actividad en Vivo (10 en 10)
+    cur.execute("""
+        SELECT id, telefono, actividad_economica, fecha_registro 
+        FROM usuarios_willpay ORDER BY fecha_registro DESC LIMIT 10
+    """)
+    usuarios = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    return render_template('panel_ceo.html', capital=capital, usuarios=usuarios)
 
-# --- ACTUALIZACIÓN DE TASAS (SÓLO NÚMEROS) ---
 @app.route('/actualizar_tasas', methods=['POST'])
 def actualizar_tasas():
+    # Recuadros manipulables limpios
     t_pagos = request.form.get('tasa_pagos')
-    t_tecnicos = request.form.get('tasa_tecnicos')
+    t_retiros = request.form.get('tasa_retiros')
     t_juridicos = request.form.get('tasa_juridicos')
     
     conn = get_db()
     cur = conn.cursor()
-    # Actualización masiva por tipo de usuario en el búnker
+    # Actualización masiva por tipo
     cur.execute("UPDATE usuarios_willpay SET comision_asignada = %s WHERE tipo_usuario = 'natural'", (t_pagos,))
-    cur.execute("UPDATE usuarios_willpay SET comision_asignada = %s WHERE tipo_usuario = 'tecnico'", (t_tecnicos,))
+    cur.execute("UPDATE usuarios_willpay SET comision_asignada = %s WHERE tipo_usuario = 'tecnico'", (t_retiros,))
     cur.execute("UPDATE usuarios_willpay SET comision_asignada = %s WHERE tipo_usuario = 'juridico'", (t_juridicos,))
     conn.commit()
     cur.close()
     conn.close()
+    flash("Tasas actualizadas con éxito")
     return redirect(url_for('panel_ceo'))
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=10000)
