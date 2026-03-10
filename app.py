@@ -3,12 +3,18 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026'
 
-# CONEXIÓN AL BÚNKER
+# CONEXIÓN AL BÚNKER (Render URL)
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a.oregon-postgres.render.com/willpay_db?sslmode=require"
+
+# Carpeta para el ADN Digital (Fotos)
+UPLOAD_FOLDER = 'static/adn_digital'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 def get_db():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
@@ -27,7 +33,7 @@ def registro():
 
 @app.route('/registro_proceso', methods=['POST'])
 def registro_proceso():
-    # Recolección de datos para el ADN Digital
+    # 1. Recolección de datos
     nombre = request.form.get('nombre')
     cedula = request.form.get('cedula')
     telefono = request.form.get('telefono')
@@ -36,31 +42,46 @@ def registro_proceso():
     pin = request.form.get('pin')
     codigo_socio = request.form.get('codigo_socio')
 
-    # Lógica de Comisiones
+    # 2. Manejo de Fotos (ADN Digital)
+    f_cedula = request.files.get('foto_cedula')
+    f_selfie = request.files.get('foto_selfie')
+    
+    path_cedula = ""
+    path_selfie = ""
+
+    if f_cedula and f_selfie:
+        filename_c = secure_filename(f"{cedula}_cedula.png")
+        filename_s = secure_filename(f"{cedula}_selfie.png")
+        path_cedula = os.path.join(UPLOAD_FOLDER, filename_c)
+        path_selfie = os.path.join(UPLOAD_FOLDER, filename_s)
+        f_cedula.save(path_cedula)
+        f_selfie.save(path_selfie)
+
+    # 3. Lógica de Comisiones y Socios
     tasa = 1.5
     es_socio = False
-    if tipo == 'firma': tasa = 2.1
-    if tipo == 'juridico': tasa = 3.1
-    
-    # Validación de los 5 socios exclusivos
     codigos_validos = ['willpay socio 1', 'willpay socio 2', 'willpay socio 3', 'willpay socio 4', 'willpay socio 5']
+    
     if codigo_socio in codigos_validos:
         es_socio = True
-        tasa = 1.0 # Beneficio de socio
+        tasa = 1.0  # Tasa preferencial socio
+    elif tipo == 'firma':
+        tasa = 2.1
+    elif tipo == 'juridico':
+        tasa = 3.1
 
-    # Aquí se guardaría en la base de datos (simulado para el ticket)
-    session['usuario_actual'] = {
-        'nombre': nombre, 'cedula': cedula, 'tipo': tipo, 
-        'tasa': tasa, 'es_socio': es_socio, 'id': 'WP-00001'
-    }
-    
-    return redirect(url_for('ticket_bienvenida'))
-
-@app.route('/ticket_bienvenida')
-def ticket_bienvenida():
-    u = session.get('usuario_actual')
-    return render_template('ticket_bienvenida.html', u=u)
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    # 4. Guardar en el Búnker de PostgreSQL
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO usuarios_willpay 
+            (nombre_completo, cedula_rif, telefono, tipo_usuario, actividad_economica, comision_asignada, pin_seguridad, ruta_cedula, ruta_selfie, es_socio)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (nombre, cedula, telefono, tipo, actividad, tasa, pin, path_cedula, path_selfie, es_socio))
+        
+        nuevo_id = cur.fetchone()['id']
+        conn.commit()
+        cur.close()
+        conn.close()
