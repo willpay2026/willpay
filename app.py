@@ -2,26 +2,28 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from datetime import datetime
 
 # --- INICIALIZACIÓN ---
 app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026'
 
-# CONEXIÓN AL BÚNKER EN RENDER
+# CONEXIÓN AL BÚNKER (RENDER POSTGRES)
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a.oregon-postgres.render.com/willpay_db?sslmode=require"
 
 def get_db():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-# --- RUTA PRINCIPAL (Solución al Not Found) ---
+# --- RUTAS DE NAVEGACIÓN ---
+
 @app.route('/')
 def index():
-    # Esto hace que al entrar a la URL se vea tu diseño de una vez
+    # Evita el Error 404 mandando al usuario al Dashboard
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
 def dashboard():
-    # Datos de prueba para que el diseño no se rompa
+    # Simulación de usuario para el diseño
     user = {'saldo': '0.00'}
     movimientos = [] 
     return render_template('dashboard.html', user=user, movimientos=movimientos)
@@ -31,6 +33,7 @@ def panel_ceo():
     try:
         conn = get_db()
         cur = conn.cursor()
+        # Suma total para el Capital del Búnker
         cur.execute("SELECT SUM(saldo) as total FROM usuarios_willpay")
         res = cur.fetchone()
         capital = res['total'] if res and res['total'] else 0.00
@@ -40,6 +43,7 @@ def panel_ceo():
     except:
         return render_template('panel_ceo.html', capital=0.00)
 
+# --- ARRANQUE DE PUERTO (PARA RENDER) ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
