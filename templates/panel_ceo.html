@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #000; color: white; font-family: sans-serif; margin: 0; text-align: center; }
+        .ceo-header { padding: 20px; border-bottom: 2px solid #d4af37; }
+        .logo { width: 120px; }
+        .id-dna { color: #d4af37; font-size: 0.7rem; letter-spacing: 2px; }
+        
+        /* LOS 3 RECUADROS MANIPULABLES */
+        .tasas-container { display: flex; justify-content: space-around; padding: 20px; gap: 10px; }
+        .recuadro-tasa { background: #111; border: 1px solid #d4af37; border-radius: 10px; padding: 10px; flex: 1; }
+        .recuadro-tasa label { display: block; font-size: 0.6rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .recuadro-tasa input { background: transparent; border: none; color: #d4af37; font-size: 1.2rem; text-align: center; width: 60px; font-weight: bold; }
+        
+        .bunker-card { border: 2px solid #d4af37; border-radius: 15px; margin: 20px; padding: 30px; background: #000; }
+        .capital-total { font-size: 3rem; font-weight: bold; margin: 10px 0; }
+        
+        .btn-update { background: #d4af37; color: #000; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="ceo-header">
+        <img src="/static/logo.png" class="logo">
+        <div class="id-dna">ID DNA CEO-0001 - FUNDADOR</div>
+        <h2>BIENVENIDO CEO<br>WILFREDO DONQUIZ</h2>
+    </div>
+
+    <form action="/actualizar_tasas" method="POST">
+        <div class="tasas-container">
+            <div class="recuadro-tasa">
+                <label>% PAGOS / COBROS</label>
+                <input type="text" name="tasa_pagos" value="1.5">%
+            </div>
+            <div class="recuadro-tasa">
+                <label>% ACT. ECONÓMICAS</label>
+                <input type="text" name="tasa_actividades" value="2.1">%
+            </div>
+            <div class="recuadro-tasa">
+                <label>% JURÍDICAS</label>
+                <input type="text" name="tasa_juridica" value="3.1">%
+            </div>
+        </div>
+        <button type="submit" class="btn-update">GUARDAR CAMBIOS EN RED</button>
+    </form>
+
+    <div class="bunker-card">
+        <div style="color: #d4af37; font-size: 0.9rem;">SALDO EN Bs.</div>
+        <div class="capital-total">{{ capital }}</div>
+        <div style="color: #444; font-size: 0.7rem;">CAPITAL TOTAL EN BÚNKER</div>
+    </div>
+
+    </body>
+</html>
