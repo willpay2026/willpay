@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from datetime import datetime
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026'
@@ -9,47 +11,49 @@ app.secret_key = 'willpay_donquiz_2026'
 # CONEXIÓN AL BÚNKER EN RENDER
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVCv07Ttl6AE5dIk68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a.oregon-postgres.render.com/willpay_db?sslmode=require"
 
+UPLOAD_FOLDER = 'static/comprobantes'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
 def get_db():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-@app.route('/panel_ceo')
-def panel_ceo():
-    conn = get_db()
-    cur = conn.cursor()
-    
-    # 1. Capital Total y Ganancias
-    cur.execute("SELECT SUM(saldo) as total FROM usuarios_willpay")
-    capital = cur.fetchone()['total'] or 0.00
-    
-    # 2. Actividad en Vivo (10 en 10)
-    cur.execute("""
-        SELECT id, telefono, actividad_economica, fecha_registro 
-        FROM usuarios_willpay ORDER BY fecha_registro DESC LIMIT 10
-    """)
-    usuarios = cur.fetchall()
-    
-    cur.close()
-    conn.close()
-    return render_template('panel_ceo.html', capital=capital, usuarios=usuarios)
+# --- RUTAS DE USUARIO ---
 
-@app.route('/actualizar_tasas', methods=['POST'])
-def actualizar_tasas():
-    # Recuadros manipulables limpios
-    t_pagos = request.form.get('tasa_pagos')
-    t_retiros = request.form.get('tasa_retiros')
-    t_juridicos = request.form.get('tasa_juridicos')
+@app.route('/')
+def dashboard():
+    if 'user_id' not in session:
+        return "Inicia sesión para continuar" # Aquí iría tu login
     
     conn = get_db()
     cur = conn.cursor()
-    # Actualización masiva por tipo
-    cur.execute("UPDATE usuarios_willpay SET comision_asignada = %s WHERE tipo_usuario = 'natural'", (t_pagos,))
-    cur.execute("UPDATE usuarios_willpay SET comision_asignada = %s WHERE tipo_usuario = 'tecnico'", (t_retiros,))
-    cur.execute("UPDATE usuarios_willpay SET comision_asignada = %s WHERE tipo_usuario = 'juridico'", (t_juridicos,))
-    conn.commit()
+    cur.execute("SELECT * FROM usuarios_willpay WHERE cedula_rif = %s", (session['user_id'],))
+    user = cur.fetchone()
+    
+    cur.execute("SELECT * FROM movimientos_willpay WHERE cedula_usuario = %s ORDER BY fecha_movimiento DESC LIMIT 10", (session['user_id'],))
+    movimientos = cur.fetchall()
     cur.close()
     conn.close()
-    flash("Tasas actualizadas con éxito")
-    return redirect(url_for('panel_ceo'))
+    return render_template('dashboard.html', user=user, movimientos=movimientos)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+@app.route('/registro_proceso', methods=['POST'])
+def registro_proceso():
+    nombre = request.form.get('nombre')
+    cedula = request.form.get('cedula')
+    telefono = request.form.get('telefono')
+    banco = request.form.get('banco_pago_movil')
+    telf_pm = request.form.get('telf_pago_movil')
+    tipo_user = request.form.get('tipo_usuario')
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO usuarios_willpay (nombre_completo, cedula_rif, telefono, banco_pago_movil, telf_pago_movil, tipo_usuario, saldo)
+            VALUES (%s, %s, %s, %s, %s, %s, 0.00)
+        """, (nombre, cedula, telefono, banco, telf_pm, tipo_user))
+        conn.commit()
+        flash("Registro Exitoso")
+    except Exception as e:
+        conn.rollback()
+        return f"Error: {e}"
