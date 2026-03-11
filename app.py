@@ -1,45 +1,46 @@
 # --- RUTA DEL PANEL CEO ---
 @app.route('/panel_ceo')
 def panel_ceo():
-    # Solo permitimos entrar si el usuario tiene rol de 'admin' o 'dueño'
     if 'user_id' not in session:
         return redirect(url_for('acceso'))
     
     conn = get_db()
     cur = conn.cursor()
     
-    # Calculamos el Capital Total en el Búnker
-    cur.execute("SELECT SUM(saldo) as total FROM users")
-    capital = cur.fetchone()['total'] or 0.00
+    # 1. Obtenemos la configuración de automatización (los interruptores)
+    cur.execute("SELECT * FROM config_ceo WHERE id = 1")
+    config = cur.fetchone()
     
-    # Obtenemos los últimos 10 movimientos para la tabla "Actividad en Vivo"
+    # 2. Calculamos el Capital Total en el Búnker
+    cur.execute("SELECT SUM(saldo) as total FROM users")
+    resultado_capital = cur.fetchone()
+    capital = resultado_capital['total'] if resultado_capital['total'] else 0.00
+    
+    # 3. Obtenemos los últimos 10 usuarios para la tabla
     cur.execute("SELECT id, nombre, rol, cedula FROM users ORDER BY id DESC LIMIT 10")
     usuarios = cur.fetchall()
     
     cur.close()
     conn.close()
     
-    return render_template('panel_ceo.html', capital=capital, usuarios=usuarios)
+    # Enviamos 'config', 'capital' y 'usuarios' al HTML
+    return render_template('panel_ceo.html', config=config, capital=capital, usuarios=usuarios)
 
-# --- ACCIÓN: CARGAR SALDO DIRECTO ---
-@app.route('/cargar_saldo', methods=['POST'])
-def cargar_saldo():
-    cedula_destino = request.form.get('cedula')
-    monto = float(request.form.get('monto'))
+# --- NUEVA ACCIÓN: CAMBIAR INTERRUPTORES ---
+@app.route('/actualizar_config', methods=['POST'])
+def actualizar_config():
+    # Detectamos si los interruptores están ON u OFF
+    auto_saldo = True if request.form.get('auto_saldo') == 'on' else False
+    auto_retiro = True if request.form.get('auto_retiro') == 'on' else False
     
     conn = get_db()
     cur = conn.cursor()
-    
-    try:
-        # Sumamos el monto al saldo del usuario destino
-        cur.execute("UPDATE users SET saldo = saldo + %s WHERE cedula = %s", (monto, cedula_destino))
-        conn.commit()
-        print(f"Éxito: Se cargaron {monto} a la cédula {cedula_destino}")
-    except Exception as e:
-        conn.rollback()
-        print(f"Error en recarga: {e}")
-    finally:
-        cur.close()
-        conn.close()
-        
+    cur.execute("""
+        UPDATE config_ceo 
+        SET auto_saldo = %s, auto_retiro = %s 
+        WHERE id = 1
+    """, (auto_saldo, auto_retiro))
+    conn.commit()
+    cur.close()
+    conn.close()
     return redirect(url_for('panel_ceo'))
