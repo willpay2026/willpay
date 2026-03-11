@@ -2,87 +2,71 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Mi Billetera</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Will-Pay</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        /* ESTILO GENERAL OSCURO */
-        body {
-            background: #000;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
+        * { box-sizing: border-box; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; width: 100vw; overflow-x: hidden; }
+        
+        .container { width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px; }
+        
+        .header { text-align: center; padding: 20px 0; }
+        .logo { width: 150px; }
 
-        /* CONTENEDOR CURVO PREMIUM */
-        .premium-frame {
-            border: 2px solid #d4af37;
-            border-radius: 40px; 
-            padding: 30px;
-            width: 100%;
-            max-width: 380px; 
-            min-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-sizing: border-box;
-            background: #000;
-        }
+        .saldo-card { background: #111; width: 100%; padding: 40px 20px; text-align: center; margin-bottom: 2px; }
+        .label { color: #888; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; }
+        .monto { font-size: 3.5rem; font-weight: bold; margin-top: 10px; }
 
-        .logo-premium {
-            width: 200px;
-            margin-bottom: 30px;
-        }
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #222; margin-top: 2px; }
+        .btn { background: #111; color: #fff; border: none; padding: 25px; font-size: 1rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn:active { background: #333; }
+        .btn-main { grid-column: span 2; background: #fff; color: #000; }
 
-        /* SECCIÓN DE SALDO */
-        .saldo-section {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .saldo-label {
-            color: #d4af37;
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
-        .saldo-monto {
-            font-size: 3rem;
-            font-weight: bold;
-            color: #fff;
-        }
+        #cobro-area { display: none; background: #111; padding: 20px; text-align: center; flex-grow: 1; }
+        .input-monto { width: 100%; background: transparent; border: none; border-bottom: 2px solid #fff; color: #fff; font-size: 2.5rem; text-align: center; padding: 10px; outline: none; margin-bottom: 20px; }
+        #qrcode { background: #fff; padding: 10px; display: inline-block; }
 
-        /* BOTONES EN FILA */
-        .action-row {
-            display: flex;
-            width: 100%;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .btn-action {
-            flex: 1;
-            padding: 15px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 1rem;
-            border: none;
-            cursor: pointer;
-            text-align: center;
-            text-transform: uppercase;
-        }
+        .footer-link { margin-top: auto; text-align: center; padding: 20px; color: #ff4444; text-decoration: none; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo_shield.png') }}" class="logo">
+        </div>
 
-        .btn-pagar { background: #d4af37; color: #000; }
-        .btn-cobrar { background: #111; color: #aaa; border: 1px solid #333; }
+        <div class="saldo-card">
+            <div class="label">Saldo Disponible</div>
+            <div class="monto">Bs. {{ "{:,.2f}".format(user.saldo if user.saldo else 0) }}</div>
+        </div>
 
-        /* Área de Cobro */
-        #cobro-area {
-            display: none;
-            width: 100%;
-            text-align: center;
+        <div class="actions">
+            <button class="btn btn-main">RECARGAR</button>
+            <button class="btn" onclick="location.href='/pagar'">PAGAR</button>
+            <button class="btn" onclick="activarCobro()">COBRAR</button>
+        </div>
+
+        <div id="cobro-area">
+            <input type="number" id="monto-input" class="input-monto" placeholder="0.00" oninput="generarQR()">
+            <div id="qrcode"></div>
+        </div>
+
+        <a href="/salir" class="footer-link">CERRAR SESIÓN</a>
+    </div>
+
+    <script>
+        function activarCobro() {
+            document.getElementById('cobro-area').style.display = 'block';
+            document.getElementById('monto-input').focus();
         }
-
-        .input-monto {
-            width: 100%;
-            padding: 15px;
-            background: #000
+        var qrcode = new QRCode(document.getElementById("qrcode"), { width: 200, height: 200 });
+        function generarQR() {
+            var monto = document.getElementById('monto-input').value;
+            if (monto > 0) {
+                qrcode.makeCode("{{ user.cedula }}|" + monto);
+            } else { qrcode.clear(); }
+        }
+    </script>
+</body>
+</html>
