@@ -2,80 +2,113 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay CEO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Will-Pay | Panel CEO</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
-        .gold { color: #d4af37; }
-        .id-dna { font-size: 0.6rem; letter-spacing: 2px; text-align: center; color: #d4af37; margin-bottom: 5px; }
+        * { box-sizing: border-box; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 0; width: 100vw; overflow-x: hidden; }
         
-        /* 3 RECUADROS DE TASAS */
-        .grid-tasas { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 15px 0; }
-        .box-tasa { border: 1px solid #d4af37; border-radius: 8px; padding: 10px; text-align: center; background: #050505; }
-        .box-tasa span { font-size: 0.55rem; color: #888; display: block; }
-        .box-tasa b { font-size: 1rem; color: #d4af37; }
+        /* Contenedor principal a pantalla completa */
+        .ceo-container { width: 100%; display: flex; flex-direction: column; padding: 15px; }
 
-        /* CARDS PRINCIPALES */
-        .card { background: #0a0a0a; border-left: 4px solid #d4af37; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-        .card-ganancia { background: #0a0a0a; border-left: 4px solid #00ff00; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-        
-        /* AUTOMATIZACIÓN */
-        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; }
-        .toggle { width: 40px; height: 20px; background: #333; border-radius: 20px; position: relative; cursor: pointer; }
-        .toggle::after { content: ''; width: 16px; height: 16px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
-        
-        table { width: 100%; font-size: 0.7rem; border-collapse: collapse; margin-top: 10px; }
-        th { color: #d4af37; text-align: left; padding: 8px; border-bottom: 1px solid #333; }
-        td { padding: 8px; border-bottom: 1px solid #111; }
-        .btn-page { background: #222; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; }
+        .header-ceo { text-align: center; padding: 20px 0; }
+        .logo-ceo { width: 140px; margin-bottom: 10px; }
+        .dna-id { color: #d4af37; font-size: 0.7rem; letter-spacing: 2px; }
+
+        .welcome-msg { font-size: 1.4rem; font-weight: bold; text-align: center; margin: 15px 0; text-transform: uppercase; }
+
+        /* LOS 3 CONTROLES DE PORCENTAJE (MANIPULABLES) */
+        .config-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 20px; }
+        .config-box { background: #111; padding: 10px; text-align: center; border: 1px solid #222; }
+        .config-box label { display: block; font-size: 0.6rem; color: #888; margin-bottom: 5px; height: 25px; }
+        .config-input { width: 100%; background: transparent; border: 1px solid #d4af37; color: #d4af37; text-align: center; font-size: 1.2rem; font-weight: bold; padding: 5px 0; outline: none; }
+
+        /* MONITOR DE CAPITAL */
+        .stats-section { background: #111; padding: 30px 15px; text-align: center; margin-bottom: 10px; border-left: 4px solid #d4af37; }
+        .stats-label { color: #d4af37; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+        .stats-monto { font-size: 3.2rem; font-weight: bold; margin: 10px 0; }
+        .stats-subtext { color: #444; font-size: 0.7rem; text-transform: uppercase; }
+
+        /* SECCIÓN DE RECARGA DIRECTA */
+        .section-title { font-size: 0.9rem; font-weight: bold; padding: 15px 5px; display: flex; align-items: center; gap: 10px; color: #d4af37; }
+        .form-directo { background: #111; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .input-directo { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; font-size: 1rem; outline: none; }
+        .btn-cargar { background: #d4af37; color: #000; border: none; padding: 15px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+
+        /* TABLA DE ACTIVIDAD EN VIVO */
+        .table-container { width: 100%; overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; text-align: left; }
+        th { color: #d4af37; padding: 10px; border-bottom: 1px solid #222; text-transform: uppercase; }
+        td { padding: 12px 10px; border-bottom: 1px solid #111; color: #ccc; }
+
+        .footer-nav { display: flex; justify-content: space-between; padding: 20px 0; }
+        .btn-nav { background: #222; color: #fff; border: none; padding: 10px 20px; font-size: 0.8rem; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div style="text-align: center; margin-bottom: 20px;">
-        <div class="id-dna">ID DNA CEO-0001 - FUNDADOR</div>
-        <h2 style="margin: 5px 0;">BIENVENIDO CEO<br>WILFREDO DONQUIZ</h2>
-    </div>
+    <div class="ceo-container">
+        <div class="header-ceo">
+            <img src="{{ url_for('static', filename='logo_shield.png') }}" class="logo-ceo">
+            <div class="dna-id">ID DNA CEO-0001 - FUNDADOR</div>
+        </div>
 
-    <div class="grid-tasas">
-        <div class="box-tasa"><span>% PAGOS</span><b>0.0%</b></div>
-        <div class="box-tasa"><span>% RETIROS</span><b>0.0%</b></div>
-        <div class="box-tasa"><span>% ACT. ECON.</span><b>0.0%</b></div>
-    </div>
+        <div class="welcome-msg">BIENVENIDO CEO<br>WILFREDO DONQUIZ</div>
 
-    <div class="card">
-        <div class="gold" style="font-size: 0.7rem;">SALDO EN Bs.</div>
-        <div style="font-size: 2.5rem; font-weight: bold;">{{ "{:,.2f}".format(capital) }}</div>
-        <div style="font-size: 0.6rem; color: #555;">CAPITAL TOTAL EN BÚNKER</div>
-    </div>
+        <div class="config-row">
+            <div class="config-box">
+                <label>% PAGOS / COBROS</label>
+                <input type="text" class="config-input" value="0.5%">
+            </div>
+            <div class="config-box">
+                <label>% ACT. ECON. PERSONAL</label>
+                <input type="text" class="config-input" value="1.0%">
+            </div>
+            <div class="config-box">
+                <label>% ACT. ECON. JURÍDICA</label>
+                <input type="text" class="config-input" value="2.5%">
+            </div>
+        </div>
 
-    <div class="card-ganancia">
-        <div style="color: #00ff00; font-size: 0.7rem;">NETO GANANCIAS (LEGADO)</div>
-        <div style="font-size: 1.8rem; font-weight: bold; color: #00ff00;">Bs. {{ "{:,.2f}".format(ganancia) }}</div>
-    </div>
+        <div class="stats-section">
+            <div class="stats-label">Capital Total en Búnker</div>
+            <div class="stats-monto">0.000,00</div>
+            <div class="stats-subtext">Saldo acumulado en la red</div>
+        </div>
 
-    <div class="card">
-        <h4 class="gold" style="margin: 0 0 10px 0;">⚙️ AUTOMATIZACIÓN</h4>
-        <div class="switch-row"><span>Auto-Aprobación Saldo</span><div class="toggle"></div></div>
-        <div class="switch-row"><span>Auto-Aprobación Retiro</span><div class="toggle"></div></div>
-        <p style="font-size: 0.5rem; color: #444; text-align: center; margin-top: 10px;">VINCULADO AL BÚNKER EN RENDER</p>
-    </div>
+        <div class="section-title">⚡ RECARGA DIRECTA</div>
+        <form class="form-directo">
+            <input type="number" class="input-directo" placeholder="Número de Cédula / ID">
+            <input type="number" class="input-directo" placeholder="Monto en Bs.">
+            <button type="button" class="btn-cargar">CARGAR SALDO</button>
+        </form>
 
-    <h4 class="gold">📊 ACTIVIDAD EN VIVO (10 en 10)</h4>
-    <table>
-        <thead>
-            <tr><th>USUARIO ID</th><th>TELÉFONO</th><th>ACT. ECON.</th></tr>
-        </thead>
-        <tbody>
-            {% for u in usuarios %}
-            <tr><td>{{ u.cedula_rif }}</td><td>{{ u.telefono }}</td><td>{{ u.tipo_usuario }}</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <div class="section-title">📊 ACTIVIDAD EN VIVO</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>USUARIO ID</th>
+                        <th>TELÉFONO</th>
+                        <th>ACT. ECON.</th>
+                        <th>FECHA/HORA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>WP-ADN-321</td>
+                        <td>0412...</td>
+                        <td>PERSONAL</td>
+                        <td>11/03/2026</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
-        <button class="btn-page">ANTERIOR</button>
-        <span style="font-size: 0.8rem; padding-top: 5px;">Página 1</span>
-        <button class="btn-page">SIGUIENTE</button>
+        <div class="footer-nav">
+            <button class="btn-nav">ANTERIOR</button>
+            <span>Página 1</span>
+            <button class="btn-nav">SIGUIENTE</button>
+        </div>
     </div>
 </body>
 </html>
