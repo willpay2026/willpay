@@ -17,13 +17,13 @@
             justify-content: center;
         }
 
-        /* CONTENEDOR CURVO PREMIUM (Tal como en la foto) */
+        /* CONTENEDOR CURVO PREMIUM */
         .premium-frame {
             border: 2px solid #d4af37;
-            border-radius: 40px; /* Bordes muy curvos */
+            border-radius: 40px; 
             padding: 30px;
             width: 100%;
-            max-width: 380px; /* Tamaño ideal para móvil */
+            max-width: 380px; 
             min-height: 80vh;
             display: flex;
             flex-direction: column;
@@ -32,9 +32,8 @@
             background: #000;
         }
 
-        /* LOGO DEL ESCUDO */
         .logo-premium {
-            width: 250px;
+            width: 200px;
             margin-bottom: 30px;
         }
 
@@ -44,8 +43,8 @@
             margin-bottom: 25px;
         }
         .saldo-label {
-            color: #888;
-            font-size: 0.9rem;
+            color: #d4af37;
+            font-size: 1.1rem;
             margin-bottom: 5px;
         }
         .saldo-monto {
@@ -73,112 +72,17 @@
             text-transform: uppercase;
         }
 
-        /* Botón PAGAR Amarillo Cobrizo */
-        .btn-pagar {
-            background: #d4af37;
-            color: #000;
-        }
+        .btn-pagar { background: #d4af37; color: #000; }
+        .btn-cobrar { background: #111; color: #aaa; border: 1px solid #333; }
 
-        /* Botón COBRAR Oscuro con Borde */
-        .btn-cobrar {
-            background: #111;
-            color: #aaa;
-            border: 1px solid #333;
-        }
-
-        /* Área de Cobro Oculta (Monto + QR) */
+        /* Área de Cobro */
         #cobro-area {
             display: none;
             width: 100%;
             text-align: center;
         }
 
-        /* Input para el Monto a Cobrar */
         .input-monto {
             width: 100%;
             padding: 15px;
-            background: #000;
-            border: 2px solid #fff; /* Borde blanco */
-            border-radius: 15px;
-            color: #d4af37; /* Texto dorado */
-            font-size: 1.8rem;
-            font-weight: bold;
-            text-align: center;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-        }
-
-        /* Contenedor del Código QR */
-        #qrcode {
-            background: #fff; /* Fondo blanco para el QR */
-            padding: 15px;
-            border-radius: 10px;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-
-        /* Botón Salir Rojo */
-        .salir-red {
-            color: #ff4444;
-            text-decoration: none;
-            font-size: 0.9rem;
-            margin-top: auto;
-            text-align: center;
-            width: 100%;
-            display: block;
-        }
-    </style>
-</head>
-<body>
-    <div class="premium-frame">
-        <img src="/static/logo_shield.png" class="logo-premium" alt="Will-Pay">
-
-        <div class="saldo-section">
-            <div class="saldo-label">Mi Saldo</div>
-            <div class="saldo-monto">Bs. {{ user.saldo }}</div>
-        </div>
-
-        <div class="action-row">
-            <button class="btn-action btn-pagar">PAGAR</button>
-            <button class="btn-action btn-cobrar" onclick="activarCobro()">COBRAR</button>
-        </div>
-
-        <div id="cobro-area">
-            <input type="number" id="monto-input" class="input-monto" placeholder="00" oninput="generarQR()">
-            
-            <div id="qrcode"></div>
-            
-            <p style="color: #666; font-size: 0.8rem; margin: 0;">Muestra este código para cobrar</p>
-        </div>
-
-        <a href="/logout" class="salir-red">Salir</a>
-    </div>
-
-    <script>
-        // Función para mostrar el área de cobro
-        function activarCobro() {
-            document.getElementById('cobro-area').style.display = 'block';
-            document.getElementById('monto-input').focus();
-        }
-
-        // Función para generar el código QR dinámicamente
-        var qrcode = new QRCode(document.getElementById("qrcode"), {
-            width: 200,
-            height: 200
-        });
-
-        function generarQR() {
-            var monto = document.getElementById('monto-input').value;
-            var cedula = "{{ user.cedula_rif }}"; // Requerimos la cédula del usuario
-
-            if (monto) {
-                // Creamos los datos que irán en el QR (Cédula + Monto)
-                var qrData = cedula + "|" + monto;
-                qrcode.makeCode(qrData);
-            } else {
-                qrcode.clear(); // Limpia el QR si no hay monto
-            }
-        }
-    </script>
-</body>
-</html>
+            background: #000
