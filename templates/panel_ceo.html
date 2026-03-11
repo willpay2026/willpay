@@ -57,29 +57,29 @@
         <div class="config-row">
             <div class="config-box">
                 <label>% PAGOS / COBROS</label>
-                <input type="text" class="config-input" value="0.5%">
+                <input type="text" name="p_pagos" class="config-input" value="0.5%">
             </div>
             <div class="config-box">
                 <label>% ACT. ECON. PERSONAL</label>
-                <input type="text" class="config-input" value="1.0%">
+                <input type="text" name="p_personal" class="config-input" value="1.0%">
             </div>
             <div class="config-box">
                 <label>% ACT. ECON. JURÍDICA</label>
-                <input type="text" class="config-input" value="2.5%">
+                <input type="text" name="p_juridica" class="config-input" value="2.5%">
             </div>
         </div>
 
         <div class="stats-section">
             <div class="stats-label">Capital Total en Búnker</div>
-            <div class="stats-monto">0.000,00</div>
+            <div class="stats-monto">Bs. {{ "{:,.2f}".format(capital) }}</div>
             <div class="stats-subtext">Saldo acumulado en la red</div>
         </div>
 
         <div class="section-title">⚡ RECARGA DIRECTA</div>
-        <form class="form-directo">
-            <input type="number" class="input-directo" placeholder="Número de Cédula / ID">
-            <input type="number" class="input-directo" placeholder="Monto en Bs.">
-            <button type="button" class="btn-cargar">CARGAR SALDO</button>
+        <form class="form-directo" action="/cargar_saldo" method="POST">
+            <input type="number" name="cedula" class="input-directo" placeholder="Número de Cédula / ID" required>
+            <input type="number" step="0.01" name="monto" class="input-directo" placeholder="Monto en Bs." required>
+            <button type="submit" class="btn-cargar">CARGAR SALDO</button>
         </form>
 
         <div class="section-title">📊 ACTIVIDAD EN VIVO</div>
@@ -88,18 +88,20 @@
                 <thead>
                     <tr>
                         <th>USUARIO ID</th>
-                        <th>TELÉFONO</th>
-                        <th>ACT. ECON.</th>
-                        <th>FECHA/HORA</th>
+                        <th>NOMBRE</th>
+                        <th>ROL</th>
+                        <th>CÉDULA</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% for u in usuarios %}
                     <tr>
-                        <td>WP-ADN-321</td>
-                        <td>0412...</td>
-                        <td>PERSONAL</td>
-                        <td>11/03/2026</td>
+                        <td>WP-ADN-{{ u.id }}</td>
+                        <td>{{ u.nombre }}</td>
+                        <td>{{ u.rol.upper() }}</td>
+                        <td>{{ u.cedula }}</td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
