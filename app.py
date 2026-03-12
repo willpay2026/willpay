@@ -3,23 +3,22 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-# --- 1. PRIMERO: CREAR LA APP ---
+# --- 1. CONSTRUCCIÓN DE LAS COLUMNAS (LA APP) ---
 app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026_legacy'
 
-# --- 2. SEGUNDO: CONEXIÓN AL BÚNKER ---
-# Usando tu URL externa que vi en la captura
+# Tu URL de Render (Asegúrate de que sea la External si pruebas desde afuera)
 DB_URL = "postgresql://willpay_db_user:746J7SWXHVcv07Tt16AE5diK68Ex6jWN@dpg-d6ea0e5m5p6s73dhh1a0-a.oregon-postgres.render.com/willpay_db"
 
 def get_db():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-# --- 3. TERCERO: INICIALIZAR TABLAS AUTOMÁTICAMENTE ---
+# --- 2. EL CEREBRO DE AUTOMATIZACIÓN (ESTO CREA TU TABLA DE CONFIG) ---
 def inicializar_bunker():
     try:
         conn = get_db()
         cur = conn.cursor()
-        # Creamos la tabla de automatización para que puedas descansar
+        # Creamos la tabla de interruptores y comisiones si no existe
         cur.execute("""
             CREATE TABLE IF NOT EXISTS config_ceo (
                 id SERIAL PRIMARY KEY,
@@ -36,14 +35,14 @@ def inicializar_bunker():
         conn.commit()
         cur.close()
         conn.close()
-        print("✅ Búnker preparado y listo.")
+        print("✅ Búnker preparado y configurado.")
     except Exception as e:
-        print(f"❌ Error al preparar: {e}")
+        print(f"❌ Error al preparar búnker: {e}")
 
-# Llamamos a la función
+# Llamamos a la función antes de que alguien entre
 inicializar_bunker()
 
-# --- 4. CUARTO: LAS RUTAS (EL MAPA) ---
+# --- 3. TUS RUTAS DE SIEMPRE (LAS QUE DISEÑASTE) ---
 
 @app.route('/')
 def splash():
@@ -57,24 +56,40 @@ def acceso():
 def registro():
     return render_template('registro.html')
 
+# --- 4. TU NUEVO PANEL CEO (EL CENTRO DE MANDO) ---
+
 @app.route('/panel_ceo')
 def panel_ceo():
-    conn = get_db()
-    cur = conn.cursor()
-    # Leemos la configuración de los interruptores
-    cur.execute("SELECT * FROM config_ceo WHERE id = 1")
-    config = cur.fetchone()
-    # Calculamos el capital total
-    cur.execute("SELECT SUM(saldo) as total FROM users")
-    capital = cur.fetchone()['total'] or 0.00
-    # Obtenemos los últimos 10 usuarios
-    cur.execute("SELECT id, nombre, rol, cedula FROM users ORDER BY id DESC LIMIT 10")
-    usuarios = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template('panel_ceo.html', config=config, capital=capital, usuarios=usuarios)
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Leemos los interruptores y porcentajes
+        cur.execute("SELECT * FROM config_ceo WHERE id = 1")
+        config = cur.fetchone()
+        
+        # Calculamos el Capital Total (Suma de todos los saldos)
+        cur.execute("SELECT SUM(saldo) as total FROM users")
+        resultado = cur.fetchone()
+        capital = resultado['total'] if resultado and resultado['total'] else 0.00
+        
+        # Traemos la lista de los últimos 10 usuarios registrados
+        cur.execute("SELECT id, nombre, rol, cedula FROM users ORDER BY id DESC LIMIT 10")
+        usuarios = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        # Enviamos todas las variables al HTML para que NO de error 500
+        return render_template('panel_ceo.html', 
+                               config=config, 
+                               capital=capital, 
+                               usuarios=usuarios)
+    except Exception as e:
+        return f"Error en el búnker: {e}"
 
-# --- 5. QUINTO: ARRANQUE ---
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host='0.0.0.0', port=port)
+# --- 5. ACCIÓN: CARGAR SALDO DESDE EL PANEL ---
+@app.route('/cargar_saldo', methods=['POST'])
+def cargar_saldo():
+    cedula = request.form.get('cedula')
+    monto = float(request.form.get('m
