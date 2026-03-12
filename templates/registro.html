@@ -3,27 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - Will-Pay</title>
+    <title>Will-Pay Registro</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
         .gold { color: #f1c40f; font-weight: bold; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #111; border: 1px solid #333; color: #fff; border-radius: 12px; box-sizing: border-box; }
-        .btn-gold { background: #f1c40f; color: #000; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 900; cursor: pointer; }
+        input { width: 100%; padding: 18px; margin: 10px 0; background: #0d0d0d; border: 1px solid #222; color: #fff; border-radius: 15px; box-sizing: border-box; }
+        .btn-gold { background: #f1c40f; color: #000; border: none; padding: 20px; width: 100%; border-radius: 15px; font-weight: 900; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h2 class="gold">CREAR CUENTA</h2>
-    <p>Únete a la revolución de pagos en Venezuela</p>
-
-    <div style="width: 100%; max-width: 400px; margin: auto;">
-        <input type="text" placeholder="Nombre Completo">
-        <input type="text" placeholder="Número de Cédula">
-        <input type="text" placeholder="Número de Teléfono">
-        <input type="password" placeholder="Crear Contraseña">
-        
-        <button class="btn-gold" onclick="window.location.href='/acceso'">FINALIZAR REGISTRO</button>
-        
-        <p style="margin-top: 20px; font-size: 0.8em; opacity: 0.6;">Al registrarte, aceptas dejar un legado sólido.</p>
-    </div>
+    <h1 class="gold">CREAR CUENTA</h1>
+    <form action="/registrar_usuario" method="POST" style="max-width: 400px; margin: auto;">
+        <input type="text" name="nombre" placeholder="Nombre y Apellido" required>
+        <input type="text" name="cedula" placeholder="Cédula de Identidad" required>
+        <input type="text" name="telefono" placeholder="Número de Teléfono" required>
+        <input type="password" name="password" placeholder="Crea tu Contraseña" required>
+        <button type="submit" class="btn-gold">FINALIZAR Y ENTRAR</button>
+    </form>
 </body>
 </html>
