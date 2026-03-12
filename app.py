@@ -14,21 +14,22 @@ def inicializar_bunker():
     try:
         conn = get_db()
         cur = conn.cursor()
+        # Asegurar columnas de configuración y usuarios
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS depositado FLOAT DEFAULT 0.0;")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);")
         cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS modo_panico BOOLEAN DEFAULT FALSE;")
-        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS auto_saldo BOOLEAN DEFAULT FALSE;")
-        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS auto_retiro BOOLEAN DEFAULT FALSE;")
+        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS p_pagos FLOAT DEFAULT 0.5;")
+        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS p_personal FLOAT DEFAULT 1.0;")
+        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS p_juridica FLOAT DEFAULT 2.5;")
         cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS ganancias_legado FLOAT DEFAULT 0.0;")
         
         cur.execute("""
             CREATE TABLE IF NOT EXISTS config_ceo (
                 id SERIAL PRIMARY KEY,
                 modo_panico BOOLEAN DEFAULT FALSE,
-                auto_saldo BOOLEAN DEFAULT FALSE,
-                auto_retiro BOOLEAN DEFAULT FALSE,
                 p_pagos FLOAT DEFAULT 0.5,
-                p_retiros FLOAT DEFAULT 1.0,
+                p_personal FLOAT DEFAULT 1.0,
+                p_juridica FLOAT DEFAULT 2.5,
                 ganancias_legado FLOAT DEFAULT 0.0
             );
             INSERT INTO config_ceo (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
@@ -38,14 +39,13 @@ def inicializar_bunker():
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY, nombre VARCHAR(100), cedula VARCHAR(20) UNIQUE,
                 telefono VARCHAR(20), rol VARCHAR(20) DEFAULT 'personal',
-                saldo FLOAT DEFAULT 0.0, depositado FLOAT DEFAULT 0.0, password TEXT
+                saldo FLOAT DEFAULT 0.0, depositado FLOAT DEFAULT 0.0
             );
         """)
         conn.commit()
-        cur.close()
-        conn.close()
+        cur.close(); conn.close()
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error inicializando: {e}")
 
 inicializar_bunker()
 
@@ -68,45 +68,26 @@ def panel_ceo():
     res = cur.fetchone()
     cur.execute("SELECT id, nombre, telefono, rol, cedula FROM users ORDER BY id DESC LIMIT 10")
     usuarios = cur.fetchall()
-    cur.close()
-    conn.close()
+    cur.close(); conn.close()
     return render_template('panel_ceo.html', config=config, capital=res['total'] or 0.0, depositado=res['dep'] or 0.0, usuarios=usuarios)
 
 # ==========================================
-# >>> MODIFICADO: CARGA QUIRÚRGICA POR TELÉFONO <<<
+# >>> NUEVO: RUTA PARA GUARDAR PORCENTAJES <<<
 # ==========================================
+@app.route('/actualizar_porcentajes', methods=['POST'])
+def actualizar_porcentajes():
+    conn = get_db()
+    cur = conn.cursor()
+    p_pagos = request.form.get('p_pagos')
+    p_personal = request.form.get('p_personal')
+    p_juridica = request.form.get('p_juridica')
+    cur.execute("UPDATE config_ceo SET p_pagos=%s, p_personal=%s, p_juridica=%s WHERE id=1", (p_pagos, p_personal, p_juridica))
+    conn.commit()
+    cur.close(); conn.close()
+    return redirect(url_for('panel_ceo'))
+
 @app.route('/cargar_saldo', methods=['POST'])
 def cargar_saldo():
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT modo_panico FROM config_ceo WHERE id = 1")
-    if cur.fetchone()['modo_panico']:
-        cur.close(); conn.close()
-        return "⚠️ PÁNICO ACTIVO"
-
-    telefono = request.form.get('telefono') 
-    monto = request.form.get('monto')
-    
-    if telefono and monto:
-        try:
-            # Ahora el búnker busca por TELÉFONO como en tu captura
-            cur.execute("UPDATE users SET saldo = saldo + %s, depositado = depositado + %s WHERE telefono = %s", (float(monto), float(monto), telefono))
-            conn.commit()
-        except: pass
-    
-    cur.close(); conn.close()
-    return redirect(url_for('panel_ceo'))
-# ==========================================
-
-@app.route('/activar_panico', methods=['POST'])
-def activar_panico():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("UPDATE config_ceo SET modo_panico = NOT modo_panico WHERE id = 1")
-    conn.commit()
-    cur.close()
-    conn.close()
-    return redirect(url_for('panel_ceo'))
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    telefono
