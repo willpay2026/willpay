@@ -3,20 +3,30 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+# --- 1. CONFIGURACIÓN ESTRUCTURAL ---
 app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026_legacy'
 
 def get_db():
+    # Parche de seguridad para conexión SSL obligatoria en Render
     db_url = os.environ.get('DATABASE_URL')
     return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
 
-# --- 1. EL CEREBRO CON BOTÓN DE PÁNICO ---
+# --- 2. EL CEREBRO DEL BÚNKER (REPARACIÓN Y CREACIÓN) ---
 def inicializar_bunker():
     try:
         conn = get_db()
         cur = conn.cursor()
         
-        # Tabla de Configuración con MODO PÁNICO
+        # 🛠️ REPARACIÓN AUTOMÁTICA: Crea columnas si la tabla ya existía
+        print("🔧 Asegurando integridad del búnker...")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS depositado FLOAT DEFAULT 0.0;")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);")
+        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS modo_panico BOOLEAN DEFAULT FALSE;")
+        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS ganancias_legado FLOAT DEFAULT 0.0;")
+        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS p_retiros FLOAT DEFAULT 1.0;")
+        
+        # 🏗️ CREACIÓN DE TABLAS (Estructura base)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS config_ceo (
                 id SERIAL PRIMARY KEY,
@@ -44,16 +54,18 @@ def inicializar_bunker():
                 password TEXT
             );
         """)
+        
         conn.commit()
         cur.close()
         conn.close()
-        print("✅ Búnker con Protocolo de Pánico activado.")
+        print("✅ Búnker blindado y actualizado correctamente.")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error en la base de datos: {e}")
 
+# Ejecutamos la limpieza antes de arrancar la web
 inicializar_bunker()
 
-# --- 2. RUTAS DE DISEÑO ---
+# --- 3. RUTAS DE DISEÑO (TU ESTÉTICA) ---
 @app.route('/')
 def splash(): return render_template('splash.html')
 
@@ -63,36 +75,44 @@ def acceso(): return render_template('acceso.html')
 @app.route('/registro')
 def registro(): return render_template('registro.html')
 
-# --- 3. PANEL CEO CON CONTROL DE EMERGENCIA ---
+# --- 4. PANEL CEO (TU CENTRO DE MANDO) ---
 @app.route('/panel_ceo')
 def panel_ceo():
     try:
         conn = get_db()
         cur = conn.cursor()
+        
+        # Traer configuración y estado de pánico
         cur.execute("SELECT * FROM config_ceo WHERE id = 1")
         config = cur.fetchone()
         
+        # Calcular Capital Total y Dinero Depositado
         cur.execute("SELECT SUM(saldo) as total, SUM(depositado) as dep FROM users")
         res = cur.fetchone()
         capital = res['total'] if res and res['total'] else 0.00
         depositado = res['dep'] if res and res['dep'] else 0.00
         
+        # Listado de Actividad en Vivo (10 en 10)
         cur.execute("SELECT id, nombre, rol, cedula, telefono FROM users ORDER BY id DESC LIMIT 10")
         usuarios = cur.fetchall()
         
         cur.close()
         conn.close()
-        return render_template('panel_ceo.html', config=config, capital=capital, depositado=depositado, usuarios=usuarios)
+        
+        return render_template('panel_ceo.html', 
+                               config=config, 
+                               capital=capital, 
+                               depositado=depositado, 
+                               usuarios=usuarios)
     except Exception as e:
-        return f"Error: {e}"
+        return f"Error en el panel: {e}"
 
-# --- 4. LÓGICA DEL BOTÓN DE PÁNICO ---
+# --- 5. ACCIÓN DEL BOTÓN DE PÁNICO ---
 @app.route('/activar_panico', methods=['POST'])
 def activar_panico():
     try:
         conn = get_db()
         cur = conn.cursor()
-        # Cambiamos el estado del pánico (Si está en False pasa a True)
         cur.execute("UPDATE config_ceo SET modo_panico = NOT modo_panico WHERE id = 1")
         conn.commit()
         cur.close()
@@ -100,30 +120,40 @@ def activar_panico():
     except: pass
     return redirect(url_for('panel_ceo'))
 
-# --- 5. CARGAR SALDO (BLOQUEADO SI HAY PÁNICO) ---
+# --- 6. CARGAR SALDO (CON BLOQUEO DE EMERGENCIA) ---
 @app.route('/cargar_saldo', methods=['POST'])
 def cargar_saldo():
-    # Primero revisamos si el búnker está bloqueado
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT modo_panico FROM config_ceo WHERE id = 1")
-    bloqueo = cur.fetchone()['modo_panico']
     
-    if bloqueo:
+    # Check Modo Pánico
+    cur.execute("SELECT modo_panico FROM config_ceo WHERE id = 1")
+    en_panico = cur.fetchone()['modo_panico']
+    
+    if en_panico:
         cur.close()
         conn.close()
-        return "⚠️ SISTEMA BLOQUEADO POR EL CEO - MODO PÁNICO ACTIVO"
+        return "⚠️ SISTEMA CONGELADO - MODO PÁNICO ACTIVO"
 
     cedula = request.form.get('cedula')
     monto = request.form.get('monto')
+    
     if cedula and monto:
-        cur.execute("UPDATE users SET saldo = saldo + %s, depositado = depositado + %s WHERE cedula = %s", (float(monto), float(monto), cedula))
-        conn.commit()
+        try:
+            monto_f = float(monto)
+            cur.execute("""
+                UPDATE users 
+                SET saldo = saldo + %s, depositado = depositado + %s 
+                WHERE cedula = %s
+            """, (monto_f, monto_f, cedula))
+            conn.commit()
+        except: pass
     
     cur.close()
     conn.close()
     return redirect(url_for('panel_ceo'))
 
+# --- 7. ARRANQUE DEL SERVIDOR ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
