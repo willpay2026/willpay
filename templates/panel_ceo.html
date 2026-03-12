@@ -5,134 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay CEO</title>
     <style>
-        /* Estilo general para legibilidad */
-        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 15px; margin: 0; }
-        .gold { color: #f1c40f; font-weight: bold; font-size: 0.9em; letter-spacing: 1px; }
-        
-        /* Contenedores con más espacio (Padding) */
-        .card { 
-            background: #0a0a0a; 
-            border-radius: 15px; 
-            padding: 20px; 
-            margin: 15px 0; 
-            text-align: left; 
-            border: 1px solid #1a1a1a;
-        }
-        
-        /* Búnker con diseño de profundidad */
-        .bunker { 
-            border: 2px solid #f1c40f; 
-            border-radius: 25px; 
-            padding: 35px 20px; 
-            margin: 20px 0; 
-            background: linear-gradient(145deg, #0f0f0f, #050505);
-        }
-
-        /* Inputs más grandes y legibles */
-        input { 
-            width: 100%; 
-            padding: 16px; 
-            margin: 10px 0; 
-            background: #111; 
-            border: 1px solid #333; 
-            color: #fff; 
-            border-radius: 12px; 
-            font-size: 1em;
-            box-sizing: border-box; 
-        }
-        
-        /* Botones con mejor contraste */
-        .btn-gold { 
-            background: #f1c40f; 
-            color: #000; 
-            border: none; 
-            padding: 18px; 
-            width: 100%; 
-            border-radius: 12px; 
-            font-weight: 800; 
-            font-size: 1.1em; 
-            cursor: pointer; 
-            text-transform: uppercase;
-        }
-
-        /* Switches estilizados */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #222; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #f1c40f; }
-        input:checked + .slider:before { transform: translateX(24px); }
-
-        /* Tabla de actividad nítida */
-        table { width: 100%; margin-top: 25px; border-collapse: separate; border-spacing: 0 10px; font-size: 0.85em; }
-        th { color: #f1c40f; text-align: left; padding: 12px; font-weight: 600; text-transform: uppercase; }
-        td { padding: 15px 12px; background: #0a0a0a; border-top: 1px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; }
-        td:first-child { border-radius: 10px 0 0 10px; border-left: 1px solid #1a1a1a; }
-        td:last-child { border-radius: 0 10px 10px 0; border-right: 1px solid #1a1a1a; }
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 15px; max-width: 600px; margin: auto; }
+        .gold { color: #f1c40f; font-weight: bold; font-size: 0.7em; letter-spacing: 1px; }
+        .card { background: #0d0d0d; border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 1px solid #1a1a1a; }
+        .bunker { border: 2px solid #f1c40f; border-radius: 25px; padding: 30px 10px; margin: 20px 0; text-align: center; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; box-sizing: border-box; }
+        .btn-gold { background: #f1c40f; color: #000; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 900; cursor: pointer; }
+        .mini-card { flex: 1; background: #0d0d0d; padding: 10px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+        .mini-input { background: transparent; border: none; color: #f1c40f; font-size: 1.2em; font-weight: bold; width: 100%; text-align: center; }
     </style>
 </head>
 <body>
     <p class="gold">ID DNA CEO-0001 - FUNDADOR</p>
-    <h1 style="margin: 15px 0; font-weight: 900; letter-spacing: -1px;">BIENVENIDO CEO<br>WILFREDO DONQUIZ</h1>
+    <h1 style="margin: 10px 0;">BIENVENIDO CEO<br>WILFREDO DONQUIZ</h1>
+
+    <form action="/actualizar_porcentajes" method="POST">
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <div class="mini-card">
+                <p class="gold" style="font-size: 0.5em;">% PAGOS</p>
+                <input type="number" step="0.1" name="p_pagos" value="{{ config.p_pagos }}" class="mini-input">
+            </div>
+            <div class="mini-card">
+                <p class="gold" style="font-size: 0.5em;">% PERSONAL</p>
+                <input type="number" step="0.1" name="p_personal" value="{{ config.p_personal }}" class="mini-input">
+            </div>
+            <div class="mini-card">
+                <p class="gold" style="font-size: 0.5em;">% JURÍDICO</p>
+                <input type="number" step="0.1" name="p_juridica" value="{{ config.p_juridica }}" class="mini-input">
+            </div>
+        </div>
+        <button type="submit" style="width: 100%; background: #222; color: #fff; border: none; padding: 8px; border-radius: 5px; font-size: 0.7em; cursor: pointer; margin-bottom: 20px;">GUARDAR PORCENTAJES</button>
+    </form>
 
     <div class="card" style="border-left: 6px solid #f1c40f;">
-        <p style="margin: 0 0 8px 0; font-size: 0.85em; opacity: 0.7;">EN TRANSACCIÓN</p>
-        <h2 style="margin: 0; font-size: 1.8em;">Bs. {{ "%.2f"|format(depositado) }}</h2>
+        <p class="gold">EN TRANSACCIÓN</p>
+        <h2 style="margin: 5px 0;">Bs. {{ "%.2f"|format(depositado) }}</h2>
     </div>
 
     <div class="card" style="border-left: 6px solid #00ff00;">
-        <p style="margin: 0 0 8px 0; font-size: 0.85em; color: #00ff00;">NETO GANANCIAS (LEGADO)</p>
-        <h2 style="margin: 0; font-size: 1.8em;">Bs. {{ "%.2f"|format(config.ganancias_legado) }}</h2>
+        <p class="gold" style="color: #00ff00;">NETO GANANCIAS (LEGADO)</p>
+        <h2 style="margin: 5px 0;">Bs. {{ "%.2f"|format(config.ganancias_legado) }}</h2>
     </div>
 
     <div class="bunker">
-        <p class="gold" style="margin-bottom: 10px;">SALDO EN Bs.</p>
-        <h1 style="font-size: 4.5em; margin: 0; font-weight: 800;">{{ "%.0f"|format(capital) }},00</h1>
-        <p style="font-size: 0.9em; color: #666; margin-top: 10px;">CAPITAL TOTAL EN BÚNKER</p>
+        <p class="gold">SALDO EN Bs.</p>
+        <h1 style="font-size: 4em; margin: 0;">{{ "%.0f"|format(capital) }},00</h1>
+        <p style="font-size: 0.8em; color: #444;">CAPITAL TOTAL EN BÚNKER</p>
     </div>
 
     <div class="card">
-        <h3 style="color: #f1c40f; margin: 0 0 20px 0; display: flex; align-items: center;">⚡ RECARGA DIRECTA</h3>
+        <h3 style="color: #f1c40f; margin-top: 0;">⚡ RECARGA DIRECTA</h3>
         <form action="/cargar_saldo" method="POST">
             <input type="text" name="telefono" placeholder="Número de Teléfono">
             <input type="number" step="0.01" name="monto" placeholder="Monto en Bs.">
-            <button type="submit" class="btn-gold" style="margin-top: 10px;">CARGAR SALDO</button>
+            <button type="submit" class="btn-gold">CARGAR SALDO</button>
         </form>
     </div>
 
-    <div class="card">
-        <h3 style="color: #f1c40f; margin: 0 0 20px 0; display: flex; align-items: center;">⚙️ AUTOMATIZACIÓN</h3>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <span style="font-size: 1.1em;">Auto-Aprobación Saldo</span>
-            <label class="switch"><input type="checkbox" {% if config.auto_saldo %}checked{% endif %}><span class="slider"></span></label>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 1.1em;">Auto-Aprobación Retiro</span>
-            <label class="switch"><input type="checkbox" {% if config.auto_retiro %}checked{% endif %}><span class="slider"></span></label>
-        </div>
-        <p style="text-align: center; font-size: 0.7em; color: #444; margin-top: 25px; letter-spacing: 1px;">VINCULADO AL BÚNKER EN RENDER</p>
-    </div>
-
-    <form action="/activar_panico" method="POST" style="margin: 25px 0;">
-        <button type="submit" style="background: #ff0000; color: #fff; border: none; padding: 20px; width: 100%; border-radius: 15px; font-weight: 900; font-size: 1.2em; cursor: pointer; box-shadow: 0 4px 15px rgba(255,0,0,0.3);">
+    <form action="/activar_panico" method="POST">
+        <button type="submit" style="background: #ff0000; color: #fff; border: none; padding: 20px; width: 100%; border-radius: 15px; font-weight: 900; margin-top: 10px;">
             {% if config.modo_panico %} 🔓 REANUDAR SISTEMA {% else %} 🚨 BOTÓN DE PÁNICO {% endif %}
         </button>
     </form>
-
-    <h3 style="text-align: left; margin: 30px 0 10px 10px; font-size: 1.2em;">📊 ACTIVIDAD EN VIVO</h3>
-    <table>
-        <thead>
-            <tr><th>USUARIO</th><th>TELÉFONO</th><th>ROL</th></tr>
-        </thead>
-        <tbody>
-            {% for u in usuarios %}
-            <tr>
-                <td><div style="font-weight: bold;">{{ u.nombre }}</div><div style="font-size: 0.8em; opacity: 0.5;">ID: {{ u.id }}</div></td>
-                <td>{{ u.telefono or '---' }}</td>
-                <td style="color: #f1c40f;">{{ u.rol.upper() }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </body>
 </html>
