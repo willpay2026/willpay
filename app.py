@@ -14,21 +14,21 @@ def inicializar_bunker():
     try:
         conn = get_db()
         cur = conn.cursor()
-        # Reparación de columnas para Dinero Depositado, Teléfono y Pánico
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS depositado FLOAT DEFAULT 0.0;")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);")
         cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS modo_panico BOOLEAN DEFAULT FALSE;")
+        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS auto_saldo BOOLEAN DEFAULT FALSE;")
+        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS auto_retiro BOOLEAN DEFAULT FALSE;")
         cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS ganancias_legado FLOAT DEFAULT 0.0;")
-        cur.execute("ALTER TABLE config_ceo ADD COLUMN IF NOT EXISTS p_retiros FLOAT DEFAULT 1.0;")
         
         cur.execute("""
             CREATE TABLE IF NOT EXISTS config_ceo (
                 id SERIAL PRIMARY KEY,
                 modo_panico BOOLEAN DEFAULT FALSE,
+                auto_saldo BOOLEAN DEFAULT FALSE,
+                auto_retiro BOOLEAN DEFAULT FALSE,
                 p_pagos FLOAT DEFAULT 0.5,
                 p_retiros FLOAT DEFAULT 1.0,
-                p_personal FLOAT DEFAULT 1.0,
-                p_juridica FLOAT DEFAULT 2.5,
                 ganancias_legado FLOAT DEFAULT 0.0
             );
             INSERT INTO config_ceo (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
@@ -36,13 +36,9 @@ def inicializar_bunker():
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                nombre VARCHAR(100),
-                cedula VARCHAR(20) UNIQUE,
-                telefono VARCHAR(20),
-                rol VARCHAR(20) DEFAULT 'personal',
-                saldo FLOAT DEFAULT 0.0,
-                depositado FLOAT DEFAULT 0.0
+                id SERIAL PRIMARY KEY, nombre VARCHAR(100), cedula VARCHAR(20) UNIQUE,
+                telefono VARCHAR(20), rol VARCHAR(20) DEFAULT 'personal',
+                saldo FLOAT DEFAULT 0.0, depositado FLOAT DEFAULT 0.0, password TEXT
             );
         """)
         conn.commit()
@@ -56,19 +52,11 @@ inicializar_bunker()
 @app.route('/')
 def splash(): return render_template('splash.html')
 
-# ==========================================
-# >>> INICIO: BLOQUE NUEVO INSERTADO <<<
-# ==========================================
 @app.route('/acceso')
-def acceso(): 
-    return render_template('acceso.html')
+def acceso(): return render_template('acceso.html')
 
 @app.route('/registro')
-def registro(): 
-    return render_template('registro.html')
-# ==========================================
-# >>> FIN: BLOQUE NUEVO INSERTADO <<<
-# ==========================================
+def registro(): return render_template('registro.html')
 
 @app.route('/panel_ceo')
 def panel_ceo():
@@ -78,11 +66,37 @@ def panel_ceo():
     config = cur.fetchone()
     cur.execute("SELECT SUM(saldo) as total, SUM(depositado) as dep FROM users")
     res = cur.fetchone()
-    cur.execute("SELECT id, nombre, telefono, cedula FROM users ORDER BY id DESC LIMIT 10")
+    cur.execute("SELECT id, nombre, telefono, rol, cedula FROM users ORDER BY id DESC LIMIT 10")
     usuarios = cur.fetchall()
     cur.close()
     conn.close()
     return render_template('panel_ceo.html', config=config, capital=res['total'] or 0.0, depositado=res['dep'] or 0.0, usuarios=usuarios)
+
+# ==========================================
+# >>> MODIFICADO: CARGA QUIRÚRGICA POR TELÉFONO <<<
+# ==========================================
+@app.route('/cargar_saldo', methods=['POST'])
+def cargar_saldo():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT modo_panico FROM config_ceo WHERE id = 1")
+    if cur.fetchone()['modo_panico']:
+        cur.close(); conn.close()
+        return "⚠️ PÁNICO ACTIVO"
+
+    telefono = request.form.get('telefono') 
+    monto = request.form.get('monto')
+    
+    if telefono and monto:
+        try:
+            # Ahora el búnker busca por TELÉFONO como en tu captura
+            cur.execute("UPDATE users SET saldo = saldo + %s, depositado = depositado + %s WHERE telefono = %s", (float(monto), float(monto), telefono))
+            conn.commit()
+        except: pass
+    
+    cur.close(); conn.close()
+    return redirect(url_for('panel_ceo'))
+# ==========================================
 
 @app.route('/activar_panico', methods=['POST'])
 def activar_panico():
