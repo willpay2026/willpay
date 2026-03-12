@@ -56,6 +56,20 @@ inicializar_bunker()
 @app.route('/')
 def splash(): return render_template('splash.html')
 
+# ==========================================
+# >>> INICIO: BLOQUE NUEVO INSERTADO <<<
+# ==========================================
+@app.route('/acceso')
+def acceso(): 
+    return render_template('acceso.html')
+
+@app.route('/registro')
+def registro(): 
+    return render_template('registro.html')
+# ==========================================
+# >>> FIN: BLOQUE NUEVO INSERTADO <<<
+# ==========================================
+
 @app.route('/panel_ceo')
 def panel_ceo():
     conn = get_db()
