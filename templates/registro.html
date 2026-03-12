@@ -3,60 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Will-Pay</title>
     <style>
-        body { background:#000; color:white; font-family:sans-serif; padding:20px; }
-        .card { background:#0a0a0a; border-radius:20px; padding:30px; max-width:480px; margin:auto; }
-        label { display:block; color:#d4af37; font-size:0.9rem; margin-top:15px; }
-        input, select { width:100%; padding:12px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333; box-sizing:border-box; }
-        .resaltado { background:#e8f0fe !important; color:#333 !important; font-weight:bold; }
-        .btn { width:100%; padding:15px; background:#d4af37; border:none; border-radius:10px; font-weight:bold; margin-top:20px; cursor:pointer; }
-        .hidden { display:none; }
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
+        .gold { color: #f1c40f; font-weight: bold; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #111; border: 1px solid #333; color: #fff; border-radius: 12px; box-sizing: border-box; }
+        .btn-gold { background: #f1c40f; color: #000; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 900; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2 style="text-align:center; color:#d4af37;">ADN DIGITAL WILL-PAY</h2>
-        <form action="/registro_proceso" method="POST" enctype="multipart/form-data">
-            <label>Nombre y Apellido</label>
-            <input type="text" name="nombre" required>
-            
-            <label>Cédula / RIF</label>
-            <input type="text" name="cedula" required>
+    <h2 class="gold">CREAR CUENTA</h2>
+    <p>Únete a la revolución de pagos en Venezuela</p>
 
-            <label>Tipo de Usuario</label>
-            <select name="tipo_usuario" id="tipo" onchange="checkTipo()" class="resaltado">
-                <option value="natural">Natural (1.5%)</option>
-                <option value="firma">Firma Personal (2.1%)</option>
-                <option value="juridico">Jurídico (3.1%)</option>
-            </select>
-
-            <div id="extra" class="hidden">
-                <label id="label_extra"></label>
-                <input type="text" name="extra_input">
-            </div>
-
-            <label>Código de Invitación (Solo Socios)</label>
-            <input type="text" name="codigo_socio" placeholder="Opcional">
-
-            <label>PIN de Seguridad (6 dígitos)</label>
-            <input type="password" name="pin" class="resaltado" maxlength="6" required>
-
-            <label>Adjuntar Cédula y Selfie (ADN)</label>
-            <input type="file" name="foto_cedula" style="margin-bottom:10px;" required>
-            <input type="file" name="foto_selfie" required>
-
-            <button type="submit" class="btn">GENERAR ADN DIGITAL</button>
-        </form>
+    <div style="width: 100%; max-width: 400px; margin: auto;">
+        <input type="text" placeholder="Nombre Completo">
+        <input type="text" placeholder="Número de Cédula">
+        <input type="text" placeholder="Número de Teléfono">
+        <input type="password" placeholder="Crear Contraseña">
+        
+        <button class="btn-gold" onclick="window.location.href='/acceso'">FINALIZAR REGISTRO</button>
+        
+        <p style="margin-top: 20px; font-size: 0.8em; opacity: 0.6;">Al registrarte, aceptas dejar un legado sólido.</p>
     </div>
-    <script>
-        function checkTipo() {
-            const t = document.getElementById('tipo').value;
-            const ex = document.getElementById('extra');
-            const lbl = document.getElementById('label_extra');
-            ex.classList.add('hidden');
-            if(t === 'firma') { ex.classList.remove('hidden'); lbl.innerText = "Actividad / Oficio"; }
-            if(t === 'juridico') { ex.classList.remove('hidden'); lbl.innerText = "Nombre de Empresa"; }
-        }
-    </script>
 </body>
 </html>
