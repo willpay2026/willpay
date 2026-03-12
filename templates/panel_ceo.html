@@ -1,71 +1,63 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay CEO</title>
-    <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 15px; max-width: 600px; margin: auto; }
-        .gold { color: #f1c40f; font-weight: bold; font-size: 0.7em; letter-spacing: 1px; }
-        .card { background: #0d0d0d; border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 1px solid #1a1a1a; }
-        .bunker { border: 2px solid #f1c40f; border-radius: 25px; padding: 30px 10px; margin: 20px 0; text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; box-sizing: border-box; }
-        .btn-gold { background: #f1c40f; color: #000; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 900; cursor: pointer; }
-        .mini-card { flex: 1; background: #0d0d0d; padding: 10px; border-radius: 10px; border: 1px solid #333; text-align: center; }
-        .mini-input { background: transparent; border: none; color: #f1c40f; font-size: 1.2em; font-weight: bold; width: 100%; text-align: center; }
-    </style>
-</head>
-<body>
-    <p class="gold">ID DNA CEO-0001 - FUNDADOR</p>
-    <h1 style="margin: 10px 0;">BIENVENIDO CEO<br>WILFREDO DONQUIZ</h1>
+from flask import Flask, render_template, request, redirect, url_for, session
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-    <form action="/actualizar_porcentajes" method="POST">
-        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-            <div class="mini-card">
-                <p class="gold" style="font-size: 0.5em;">% PAGOS</p>
-                <input type="number" step="0.1" name="p_pagos" value="{{ config.p_pagos }}" class="mini-input">
-            </div>
-            <div class="mini-card">
-                <p class="gold" style="font-size: 0.5em;">% PERSONAL</p>
-                <input type="number" step="0.1" name="p_personal" value="{{ config.p_personal }}" class="mini-input">
-            </div>
-            <div class="mini-card">
-                <p class="gold" style="font-size: 0.5em;">% JURÍDICO</p>
-                <input type="number" step="0.1" name="p_juridica" value="{{ config.p_juridica }}" class="mini-input">
-            </div>
-        </div>
-        <button type="submit" style="width: 100%; background: #222; color: #fff; border: none; padding: 8px; border-radius: 5px; font-size: 0.7em; cursor: pointer; margin-bottom: 20px;">GUARDAR PORCENTAJES</button>
-    </form>
+app = Flask(__name__)
+app.secret_key = 'willpay_donquiz_2026_legacy'
 
-    <div class="card" style="border-left: 6px solid #f1c40f;">
-        <p class="gold">EN TRANSACCIÓN</p>
-        <h2 style="margin: 5px 0;">Bs. {{ "%.2f"|format(depositado) }}</h2>
-    </div>
+def get_db():
+    db_url = os.environ.get('DATABASE_URL')
+    return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
 
-    <div class="card" style="border-left: 6px solid #00ff00;">
-        <p class="gold" style="color: #00ff00;">NETO GANANCIAS (LEGADO)</p>
-        <h2 style="margin: 5px 0;">Bs. {{ "%.2f"|format(config.ganancias_legado) }}</h2>
-    </div>
+# ==========================================
+# >>> CONFIGURACIÓN DE RUTAS DE ACCESO <<<
+# ==========================================
+@app.route('/')
+def splash(): 
+    return render_template('splash.html')
 
-    <div class="bunker">
-        <p class="gold">SALDO EN Bs.</p>
-        <h1 style="font-size: 4em; margin: 0;">{{ "%.0f"|format(capital) }},00</h1>
-        <p style="font-size: 0.8em; color: #444;">CAPITAL TOTAL EN BÚNKER</p>
-    </div>
+@app.route('/acceso')
+def acceso(): 
+    return render_template('acceso.html')
 
-    <div class="card">
-        <h3 style="color: #f1c40f; margin-top: 0;">⚡ RECARGA DIRECTA</h3>
-        <form action="/cargar_saldo" method="POST">
-            <input type="text" name="telefono" placeholder="Número de Teléfono">
-            <input type="number" step="0.01" name="monto" placeholder="Monto en Bs.">
-            <button type="submit" class="btn-gold">CARGAR SALDO</button>
-        </form>
-    </div>
+@app.route('/registro')
+def registro(): 
+    return render_template('registro.html')
 
-    <form action="/activar_panico" method="POST">
-        <button type="submit" style="background: #ff0000; color: #fff; border: none; padding: 20px; width: 100%; border-radius: 15px; font-weight: 900; margin-top: 10px;">
-            {% if config.modo_panico %} 🔓 REANUDAR SISTEMA {% else %} 🚨 BOTÓN DE PÁNICO {% endif %}
-        </button>
-    </form>
-</body>
-</html>
+@app.route('/panel_ceo')
+def panel_ceo():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM config_ceo WHERE id = 1")
+    config = cur.fetchone()
+    cur.execute("SELECT SUM(saldo) as total, SUM(depositado) as dep FROM users")
+    res = cur.fetchone()
+    cur.execute("SELECT id, nombre, telefono, rol, cedula FROM users ORDER BY id DESC LIMIT 10")
+    usuarios = cur.fetchall()
+    cur.close(); conn.close()
+    return render_template('panel_ceo.html', config=config, capital=res['total'] or 0.0, depositado=res['dep'] or 0.0, usuarios=usuarios)
+
+# Rutas de guardado
+@app.route('/actualizar_porcentajes', methods=['POST'])
+def actualizar_porcentajes():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE config_ceo SET p_pagos=%s, p_personal=%s, p_juridica=%s WHERE id=1", 
+               (request.form.get('p_pagos'), request.form.get('p_personal'), request.form.get('p_juridica')))
+    conn.commit()
+    cur.close(); conn.close()
+    return redirect(url_for('panel_ceo'))
+
+@app.route('/cargar_saldo', methods=['POST'])
+def cargar_saldo():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET saldo = saldo + %s, depositado = depositado + %s WHERE telefono = %s", 
+               (float(request.form.get('monto')), float(request.form.get('monto')), request.form.get('telefono')))
+    conn.commit()
+    cur.close(); conn.close()
+    return redirect(url_for('panel_ceo'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
