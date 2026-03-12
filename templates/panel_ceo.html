@@ -2,115 +2,54 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Will-Pay | Panel CEO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay CEO</title>
     <style>
-        * { box-sizing: border-box; }
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 0; width: 100vw; overflow-x: hidden; }
-        
-        /* Contenedor principal a pantalla completa */
-        .ceo-container { width: 100%; display: flex; flex-direction: column; padding: 15px; }
-
-        .header-ceo { text-align: center; padding: 20px 0; }
-        .logo-ceo { width: 140px; margin-bottom: 10px; }
-        .dna-id { color: #d4af37; font-size: 0.7rem; letter-spacing: 2px; }
-
-        .welcome-msg { font-size: 1.4rem; font-weight: bold; text-align: center; margin: 15px 0; text-transform: uppercase; }
-
-        /* LOS 3 CONTROLES DE PORCENTAJE (MANIPULABLES) */
-        .config-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 20px; }
-        .config-box { background: #111; padding: 10px; text-align: center; border: 1px solid #222; }
-        .config-box label { display: block; font-size: 0.6rem; color: #888; margin-bottom: 5px; height: 25px; }
-        .config-input { width: 100%; background: transparent; border: 1px solid #d4af37; color: #d4af37; text-align: center; font-size: 1.2rem; font-weight: bold; padding: 5px 0; outline: none; }
-
-        /* MONITOR DE CAPITAL */
-        .stats-section { background: #111; padding: 30px 15px; text-align: center; margin-bottom: 10px; border-left: 4px solid #d4af37; }
-        .stats-label { color: #d4af37; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
-        .stats-monto { font-size: 3.2rem; font-weight: bold; margin: 10px 0; }
-        .stats-subtext { color: #444; font-size: 0.7rem; text-transform: uppercase; }
-
-        /* SECCIÓN DE RECARGA DIRECTA */
-        .section-title { font-size: 0.9rem; font-weight: bold; padding: 15px 5px; display: flex; align-items: center; gap: 10px; color: #d4af37; }
-        .form-directo { background: #111; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .input-directo { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; font-size: 1rem; outline: none; }
-        .btn-cargar { background: #d4af37; color: #000; border: none; padding: 15px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
-
-        /* TABLA DE ACTIVIDAD EN VIVO */
-        .table-container { width: 100%; overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; text-align: left; }
-        th { color: #d4af37; padding: 10px; border-bottom: 1px solid #222; text-transform: uppercase; }
-        td { padding: 12px 10px; border-bottom: 1px solid #111; color: #ccc; }
-
-        .footer-nav { display: flex; justify-content: space-between; padding: 20px 0; }
-        .btn-nav { background: #222; color: #fff; border: none; padding: 10px 20px; font-size: 0.8rem; cursor: pointer; }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .gold { color: #f1c40f; font-weight: bold; }
+        .card { background: #111; border-radius: 15px; padding: 15px; margin: 10px 0; border-left: 5px solid; }
+        .amarillo { border-color: #f1c40f; }
+        .verde { border-color: #00ff00; }
+        .bunker { border: 2px solid #f1c40f; border-radius: 20px; padding: 30px; margin: 20px 0; }
+        .btn-panico { background: #ff0000; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 1.1em; cursor: pointer; }
+        .active-panico { background: #00ff00; color: #000; }
+        table { width: 100%; font-size: 0.8em; margin-top: 20px; text-align: left; }
+        th { color: #f1c40f; border-bottom: 1px solid #333; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #222; }
     </style>
 </head>
 <body>
-    <div class="ceo-container">
-        <div class="header-ceo">
-            <img src="{{ url_for('static', filename='logo_shield.png') }}" class="logo-ceo">
-            <div class="dna-id">ID DNA CEO-0001 - FUNDADOR</div>
-        </div>
+    <h3 class="gold">ID DNA CEO-0001 - FUNDADOR</h3>
+    <h1>BIENVENIDO CEO<br>WILFREDO DONQUIZ</h1>
 
-        <div class="welcome-msg">BIENVENIDO CEO<br>WILFREDO DONQUIZ</div>
-
-        <div class="config-row">
-            <div class="config-box">
-                <label>% PAGOS / COBROS</label>
-                <input type="text" name="p_pagos" class="config-input" value="0.5%">
-            </div>
-            <div class="config-box">
-                <label>% ACT. ECON. PERSONAL</label>
-                <input type="text" name="p_personal" class="config-input" value="1.0%">
-            </div>
-            <div class="config-box">
-                <label>% ACT. ECON. JURÍDICA</label>
-                <input type="text" name="p_juridica" class="config-input" value="2.5%">
-            </div>
-        </div>
-
-        <div class="stats-section">
-            <div class="stats-label">Capital Total en Búnker</div>
-            <div class="stats-monto">Bs. {{ "{:,.2f}".format(capital) }}</div>
-            <div class="stats-subtext">Saldo acumulado en la red</div>
-        </div>
-
-        <div class="section-title">⚡ RECARGA DIRECTA</div>
-        <form class="form-directo" action="/cargar_saldo" method="POST">
-            <input type="number" name="cedula" class="input-directo" placeholder="Número de Cédula / ID" required>
-            <input type="number" step="0.01" name="monto" class="input-directo" placeholder="Monto en Bs." required>
-            <button type="submit" class="btn-cargar">CARGAR SALDO</button>
-        </form>
-
-        <div class="section-title">📊 ACTIVIDAD EN VIVO</div>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>USUARIO ID</th>
-                        <th>NOMBRE</th>
-                        <th>ROL</th>
-                        <th>CÉDULA</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in usuarios %}
-                    <tr>
-                        <td>WP-ADN-{{ u.id }}</td>
-                        <td>{{ u.nombre }}</td>
-                        <td>{{ u.rol.upper() }}</td>
-                        <td>{{ u.cedula }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="footer-nav">
-            <button class="btn-nav">ANTERIOR</button>
-            <span>Página 1</span>
-            <button class="btn-nav">SIGUIENTE</button>
-        </div>
+    <div class="card amarillo">
+        <p>EN TRANACCIÓN / DEPOSITADO</p>
+        <h2>Bs. {{ "%.2f"|format(depositado) }}</h2>
     </div>
+
+    <div class="card verde">
+        <p>NETO GANANCIAS (LEGADO)</p>
+        <h2>Bs. {{ "%.2f"|format(config.ganancias_legado) }}</h2>
+    </div>
+
+    <div class="bunker">
+        <p class="gold">SALDO EN Bs.</p>
+        <h1 style="font-size: 3.5em; margin: 10px 0;">{{ "%.2f"|format(capital) }}</h1>
+        <p>CAPITAL TOTAL EN BÚNKER</p>
+    </div>
+
+    <form action="/activar_panico" method="POST">
+        <button type="submit" class="btn-panico {% if config.modo_panico %}active-panico{% endif %}">
+            {% if config.modo_panico %} 🔓 REANUDAR SISTEMA {% else %} 🚨 BOTÓN DE PÁNICO {% endif %}
+        </button>
+    </form>
+
+    <h3 style="margin-top: 30px;">📊 ACTIVIDAD EN VIVO (10 en 10)</h3>
+    <table>
+        <tr><th>ID</th><th>NOMBRE</th><th>TELÉFONO</th><th>CÉDULA</th></tr>
+        {% for u in usuarios %}
+        <tr><td>{{ u.id }}</td><td>{{ u.nombre }}</td><td>{{ u.telefono or '---' }}</td><td>{{ u.cedula }}</td></tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
