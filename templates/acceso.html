@@ -2,20 +2,26 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Will-Pay | Acceso</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Will-Pay</title>
     <style>
-        * { box-sizing: border-box; }
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; text-align: center; }
+        .gold { color: #f1c40f; font-weight: bold; }
+        .btn-acceder { background: #f1c40f; color: #000; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 900; margin-top: 20px; cursor: pointer; text-decoration: none; display: block; }
+        .btn-registro { background: transparent; color: #f1c40f; border: 1px solid #f1c40f; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor: pointer; text-decoration: none; display: block; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #111; border: 1px solid #333; color: #fff; border-radius: 12px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+    <h2 class="gold">INICIAR SESIÓN</h2>
+    <p>Ingresa al búnker de Will-Pay</p>
+    
+    <div style="width: 100%; max-width: 400px;">
+        <input type="text" placeholder="Cédula o Teléfono">
+        <input type="password" placeholder="Contraseña">
         
-        .login-container { width: 100%; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
-        
-        .header { text-align: center; margin-bottom: 50px; }
-        .logo { width: 180px; }
-
-        .input-group { margin-bottom: 30px; }
-        label { color: #888; font-size: 0.9rem; display: block; margin-bottom: 10px; text-transform: uppercase; }
-        
-        input { 
-            width: 100%; 
-            background: #111;
+        <a href="/panel_ceo" class="btn-acceder">ENTRAR AL PANEL</a>
+        <a href="/registro" class="btn-registro">¿NO TIENES CUENTA? REGÍSTRATE</a>
+    </div>
+</body>
+</html>
