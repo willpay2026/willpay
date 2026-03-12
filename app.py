@@ -7,7 +7,6 @@ app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026_legacy'
 
 def get_db():
-    # Conexión a la base de datos en Render
     db_url = os.environ.get('DATABASE_URL')
     return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
 
@@ -31,20 +30,17 @@ def registro():
 def panel_ceo():
     conn = get_db()
     cur = conn.cursor()
-    # Buscamos la configuración del CEO
     cur.execute("SELECT * FROM config_ceo WHERE id = 1")
     config = cur.fetchone()
-    # Sumamos el capital total y lo depositado
     cur.execute("SELECT SUM(saldo) as total, SUM(depositado) as dep FROM users")
     res = cur.fetchone()
-    # Lista de los últimos 10 usuarios
     cur.execute("SELECT id, nombre, telefono, rol, cedula FROM users ORDER BY id DESC LIMIT 10")
     usuarios = cur.fetchall()
     cur.close()
     conn.close()
     return render_template('panel_ceo.html', config=config, capital=res['total'] or 0.0, depositado=res['dep'] or 0.0, usuarios=usuarios)
 
-# Rutas de guardado de porcentajes
+# Rutas de guardado
 @app.route('/actualizar_porcentajes', methods=['POST'])
 def actualizar_porcentajes():
     conn = get_db()
@@ -56,7 +52,6 @@ def actualizar_porcentajes():
     conn.close()
     return redirect(url_for('panel_ceo'))
 
-# Carga de saldo manual
 @app.route('/cargar_saldo', methods=['POST'])
 def cargar_saldo():
     conn = get_db()
@@ -69,5 +64,4 @@ def cargar_saldo():
     return redirect(url_for('panel_ceo'))
 
 if __name__ == '__main__':
-    # Puerto automático para Render
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
