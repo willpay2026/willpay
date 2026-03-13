@@ -3,29 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Mi Bóveda</title>
+    <title>Will-Pay | Búnker</title>
     <style>
-        body { background-color: #050505; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; text-align: center; }
-        .bunker-card { background: linear-gradient(145deg, #1a1a1a, #0a0a0a); border: 2px solid #d4af37; border-radius: 20px; padding: 30px; max-width: 400px; margin: 40px auto; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2); }
-        .saldo-label { font-size: 0.9em; color: #888; text-transform: uppercase; letter-spacing: 2px; }
-        .saldo-monto { font-size: 3em; color: #d4af37; font-weight: bold; margin: 10px 0; }
-        .btn-pay { background-color: #d4af37; color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 1.1em; transition: 0.3s; text-decoration: none; display: inline-block; }
-        .btn-pay:hover { background-color: #fff; transform: scale(1.05); }
-        table { width: 100%; max-width: 600px; margin: 30px auto; border-collapse: collapse; background: #111; border-radius: 10px; overflow: hidden; }
-        th { background: #d4af37; color: #000; padding: 12px; }
-        td { padding: 12px; border-bottom: 1px solid #222; font-size: 0.9em; }
-        .logout { color: #555; text-decoration: none; font-size: 0.8em; margin-top: 20px; display: block; }
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .bunker-card { border: 2px solid #d4af37; border-radius: 20px; padding: 30px; max-width: 400px; margin: 20px auto; box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); }
+        .saldo-label { color: #888; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; }
+        .saldo-monto { font-size: 3rem; font-weight: bold; color: #d4af37; margin: 10px 0; }
+        .btn-pay { background: #d4af37; color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; font-size: 1rem; cursor: pointer; text-decoration: none; display: inline-block; transition: 0.3s; }
+        .btn-pay:hover { background: #fff; transform: scale(1.05); }
+        table { width: 100%; max-width: 500px; margin: 20px auto; border-collapse: collapse; background: #111; border-radius: 10px; overflow: hidden; }
+        th { background: #d4af37; color: #000; padding: 10px; font-size: 0.8rem; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
     <h2>Hola, {{ u.nombre if u else 'Usuario' }}</h2>
-    
+
     <div class="bunker-card">
         <div class="saldo-label">Disponible en Bóveda</div>
-        <div class="saldo-monto">{{ u.saldo if u else '0.00' }} <span style="font-size: 0.4em;">Bs</span></div>
+        <div class="saldo-monto">{{ u.saldo if u else '0.00' }} <span style="font-size: 1.5rem;">Bs</span></div>
         <br>
-        <a href="#" class="btn-pay">PAGAR CON QR</a>
+        <a href="/pagar" class="btn-pay">PAGAR AHORA</a>
     </div>
 
     <h3>MOVIMIENTOS RECIENTES</h3>
@@ -40,9 +39,9 @@
         <tbody>
             {% for m in movimientos %}
             <tr>
-                <td>{{ m.fecha }}</td>
+                <td>{{ m.fecha.strftime('%d/%m') }}</td>
                 <td>{{ m.referencia }}</td>
-                <td>{{ m.monto }} Bs</td>
+                <td style="color: #d4af37;">{{ m.monto }} Bs</td>
             </tr>
             {% else %}
             <tr>
@@ -52,7 +51,8 @@
         </tbody>
     </table>
 
-    <a href="/logout" class="logout">SALIR DEL SISTEMA SEGURO</a>
+    <br>
+    <a href="/logout" style="color: #444; text-decoration: none; font-size: 0.8rem;">SALIR DEL SISTEMA SEGURO</a>
 
 </body>
 </html>
