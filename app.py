@@ -194,7 +194,37 @@ def reportar_pago():
 def logout():
     session.clear()
     return redirect(url_for('acceso'))
-
+@app.route('/inyectar_datos')
+def inyectar_datos():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        # Creamos la tabla por si acaso no existe
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                nombre VARCHAR(100),
+                cedula VARCHAR(20) UNIQUE,
+                telefono VARCHAR(20),
+                password VARCHAR(20),
+                rol VARCHAR(20) DEFAULT 'usuario',
+                saldo DECIMAL(10,2) DEFAULT 0.0
+            );
+        """)
+        # Metemos los usuarios de prueba
+        cur.execute("""
+            INSERT INTO users (nombre, cedula, telefono, password, rol, saldo)
+            VALUES 
+            ('Cliente Prueba', '101010', '04120000001', '1122', 'usuario', 500.00),
+            ('Comercio Prueba', '202020', '04120000002', '3344', 'usuario', 0.00)
+            ON CONFLICT (cedula) DO NOTHING;
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+        return "<h1>✅ Búnker Cargado</h1><p>Usuarios 101010 y 202020 listos para la batalla.</p>"
+    except Exception as e:
+        return f"<h1>❌ Error</h1><p>{str(e)}</p>"
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
