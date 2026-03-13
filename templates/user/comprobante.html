@@ -1,30 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay | Comprobante</title>
     <style>
-        body { background: #000; font-family: 'Courier New', monospace; padding: 20px; }
-        .ticket { background: white; color: black; width: 300px; margin: auto; padding: 20px; border-radius: 10px; text-align: center; }
-        .hr { border-top: 1px dashed black; margin: 10px 0; }
-        .btn-fin { background: #000; color: #fff; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-top: 15px; }
+        body { background-color: #000; color: #fff; font-family: 'Courier New', Courier, monospace; text-align: center; padding: 10px; }
+        .ticket-container { background: #fff; color: #000; max-width: 350px; margin: 20px auto; padding: 20px; border-radius: 15px; box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
+        .logo-img { width: 80px; margin-bottom: 10px; }
+        .header-text { font-weight: bold; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
+        .info-row { text-align: left; font-size: 0.85rem; margin: 5px 0; text-transform: uppercase; }
+        .status-badge { color: #28a745; font-weight: bold; margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .monto-section { border-top: 2px dashed #000; margin-top: 15px; padding-top: 10px; }
+        .monto-valor { font-size: 1.8rem; font-weight: bold; }
+        .btn-finalizar { background: #000; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; text-decoration: none; display: block; }
+        .footer-note { font-size: 0.6rem; color: #666; margin-top: 10px; }
     </style>
 </head>
-<body>
-    <div class="ticket">
-        <img src="/static/logonuevo.png" width="60">
-        <p style="font-size: 10px; font-weight: bold; margin: 5px 0;">COMPROBANTE ELECTRÓNICO</p>
-        <div class="hr"></div>
-        <p align="left" style="font-size: 11px;">
-            Nro. OPERACIÓN: WP-{{ t.id }}<br>
-            FECHA/HORA: {{ t.fecha }}<br>
-            CLIENTE: {{ u.nombre }} (WP-ADN-{{ u.id }})<br>
-            ESTATUS: <span style="color: green;">CERTIFICADO ✅</span>
-        </p>
-        <div class="hr"></div>
-        <p style="font-size: 10px; margin: 0;">MONTO NETO</p>
-        <p style="font-size: 26px; font-weight: bold; margin: 10px 0;">Bs. {{ "%.2f"|format(t.monto) }}</p>
-        <div class="hr"></div>
-        <small style="font-size: 8px;">Este ticket sirve como respaldo para auditorías contables de la red Will-Pay.</small>
-        <button class="btn-fin" onclick="window.location.href='/dashboard'">FINALIZAR</button>
+<body onload="ejecutarBeep()">
+
+    <audio id="sonido-beep" src="/static/beep.mp3" preload="auto"></audio>
+
+    <div class="ticket-container">
+        <img src="/static/logo_willpay.png" class="logo-img" alt="Will-Pay">
+        <div class="header-text">COMPROBANTE ELECTRÓNICO</div>
+
+        <div class="info-row"><strong>Nro. OPERACIÓN:</strong> {{ tx.referencia }}</div>
+        <div class="info-row"><strong>FECHA/HORA:</strong> {{ tx.fecha.strftime('%d/%m/%Y, %H:%M:%S') }}</div>
+        <div class="info-row"><strong>CLIENTE:</strong> {{ tx.emisor_nombre }}</div>
+        <div class="info-row"><strong>COMERCIO:</strong> {{ tx.receptor_nombre }}</div>
+        
+        <div class="status-badge">
+            ESTATUS: CERTIFICADO ✅
+        </div>
+
+        <div class="monto-section">
+            <div style="font-size: 0.7rem;">MONTO NETO</div>
+            <div class="monto-valor">Bs. {{ "%.2f"|format(tx.monto) }}</div>
+        </div>
+
+        <p class="footer-note">Este ticket sirve como respaldo para auditorías contables de la red Will-Pay.</p>
+
+        <a href="/dashboard" class="btn-finalizar">FINALIZAR</a>
     </div>
+
+    <script>
+        function ejecutarBeep() {
+            const audio = document.getElementById("sonido-beep");
+            audio.play().catch(e => console.log("El navegador bloqueó el audio automático: ", e));
+        }
+    </script>
 </body>
 </html>
