@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .ticket { background:white; color:black; width:300px; padding:20px; font-family:'Courier New', monospace; margin:auto; text-align:center; border: 1px solid #ddd; }
+        .logo { width:100px; filter: grayscale(1); }
+        .hr { border-top: 1px dashed black; margin: 10px 0; }
+        .btn-print { background:#d4af37; padding:10px; border-radius:5px; text-decoration:none; color:black; display:block; margin-top:20px; font-family:sans-serif; font-weight:bold; }
+    </style>
+</head>
+<body>
+    <div class="ticket" id="print-area">
+        <img src="/static/logonuevo.png" class="logo">
+        <h3>WILL-PAY VENEZUELA</h3>
+        <p>EXPEDIENTE: {{ u.id }}</p>
+        <div class="hr"></div>
+        <p align="left">USUARIO: {{ u.nombre }}<br>RIF: {{ u.cedula }}<br>TASA: {{ u.tasa }}%</p>
+        <div class="hr"></div>
+        <p><b>BIENVENIDO AL LEGADO</b></p>
+        <p>{{ "SOCIOS EXCLUSIVOS" if u.es_socio else "ADN DIGITAL VERIFICADO" }}</p>
+        <div class="hr"></div>
+        <small>Documento válido para declaración ISLR</small>
+    </div>
+    <div style="text-align:center;">
+        <a href="javascript:window.print()" class="btn-print">DESCARGAR COMPROBANTE</a>
+    </div>
+</body>
+</html>
