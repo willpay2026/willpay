@@ -5,20 +5,136 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay Acceso</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; padding: 20px; }
-        .gold { color: #f1c40f; font-weight: bold; }
-        input { width: 100%; padding: 18px; margin: 10px 0; background: #0d0d0d; border: 1px solid #222; color: #fff; border-radius: 15px; box-sizing: border-box; }
-        .btn-gold { background: #f1c40f; color: #000; border: none; padding: 20px; width: 100%; border-radius: 15px; font-weight: 900; cursor: pointer; text-decoration: none; display: block; }
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: sans-serif; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+            height: 100vh; 
+            margin: 0; 
+            padding: 20px; 
+            box-sizing: border-box;
+        }
+
+        .main-container {
+            max-width: 400px; 
+            width: 100%; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-small { 
+            width: 150px; /* Un poco más grande para que se vea cachuo */
+            margin-bottom: 10px; 
+        }
+
+        .brand-name {
+            color: #d4af37; /* Dorado Wildon */
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .slogan {
+            color: #fff;
+            font-size: 16px;
+            margin: 0 0 40px 0;
+        }
+
+        .panel-title {
+            color: #d4af37;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .user-name {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        /* Inputs según tu diseño (Claritos sobre negro) */
+        input { 
+            width: 100%; 
+            padding: 18px; 
+            margin-bottom: 15px; 
+            background: #e8f0fe; /* Fondo azulado muy claro */
+            border: none; 
+            color: #333; 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            text-align: center; 
+        }
+        
+        input::placeholder {
+            color: #aaa;
+        }
+
+        /* Botón Dorado Cachuo */
+        .btn-gold { 
+            background: #d4af37; 
+            color: #000; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            border-radius: 12px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            text-decoration: none; 
+            display: block; 
+            font-size: 18px; 
+            margin-top: 15px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .register-link { 
+            color: #d4af37; 
+            text-decoration: none; 
+            display: block; 
+            margin-top: 30px; 
+            font-size: 16px; 
+        }
+
+        .wildon-footer { 
+            color: #d4af37; 
+            font-size: 12px; 
+            margin-top: 60px; 
+            letter-spacing: 2px; 
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
-    <h1 class="gold">WILL-PAY</h1>
-    <p>Billetera Digital de Confianza</p>
-    <div style="max-width: 400px; margin: auto; width: 100%;">
-        <input type="text" placeholder="Número de Cédula">
-        <input type="password" placeholder="Contraseña">
-        <a href="/panel_ceo" class="btn-gold">ENTRAR AL BÚNKER</a>
-        <a href="/registro" style="color: #f1c40f; text-decoration: none; display: block; margin-top: 20px; font-size: 0.9em;">¿No tienes cuenta? Regístrate</a>
+    
+    <div class="main-container">
+        <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Will-Pay" class="logo-small">
+        <p class="brand-name">Will-Pay</p>
+        <p class="slogan">Tu Billetera Digital de Confianza</p>
+
+        <p class="panel-title">ACCESO AL PANEL</p>
+        <p class="user-name">Nombre y Apellido</p>
+
+        <form action="/login" method="POST" style="width: 100%;">
+            <input type="text" name="cedula" placeholder="Número de Telf" required>
+            <input type="password" name="pin" placeholder="PIN" required>
+            
+            <button type="submit" class="btn-gold">ENTRAR</button>
+        </form>
+
+        <a href="/registro" class="register-link">¿No tienes cuenta? Regístrate aquí</a>
+        
+        <p class="wildon-footer">Creado por Wildon C.A</p>
     </div>
 </body>
 </html>
