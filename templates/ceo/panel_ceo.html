@@ -1,63 +1,120 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-import os
-import psycopg2
-from psycopg2.extras import RealDictCursor
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Will-Pay | Búnker CEO</title>
+    <style>
+        body { background: #000; color: #fff; font-family: 'Arial', sans-serif; margin: 0; padding: 0; }
+        .panic-bar { background: red; color: white; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .header { text-align: center; padding: 20px; }
+        .logo { width: 80px; }
+        .ceo-welcome { color: #d4af37; font-size: 18px; margin-top: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* Contenedores Principales */
+        .main-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; padding: 20px; }
+        .card { background: #0a0a0a; border: 1px solid #333; border-radius: 10px; padding: 20px; position: relative; }
+        .card-gold { border: 2px solid #d4af37; }
+        
+        /* Tasas de Comisión */
+        .tasa-row { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .tasa-box { text-align: center; border: 1px solid #d4af37; padding: 10px; border-radius: 5px; min-width: 100px; }
+        .tasa-label { font-size: 10px; color: #d4af37; text-transform: uppercase; }
+        .tasa-value { font-size: 18px; font-weight: bold; display: block; }
+        .tasa-input { background: transparent; border: none; color: #d4af37; width: 40px; text-align: center; font-size: 18px; }
 
-app = Flask(__name__)
-app.secret_key = 'willpay_donquiz_2026_legacy'
+        /* Saldo y Estadísticas */
+        .saldo-big { font-size: 48px; font-weight: bold; text-align: center; margin: 20px 0; }
+        .stat-line { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #222; }
+        .neto { color: #00ff00; font-weight: bold; }
 
-def get_db():
-    db_url = os.environ.get('DATABASE_URL')
-    return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
+        /* Switches de Automatización */
+        .switch-container { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #d4af37; }
+        input:checked + .slider:before { transform: translateX(20px); }
 
-# ==========================================
-# >>> CONFIGURACIÓN DE RUTAS DE ACCESO <<<
-# ==========================================
-@app.route('/')
-def splash(): 
-    return render_template('splash.html')
+        /* Tabla de Actividad */
+        .tabla-actividad { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+        .tabla-actividad th { color: #d4af37; text-align: left; padding: 10px; border-bottom: 1px solid #333; }
+        .tabla-actividad td { padding: 10px; border-bottom: 1px solid #111; }
+        
+        .btn-gold { background: #d4af37; color: #000; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; }
+    </style>
+</head>
+<body>
 
-@app.route('/acceso')
-def acceso(): 
-    return render_template('acceso.html')
+    <div class="panic-bar">🚨 BOTÓN DE PÁNICO: MANTENIMIENTO EMERGENCIA</div>
 
-@app.route('/registro')
-def registro(): 
-    return render_template('registro.html')
+    <div class="header">
+        <img src="/static/logonuevo.png" class="logo">
+        <div style="color: #d4af37; font-size: 10px;">ID DNA CEO-0001 - FUNDADOR</div>
+        <div class="ceo-welcome">BIENVENIDO CEO WILFREDO DONQUIZ</div>
+    </div>
 
-@app.route('/panel_ceo')
-def panel_ceo():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM config_ceo WHERE id = 1")
-    config = cur.fetchone()
-    cur.execute("SELECT SUM(saldo) as total, SUM(depositado) as dep FROM users")
-    res = cur.fetchone()
-    cur.execute("SELECT id, nombre, telefono, rol, cedula FROM users ORDER BY id DESC LIMIT 10")
-    usuarios = cur.fetchall()
-    cur.close(); conn.close()
-    return render_template('panel_ceo.html', config=config, capital=res['total'] or 0.0, depositado=res['dep'] or 0.0, usuarios=usuarios)
+    <div class="tasa-row">
+        <div class="tasa-box">
+            <span class="tasa-label">% PAGOS</span>
+            <input type="text" class="tasa-input" value="3.0" onchange="actualizarTasa('pagos', this.value)">%
+        </div>
+        <div class="tasa-box">
+            <span class="tasa-label">% RETIROS</span>
+            <input type="text" class="tasa-input" value="2.0" onchange="actualizarTasa('retiros', this.value)">%
+        </div>
+        <div class="tasa-box">
+            <span class="tasa-label">% ACT. ECON.</span>
+            <input type="text" class="tasa-input" value="1.5" onchange="actualizarTasa('act_econ', this.value)">%
+        </div>
+    </div>
 
-# Rutas de guardado
-@app.route('/actualizar_porcentajes', methods=['POST'])
-def actualizar_porcentajes():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("UPDATE config_ceo SET p_pagos=%s, p_personal=%s, p_juridica=%s WHERE id=1", 
-               (request.form.get('p_pagos'), request.form.get('p_personal'), request.form.get('p_juridica')))
-    conn.commit()
-    cur.close(); conn.close()
-    return redirect(url_for('panel_ceo'))
+    <div class="main-grid">
+        <div class="card card-gold">
+            <div class="tasa-label" style="text-align: center;">SALDO EN Bs.</div>
+            <div class="saldo-big">0.000,00</div>
+            <div style="color: #666; font-size: 10px; text-align: center;">CAPITAL TOTAL EN BÚNKER</div>
+        </div>
 
-@app.route('/cargar_saldo', methods=['POST'])
-def cargar_saldo():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("UPDATE users SET saldo = saldo + %s, depositado = depositado + %s WHERE telefono = %s", 
-               (float(request.form.get('monto')), float(request.form.get('monto')), request.form.get('telefono')))
-    conn.commit()
-    cur.close(); conn.close()
-    return redirect(url_for('panel_ceo'))
+        <div>
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="stat-line"><span>DINERO DEPOSITADO</span> <span>Bs. 0,00</span></div>
+                <div class="stat-line"><span>EN TRANSACCIÓN</span> <span>Bs. 0,00</span></div>
+                <div class="stat-line neto"><span>NETO GANANCIAS (LEGADO)</span> <span>Bs. 0,00</span></div>
+            </div>
+            
+            <div class="card">
+                <div class="tasa-label">⚙️ AUTOMATIZACIÓN</div>
+                <div class="switch-container">
+                    <span>Auto-Aprobación Saldo</span>
+                    <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+                <div class="switch-container">
+                    <span>Auto-Aprobación Retiro</span>
+                    <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+            </div>
+        </div>
+    </div>
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    <div style="padding: 20px;">
+        <div class="tasa-label">📊 ACTIVIDAD EN VIVO (10 en 10)</div>
+        <table class="tabla-actividad">
+            <thead>
+                <tr>
+                    <th>USUARIO ID</th>
+                    <th>TELÉFONO</th>
+                    <th>ACT. ECON.</th>
+                    <th>FECHA/HORA</th>
+                    <th>SALDO</th>
+                    <th>MOTIVO</th>
+                    <th>ACCIÓN</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
