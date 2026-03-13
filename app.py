@@ -21,9 +21,9 @@ def get_db():
 
 @app.before_request
 def check_mantenimiento():
-    rutas_libres = ['panel_ceo', 'static', 'login', 'acceso', 'panico_toggle', 'registro', 'crear_cuenta']
+    rutas_libres = ['panel_ceo', 'static', 'login', 'acceso', 'registro', 'crear_cuenta', 'inyectar_datos']
     if MODO_PANICO and request.endpoint not in rutas_libres:
-        return "<h1>⚠️ MANTENIMIENTO DE EMERGENCIA ACTIVADO</h1><p>Will-Pay está protegiendo el búnker. Reintenta en unos minutos.</p>", 503
+        return "<h1>⚠️ MANTENIMIENTO DE EMERGENCIA ACTIVADO</h1><p>Will-Pay está protegiendo el búnker.</p>", 503
 
 # --- RUTAS DE ACCESO ---
 @app.route('/')
@@ -92,18 +92,21 @@ def dashboard():
     
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
-    user = cur.fetchone()
-    
-    cur.execute("""
-        SELECT * FROM transacciones 
-        WHERE emisor_id = %s OR receptor_id = %s 
-        ORDER BY fecha DESC LIMIT 5
-    """, (user['id'], user['id']))
-    movimientos = cur.fetchall()
-    
-    cur.close()
-    conn.close()
+    try:
+        cur.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+        user = cur.fetchone()
+        
+        cur.execute("""
+            SELECT fecha, referencia, monto, estatus FROM transacciones 
+            WHERE emisor_id = %s OR receptor_id = %s 
+            ORDER BY fecha DESC LIMIT 5
+        """, (user['id'], user['id']))
+        movimientos = cur.fetchall()
+    except Exception as e:
+        return f"Error en Dashboard: {str(e)}"
+    finally:
+        cur.close()
+        conn.close()
     
     return render_template('user/dashboard.html', u=user, movimientos=movimientos)
 
@@ -116,115 +119,4 @@ def procesar_pago():
     monto = float(data['monto'])
     emisor_id = session['user_id']
     
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT saldo FROM users WHERE id = %s", (emisor_id,))
-    emisor = cur.fetchone()
-    
-    if emisor['saldo'] < monto:
-        cur.close() # Cierre preventivo
-        conn.close()
-        return jsonify({'success': False, 'message': 'Saldo insuficiente'})
-
-    ref_wp = f"WP-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-    cur.execute("UPDATE users SET saldo = saldo - %s WHERE id = %s", (monto, emisor_id))
-    cur.execute("""
-        INSERT INTO transacciones (emisor_id, monto, tipo, referencia, estatus, fecha) 
-        VALUES (%s, %s, 'PAGO_QR', %s, 'EXITOSO', NOW()) RETURNING id
-    """, (emisor_id, monto, ref_wp))
-    
-    t_id = cur.fetchone()['id']
-    conn.commit()
-    cur.close()
-    conn.close()
-    
-    return jsonify({'success': True, 't_id': t_id})
-
-# --- TICKETS Y PANEL CEO ---
-@app.route('/comprobante/<int:t_id>')
-def comprobante(t_id):
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    return render_template('user/comprobante.html', t_id=t_id)
-
-@app.route('/panel_ceo')
-def panel_ceo():
-    if 'user_id' not in session or session.get('user_rol') != 'admin':
-        return "Acceso denegado: Solo el CEO tiene acceso aquí.", 403
-    
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM transacciones WHERE estatus = 'PENDIENTE' ORDER BY fecha DESC")
-    pendientes = cur.fetchall()
-    cur.close()
-    conn.close()
-    
-    return render_template('ceo/panel_ceo.html', tasas=SISTEMA_TASAS, pendientes=pendientes, panico=MODO_PANICO)
-
-@app.route('/panico_toggle', methods=['POST'])
-def panico_toggle():
-    global MODO_PANICO
-    MODO_PANICO = not MODO_PANICO
-    return jsonify({'status': MODO_PANICO})
-
-@app.route('/actualizar_tasa', methods=['POST'])
-def actualizar_tasa():
-    data = request.get_json()
-    SISTEMA_TASAS[data['tipo']] = float(data['valor'])
-    return jsonify({'success': True})
-
-@app.route('/reportar_pago', methods=['POST'])
-def reportar_pago():
-    ref = request.form.get('referencia')
-    monto = request.form.get('monto')
-    user_id = session.get('user_id')
-    if not user_id: return redirect(url_for('acceso'))
-    
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO transacciones (emisor_id, monto, referencia, estatus, tipo, fecha) 
-        VALUES (%s, %s, %s, 'PENDIENTE', 'RECARGA', NOW())
-    """, (user_id, monto, ref))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return redirect(url_for('dashboard'))
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('acceso'))
-@app.route('/inyectar_datos')
-def inyectar_datos():
-    try:
-        conn = get_db()
-        cur = conn.cursor()
-        # Creamos la tabla por si acaso no existe
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                nombre VARCHAR(100),
-                cedula VARCHAR(20) UNIQUE,
-                telefono VARCHAR(20),
-                password VARCHAR(20),
-                rol VARCHAR(20) DEFAULT 'usuario',
-                saldo DECIMAL(10,2) DEFAULT 0.0
-            );
-        """)
-        # Metemos los usuarios de prueba
-        cur.execute("""
-            INSERT INTO users (nombre, cedula, telefono, password, rol, saldo)
-            VALUES 
-            ('Cliente Prueba', '101010', '04120000001', '1122', 'usuario', 500.00),
-            ('Comercio Prueba', '202020', '04120000002', '3344', 'usuario', 0.00)
-            ON CONFLICT (cedula) DO NOTHING;
-        """)
-        conn.commit()
-        cur.close()
-        conn.close()
-        return "<h1>✅ Búnker Cargado</h1><p>Usuarios 101010 y 202020 listos para la batalla.</p>"
-    except Exception as e:
-        return f"<h1>❌ Error</h1><p>{str(e)}</p>"
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    conn
