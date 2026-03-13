@@ -56,7 +56,7 @@ def dashboard():
         cur.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
         user = cur.fetchone()
         
-        # AJUSTE MAESTRO: Usamos ::text para evitar el error de "operator does not exist"
+        # Ajuste para evitar error de tipos entre ID e historial
         cur.execute("""
             SELECT fecha, referencia, monto, estatus FROM transacciones 
             WHERE emisor::text = %s::text OR receptor::text = %s::text 
@@ -71,6 +71,59 @@ def dashboard():
     
     return render_template('user/dashboard.html', u=user, movimientos=movimientos)
 
+# --- MOTOR DE PAGOS ---
+@app.route('/pagar')
+def pagar():
+    if 'user_id' not in session: return redirect(url_for('acceso'))
+    return render_template('user/pagar.html')
+
+@app.route('/procesar_pago', methods=['POST'])
+def procesar_pago():
+    if 'user_id' not in session: return redirect(url_for('acceso'))
+    
+    monto = float(request.form.get('monto'))
+    receptor_cedula = request.form.get('cedula_receptor')
+    emisor_id = session['user_id']
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # 1. Verificar emisor y saldo
+        cur.execute("SELECT saldo FROM users WHERE id = %s", (emisor_id,))
+        emisor = cur.fetchone()
+        
+        if emisor['saldo'] < monto:
+            return "<h1>❌ Saldo Insuficiente</h1><a href='/dashboard'>Volver</a>"
+
+        # 2. Verificar que el receptor existe
+        cur.execute("SELECT id FROM users WHERE cedula = %s", (receptor_cedula,))
+        receptor = cur.fetchone()
+        
+        if not receptor:
+            return "<h1>❌ Receptor no encontrado</h1><a href='/dashboard'>Volver</a>"
+
+        # 3. EJECUTAR TRASPASO
+        ref_wp = f"WP-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        # Restar al emisor
+        cur.execute("UPDATE users SET saldo = saldo - %s WHERE id = %s", (monto, emisor_id))
+        # Sumar al receptor
+        cur.execute("UPDATE users SET saldo = saldo + %s WHERE id = %s", (monto, receptor['id']))
+        # Registrar en historial
+        cur.execute("""
+            INSERT INTO transacciones (emisor, receptor, monto, tipo, referencia, estatus, fecha) 
+            VALUES (%s, %s, %s, 'PAGO_MOVIL', %s, 'EXITOSO', NOW())
+        """, (str(emisor_id), str(receptor['id']), monto, ref_wp))
+        
+        conn.commit()
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        conn.rollback()
+        return f"Error en transacción: {str(e)}"
+    finally:
+        cur.close()
+        conn.close()
+
 # --- PANEL CEO ---
 @app.route('/panel_ceo')
 def panel_ceo():
@@ -84,7 +137,6 @@ def inyectar_datos():
     try:
         conn = get_db()
         cur = conn.cursor()
-        # Crear Tablas con nombres definitivos
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -106,7 +158,6 @@ def inyectar_datos():
                 fecha TIMESTAMP DEFAULT NOW()
             );
         """)
-        # Insertar usuarios de prueba
         cur.execute("""
             INSERT INTO users (nombre, cedula, telefono, password, rol, saldo)
             VALUES 
@@ -116,12 +167,4 @@ def inyectar_datos():
         """)
         conn.commit()
         cur.close()
-        conn.close()
-        return "<h1>✅ Búnker Listo</h1><p>Tablas y usuarios cargados. Ya puedes entrar.</p>"
-    except Exception as e:
-        return f"<h1>❌ Error</h1><p>{str(e)}</p>"
-
-# --- CIERRE DEL MOTOR ---
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+        conn
