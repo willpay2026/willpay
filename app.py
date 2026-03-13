@@ -56,7 +56,6 @@ def dashboard():
         cur.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
         user = cur.fetchone()
         
-        # Ajuste para evitar error de tipos entre ID e historial
         cur.execute("""
             SELECT fecha, referencia, monto, estatus FROM transacciones 
             WHERE emisor::text = %s::text OR receptor::text = %s::text 
@@ -88,28 +87,22 @@ def procesar_pago():
     conn = get_db()
     cur = conn.cursor()
     try:
-        # 1. Verificar emisor y saldo
         cur.execute("SELECT saldo FROM users WHERE id = %s", (emisor_id,))
         emisor = cur.fetchone()
         
         if emisor['saldo'] < monto:
             return "<h1>❌ Saldo Insuficiente</h1><a href='/dashboard'>Volver</a>"
 
-        # 2. Verificar que el receptor existe
         cur.execute("SELECT id FROM users WHERE cedula = %s", (receptor_cedula,))
         receptor = cur.fetchone()
         
         if not receptor:
             return "<h1>❌ Receptor no encontrado</h1><a href='/dashboard'>Volver</a>"
 
-        # 3. EJECUTAR TRASPASO
         ref_wp = f"WP-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
         
-        # Restar al emisor
         cur.execute("UPDATE users SET saldo = saldo - %s WHERE id = %s", (monto, emisor_id))
-        # Sumar al receptor
         cur.execute("UPDATE users SET saldo = saldo + %s WHERE id = %s", (monto, receptor['id']))
-        # Registrar en historial
         cur.execute("""
             INSERT INTO transacciones (emisor, receptor, monto, tipo, referencia, estatus, fecha) 
             VALUES (%s, %s, %s, 'PAGO_MOVIL', %s, 'EXITOSO', NOW())
@@ -167,4 +160,12 @@ def inyectar_datos():
         """)
         conn.commit()
         cur.close()
-        conn
+        conn.close()
+        return "<h1>✅ Búnker Actualizado</h1><p>Tablas listas para transferencias.</p>"
+    except Exception as e:
+        return f"<h1>❌ Error</h1><p>{str(e)}</p>"
+
+# --- CIERRE DEL MOTOR ---
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
