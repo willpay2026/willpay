@@ -1,28 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <title>Will-Pay | Ticket de Bienvenida</title>
     <style>
-        .ticket { background:white; color:black; width:300px; padding:20px; font-family:'Courier New', monospace; margin:auto; text-align:center; border: 1px solid #ddd; }
-        .logo { width:100px; filter: grayscale(1); }
-        .hr { border-top: 1px dashed black; margin: 10px 0; }
-        .btn-print { background:#d4af37; padding:10px; border-radius:5px; text-decoration:none; color:black; display:block; margin-top:20px; font-family:sans-serif; font-weight:bold; }
+        body { background: #1a1a1a; font-family: 'Courier New', monospace; padding: 20px; }
+        
+        .ticket { 
+            background: #000; 
+            color: #fff; 
+            width: 320px; 
+            padding: 30px 20px; 
+            margin: auto; 
+            text-align: center; 
+            border: 2px solid #d4af37; 
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+            position: relative;
+        }
+
+        .gold-text { color: #d4af37; font-weight: bold; }
+        
+        .logo { width: 120px; margin-bottom: 10px; }
+        
+        .hr { border-top: 1px dashed #d4af37; margin: 15px 0; }
+        
+        .user-data { text-align: left; font-size: 13px; line-height: 1.8; }
+        
+        .vision-message { 
+            font-size: 11px; 
+            color: #aaa; 
+            font-style: italic; 
+            margin: 20px 0;
+            line-height: 1.4;
+        }
+
+        .barcode { font-family: 'Libre Barcode 39', cursive; font-size: 40px; color: #fff; }
+
+        .btn-print { 
+            background: #d4af37; 
+            padding: 15px; 
+            border-radius: 10px; 
+            text-decoration: none; 
+            color: #000; 
+            display: block; 
+            max-width: 320px;
+            margin: 20px auto; 
+            font-family: sans-serif; 
+            font-weight: bold; 
+            text-align: center;
+        }
+
+        @media print {
+            .btn-print { display: none; }
+            body { background: white; }
+            .ticket { border: 1px solid #000; color: #000; box-shadow: none; background: white; }
+            .gold-text { color: #000; }
+            .hr { border-top: 1px dashed #000; }
+        }
     </style>
 </head>
 <body>
+
     <div class="ticket" id="print-area">
-        <img src="/static/logonuevo.png" class="logo">
-        <h3>WILL-PAY VENEZUELA</h3>
-        <p>EXPEDIENTE: {{ u.id }}</p>
+        <img src="{{ url_for('static', filename='logonuevo.png') }}" class="logo">
+        <h2 class="gold-text">WILL-PAY VENEZUELA</h2>
+        <p style="font-size: 12px;">EXPEDIENTE DIGITAL: #{{ u.id }}</p>
+        
         <div class="hr"></div>
-        <p align="left">USUARIO: {{ u.nombre }}<br>RIF: {{ u.cedula }}<br>TASA: {{ u.tasa }}%</p>
+        
+        <div class="user-data">
+            <span class="gold-text">TITULAR:</span> {{ u.nombre }}<br>
+            <span class="gold-text">CÉDULA/RIF:</span> {{ u.cedula }}<br>
+            <span class="gold-text">ESTADO:</span> {{ "SOCIOS EXCLUSIVOS" if u.es_socio else "ADN DIGITAL VERIFICADO" }}<br>
+            <span class="gold-text">COMISIÓN:</span> {{ u.tasa }}% por operación
+        </div>
+
         <div class="hr"></div>
-        <p><b>BIENVENIDO AL LEGADO</b></p>
-        <p>{{ "SOCIOS EXCLUSIVOS" if u.es_socio else "ADN DIGITAL VERIFICADO" }}</p>
+
+        <p class="gold-text" style="font-size: 14px;">BIENVENIDO AL LEGADO</p>
+        
+        <div class="vision-message">
+            "Will-Pay nació de un sueño en Venezuela: revolucionar el sistema de pagos con código simple y honesto. Este ticket marca el inicio de tu nueva era financiera."
+        </div>
+
         <div class="hr"></div>
-        <small>Documento válido para declaración ISLR</small>
+        
+        <p style="font-size: 10px; margin-bottom: 5px;">CÓDIGO DE AUDITORÍA</p>
+        <div style="background: #fff; padding: 5px; border-radius: 5px;">
+            <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text={{ u.cedula }}&scale=1&rotate=N&includetext" alt="Barcode" style="width: 100%;">
+        </div>
+        
+        <p style="font-size: 9px; margin-top: 15px;">Documento válido para auditoría interna y declaración de ingresos.</p>
     </div>
-    <div style="text-align:center;">
-        <a href="javascript:window.print()" class="btn-print">DESCARGAR COMPROBANTE</a>
-    </div>
+
+    <a href="javascript:window.print()" class="btn-print">DESCARGAR EXPEDIENTE (PDF)</a>
+
 </body>
 </html>
