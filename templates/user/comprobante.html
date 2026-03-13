@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { background: #000; font-family: 'Courier New', monospace; padding: 20px; }
+        .ticket { background: white; color: black; width: 300px; margin: auto; padding: 20px; border-radius: 10px; text-align: center; }
+        .hr { border-top: 1px dashed black; margin: 10px 0; }
+        .btn-fin { background: #000; color: #fff; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="ticket">
+        <img src="/static/logonuevo.png" width="60">
+        <p style="font-size: 10px; font-weight: bold; margin: 5px 0;">COMPROBANTE ELECTRÓNICO</p>
+        <div class="hr"></div>
+        <p align="left" style="font-size: 11px;">
+            Nro. OPERACIÓN: WP-{{ t.id }}<br>
+            FECHA/HORA: {{ t.fecha }}<br>
+            CLIENTE: {{ u.nombre }} (WP-ADN-{{ u.id }})<br>
+            ESTATUS: <span style="color: green;">CERTIFICADO ✅</span>
+        </p>
+        <div class="hr"></div>
+        <p style="font-size: 10px; margin: 0;">MONTO NETO</p>
+        <p style="font-size: 26px; font-weight: bold; margin: 10px 0;">Bs. {{ "%.2f"|format(t.monto) }}</p>
+        <div class="hr"></div>
+        <small style="font-size: 8px;">Este ticket sirve como respaldo para auditorías contables de la red Will-Pay.</small>
+        <button class="btn-fin" onclick="window.location.href='/dashboard'">FINALIZAR</button>
+    </div>
+</body>
+</html>
