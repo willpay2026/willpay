@@ -7,81 +7,75 @@
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
         .logo-small { width: 100px; margin-top: 10px; }
-        
-        /* Contenedor de Saldo Dorado */
         .saldo-card { 
             border: 2px solid #d4af37; border-radius: 20px; padding: 20px; 
             margin: 20px 0; background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
         }
-        .saldo-label { color: #888; font-size: 14px; }
-        .saldo-monto { color: #d4af37; font-size: 32px; font-weight: bold; margin: 10px 0; }
-
-        /* Botones de Acción */
+        .saldo-label { color: #d4af37; font-size: 14px; font-weight: bold; }
+        .saldo-monto { color: #fff; font-size: 36px; font-weight: bold; margin: 10px 0; }
         .btn-action { 
             width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; 
             text-transform: uppercase; margin-bottom: 10px; cursor: pointer; border: none;
         }
-        .btn-recargar { background: transparent; color: #d4af37; border: 1px solid #d4af37; }
-        .btn-pagar { background: #d4af37; color: #000; width: 48%; float: left; }
-        .btn-cobrar { background: #333; color: #fff; width: 48%; float: right; }
-
+        .btn-recargar { background: #d4af37; color: #000; width: 48%; float: left; }
+        .btn-retirar { background: #333; color: #fff; width: 48%; float: right; }
+        .btn-pagar { background: #333; color: #fff; width: 48%; float: left; margin-top: 10px; }
+        .btn-cobrar { background: #333; color: #fff; width: 48%; float: right; margin-top: 10px; }
         .input-monto { 
-            width: 100%; padding: 15px; background: #111; border: 1px solid #333; 
-            color: #d4af37; border-radius: 10px; font-size: 24px; text-align: center; margin: 20px 0;
+            width: 100%; padding: 15px; background: #000; border: 1px solid #d4af37; 
+            color: #fff; border-radius: 10px; font-size: 28px; text-align: center; margin: 20px 0;
         }
-
-        /* Área de Recarga (Tus datos) */
-        .recarga-box { background: #111; border-radius: 15px; padding: 15px; text-align: left; margin-top: 20px; font-size: 13px; }
-        .pago-movil-datos { color: #d4af37; font-weight: bold; margin-bottom: 10px; }
-        
-        .movimientos { text-align: left; margin-top: 30px; }
-        .mov-item { border-left: 3px solid #d4af37; padding: 10px; background: #0a0a0a; margin-bottom: 10px; border-radius: 0 10px 10px 0; }
+        .recarga-box { background: #111; border-radius: 15px; padding: 15px; text-align: left; margin-top: 20px; display: none; }
     </style>
 </head>
 <body>
-
     <img src="{{ url_for('static', filename='logonuevo.png') }}" class="logo-small">
     
     <div class="saldo-card">
         <div class="saldo-label">Saldo Disponible</div>
         <div class="saldo-monto">Bs. {{ "%.2f"|format(u.saldo) }}</div>
-    </div>
-
-    <button class="btn-action btn-recargar" onclick="document.getElementById('modal-recarga').style.display='block'">RECARGAR</button>
-
-    <div style="overflow: hidden; margin-top: 10px;">
-        <button class="btn-action btn-pagar">PAGAR</button>
-        <button class="btn-action btn-cobrar">COBRAR</button>
-    </div>
-
-    <input type="number" class="input-monto" placeholder="0.00">
-
-    <div style="background: #fff; padding: 10px; display: inline-block; border-radius: 10px; margin-top: 10px;">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=WillPay-{{ u.id }}" style="width: 150px;">
-    </div>
-
-    <div id="modal-recarga" class="recarga-box">
-        <p class="pago-movil-datos">DATOS DE PAGO MÓVIL:<br>
-        Banesco | 04126602555 | ID 13496133</p>
-        
-        <form action="/reportar_pago" method="POST" enctype="multipart/form-data">
-            <input type="text" name="referencia" placeholder="Nro de Referencia" required style="width: 100%; padding: 10px; margin-bottom: 5px;">
-            <input type="number" name="monto" placeholder="Monto transferido" required style="width: 100%; padding: 10px; margin-bottom: 5px;">
-            <label style="font-size: 10px;">Adjuntar Capture de Pantalla:</label>
-            <input type="file" name="capture" accept="image/*" required style="font-size: 10px;">
-            <button type="submit" class="btn-action btn-recargar" style="margin-top: 10px;">ENVIAR REPORTE</button>
-        </form>
-    </div>
-
-    <div class="movimientos">
-        <p style="color: #888;">Últimos Movimientos</p>
-        <div class="mov-item">
-            <div style="font-size: 14px;">Bienvenida Will-Pay</div>
-            <div style="font-size: 10px; color: #555;">{{ u.fecha_registro }}</div>
+        <div style="overflow: hidden;">
+            <button class="btn-action btn-recargar" onclick="document.getElementById('modal-recarga').style.display='block'">RECARGAR</button>
+            <button class="btn-action btn-retirar">RETIRAR</button>
         </div>
     </div>
 
-    <a href="/logout" style="color: #f44336; text-decoration: none; font-size: 12px; display: block; margin-top: 20px;">Cerrar Sesión</a>
+    <div style="overflow: hidden;">
+        <button class="btn-action btn-pagar" onclick="procesarTransaccion()">PAGAR</button>
+        <button class="btn-action btn-cobrar">COBRAR</button>
+    </div>
 
+    <input type="number" id="monto_input" class="input-monto" placeholder="0.00">
+
+    <div id="modal-recarga" class="recarga-box">
+        <p style="color:#d4af37; font-weight:bold;">PAGO MÓVIL: Banesco | 04126602555 | ID 13496133</p>
+        <form action="/reportar_pago" method="POST" enctype="multipart/form-data">
+            <input type="text" name="referencia" placeholder="Referencia" required style="width:100%; padding:8px; margin-bottom:5px;">
+            <input type="file" name="capture" required style="font-size:10px;">
+            <button type="submit" class="btn-action btn-recargar" style="width:100%; margin-top:10px;">ENVIAR REPORTE</button>
+        </form>
+    </div>
+
+    <audio id="beepSound" src="{{ url_for('static', filename='beep.mp3') }}" preload="auto"></audio>
+
+    <script>
+    function procesarTransaccion() {
+        let monto = document.getElementById('monto_input').value;
+        if(!monto || monto <= 0) return alert("Monto inválido");
+
+        fetch('/procesar_pago', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({monto: monto})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                document.getElementById('beepSound').play();
+                setTimeout(() => { window.location.href = '/comprobante/' + data.t_id; }, 500);
+            } else { alert(data.message); }
+        });
+    }
+    </script>
 </body>
 </html>
