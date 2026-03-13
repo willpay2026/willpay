@@ -4,7 +4,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import datetime
 
-# 1. INICIO DEL SISTEMA (Primero definimos la app)
+# 1. INICIO DEL SISTEMA
 app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026_legacy'
 
@@ -56,12 +56,12 @@ def dashboard():
         cur.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
         user = cur.fetchone()
         
-        # Corregido: 'emisor' y 'receptor' para que coincida con tu DB
+        # AJUSTE MAESTRO: Usamos ::text para evitar el error de "operator does not exist"
         cur.execute("""
             SELECT fecha, referencia, monto, estatus FROM transacciones 
-            WHERE emisor = %s OR receptor = %s 
+            WHERE emisor::text = %s::text OR receptor::text = %s::text 
             ORDER BY fecha DESC LIMIT 5
-        """, (user['id'], user['id']))
+        """, (str(user['id']), str(user['id'])))
         movimientos = cur.fetchall()
     except Exception as e:
         return f"Error en Dashboard: {str(e)}"
@@ -97,8 +97,8 @@ def inyectar_datos():
             );
             CREATE TABLE IF NOT EXISTS transacciones (
                 id SERIAL PRIMARY KEY,
-                emisor INTEGER REFERENCES users(id),
-                receptor INTEGER REFERENCES users(id),
+                emisor VARCHAR(50),
+                receptor VARCHAR(50),
                 monto DECIMAL(10,2),
                 tipo VARCHAR(50),
                 referencia VARCHAR(100),
