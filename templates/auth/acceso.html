@@ -28,27 +28,13 @@
             align-items: center;
         }
 
-        .logo-small { 
-            width: 150px; /* Un poco más grande para que se vea cachuo */
-            margin-bottom: 10px; 
-        }
-
-        .brand-name {
-            color: #d4af37; /* Dorado Wildon */
-            font-size: 32px;
-            font-weight: bold;
-            margin: 0;
-            letter-spacing: 1px;
-        }
-
-        .slogan {
-            color: #fff;
-            font-size: 16px;
-            margin: 0 0 40px 0;
+        .logo-willpay { 
+            width: 220px; /* Tamaño ideal según tu imagen */
+            margin-bottom: 40px; 
         }
 
         .panel-title {
-            color: #d4af37;
+            color: #d4af37; /* Dorado Wildon */
             font-size: 20px;
             font-weight: bold;
             text-transform: uppercase;
@@ -56,18 +42,18 @@
             margin-bottom: 5px;
         }
 
-        .user-name {
+        .user-label {
             color: #666;
             font-size: 16px;
             margin-bottom: 30px;
         }
 
-        /* Inputs según tu diseño (Claritos sobre negro) */
+        /* Inputs claritos como tu diseño original */
         input { 
             width: 100%; 
             padding: 18px; 
             margin-bottom: 15px; 
-            background: #e8f0fe; /* Fondo azulado muy claro */
+            background: #e8f0fe; 
             border: none; 
             color: #333; 
             border-radius: 12px; 
@@ -75,12 +61,7 @@
             font-size: 16px; 
             text-align: center; 
         }
-        
-        input::placeholder {
-            color: #aaa;
-        }
 
-        /* Botón Dorado Cachuo */
         .btn-gold { 
             background: #d4af37; 
             color: #000; 
@@ -95,10 +76,9 @@
             font-size: 18px; 
             margin-top: 15px; 
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
-        .register-link { 
+        .footer-link { 
             color: #d4af37; 
             text-decoration: none; 
             display: block; 
@@ -118,21 +98,19 @@
 <body>
     
     <div class="main-container">
-        <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Will-Pay" class="logo-small">
-        <p class="brand-name">Will-Pay</p>
-        <p class="slogan">Tu Billetera Digital de Confianza</p>
+        <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Will-Pay" class="logo-willpay">
 
         <p class="panel-title">ACCESO AL PANEL</p>
-        <p class="user-name">Nombre y Apellido</p>
+        <p class="user-label">Nombre y Apellido</p>
 
         <form action="/login" method="POST" style="width: 100%;">
-            <input type="text" name="cedula" placeholder="Número de Telf" required>
-            <input type="password" name="pin" placeholder="PIN" required>
+            <input type="text" name="cedula" placeholder="04126602555" required>
+            <input type="password" name="pin" placeholder="••••" required>
             
             <button type="submit" class="btn-gold">ENTRAR</button>
         </form>
 
-        <a href="/registro" class="register-link">¿No tienes cuenta? Regístrate aquí</a>
+        <a href="/registro" class="footer-link">¿No tienes cuenta? Regístrate aquí</a>
         
         <p class="wildon-footer">Creado por Wildon C.A</p>
     </div>
