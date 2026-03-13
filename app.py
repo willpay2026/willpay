@@ -1,78 +1,35 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-import os
-import psycopg2
-from psycopg2.extras import RealDictCursor
-
-app = Flask(__name__)
-# El secreto del legado para Wilyanny
-app.secret_key = 'willpay_donquiz_2026_legacy'
-
-def get_db():
-    db_url = os.environ.get('DATABASE_URL')
-    return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
-
-# --- RUTAS DE NAVEGACIÓN (INTACTAS) ---
-@app.route('/')
-def splash():
-    return render_template('auth/splash.html')
-
-@app.route('/acceso')
-def acceso():
-    return render_template('auth/acceso.html')
-
-@app.route('/registro')
-def registro():
-    return render_template('auth/registro.html')
-
-@app.route('/terminos')
-def terminos():
-    return render_template('common/terminos.html')
-
-# --- LÓGICA DE REGISTRO ---
-@app.route('/crear_cuenta', methods=['POST'])
-def crear_cuenta():
-    nombre = request.form.get('nombre')
-    cedula = request.form.get('cedula')
-    telefono = request.form.get('telefono')
-    tipo = request.form.get('tipo_usuario')
-    pin = request.form.get('pin')
+# --- RUTA PARA REPORTAR RECARGAS ---
+@app.route('/reportar_pago', methods=['POST'])
+def reportar_pago():
+    if 'user_id' not in session: return redirect(url_for('acceso'))
     
-    # Se guarda con saldo 0 y estatus pendiente
+    user_id = session['user_id']
+    referencia = request.form.get('referencia')
+    monto = request.form.get('monto')
+    capture = request.files.get('capture') # Aquí procesarías el archivo
+    
     conn = get_db()
     cur = conn.cursor()
+    
+    # Verificamos si la referencia ya existe (Seguridad Will-Pay)
+    cur.execute("SELECT id FROM transacciones WHERE referencia = %s", (referencia,))
+    if cur.fetchone():
+        return "Error: Esta referencia ya fue utilizada."
+
+    # Guardamos el reporte como "Pendiente" para que Wilfredo lo apruebe
     cur.execute("""
-        INSERT INTO users (nombre, cedula, telefono, rol, password, saldo, verificado) 
-        VALUES (%s, %s, %s, %s, %s, 0.0, False)
-    """, (nombre, cedula, telefono, tipo, pin))
+        INSERT INTO transacciones (emisor_id, monto, tipo, referencia, estatus) 
+        VALUES (%s, %s, 'RECARGA', %s, 'PENDIENTE')
+    """, (user_id, monto, referencia))
+    
     conn.commit()
     cur.close()
     conn.close()
-    return redirect(url_for('acceso'))
+    return "Reporte enviado. En breve Wilfredo validará tu saldo."
 
-# --- LÓGICA DE ACCESO (TU ENTRADA CACHUA) ---
-@app.route('/login', methods=['POST'])
-def login():
-    cedula = request.form.get('cedula')
-    pin = request.form.get('pin')
-    
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE cedula = %s OR telefono = %s", (cedula, cedula))
-    user = cur.fetchone()
-    cur.close()
-    conn.close()
-
-    if user and user['password'] == pin:
-        session['user_id'] = user['id']
-        # Si eres Wilfredo, directo al Búnker
-        if user['cedula'] == '13496133':
-            return redirect(url_for('panel_ceo'))
-        return redirect(url_for('dashboard'))
-    return "Credenciales incorrectas"
-
-# --- NUEVA RUTA: EL TICKET MÁGICO ---
-@app.route('/ticket_bienvenida')
-def ticket_bienvenida():
+# --- ACTUALIZACIÓN DEL DASHBOARD ---
+@app.route('/dashboard')
+def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
     
     conn = get_db()
@@ -81,31 +38,12 @@ def ticket_bienvenida():
     user = cur.fetchone()
     cur.close()
     conn.close()
-
-    # Definimos la tasa según el tipo para el ticket
-    tasas = {'personal': 3, 'actividad': 2, 'juridico': 1.5}
     
-    # Creamos un objeto 'u' para que el HTML lo lea fácil
+    # Datos para el HTML
     u = {
         'id': user['id'],
         'nombre': user['nombre'],
-        'cedula': user['cedula'],
-        'tasa': tasas.get(user['rol'], 3),
-        'es_socio': True if user['rol'] == 'admin' else False
+        'saldo': user['saldo'],
+        'fecha_registro': '2026-03-13' # Puedes jalarla de la DB
     }
-    
-    return render_template('user/ticket_bienvenida.html', u=u)
-
-# --- PANELES ---
-@app.route('/panel_ceo')
-def panel_ceo():
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    return render_template('ceo/panel_ceo.html')
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    return render_template('user/dashboard.html')
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    return render_template('user/dashboard.html', u=u)
