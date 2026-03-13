@@ -3,79 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Mi Billetera</title>
+    <title>Will-Pay | Mi Bóveda</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
-        .logo-small { width: 100px; margin-top: 10px; }
-        .saldo-card { 
-            border: 2px solid #d4af37; border-radius: 20px; padding: 20px; 
-            margin: 20px 0; background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
-        }
-        .saldo-label { color: #d4af37; font-size: 14px; font-weight: bold; }
-        .saldo-monto { color: #fff; font-size: 36px; font-weight: bold; margin: 10px 0; }
-        .btn-action { 
-            width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; 
-            text-transform: uppercase; margin-bottom: 10px; cursor: pointer; border: none;
-        }
-        .btn-recargar { background: #d4af37; color: #000; width: 48%; float: left; }
-        .btn-retirar { background: #333; color: #fff; width: 48%; float: right; }
-        .btn-pagar { background: #333; color: #fff; width: 48%; float: left; margin-top: 10px; }
-        .btn-cobrar { background: #333; color: #fff; width: 48%; float: right; margin-top: 10px; }
-        .input-monto { 
-            width: 100%; padding: 15px; background: #000; border: 1px solid #d4af37; 
-            color: #fff; border-radius: 10px; font-size: 28px; text-align: center; margin: 20px 0;
-        }
-        .recarga-box { background: #111; border-radius: 15px; padding: 15px; text-align: left; margin-top: 20px; display: none; }
+        body { background-color: #050505; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .bunker-card { background: linear-gradient(145deg, #1a1a1a, #0a0a0a); border: 2px solid #d4af37; border-radius: 20px; padding: 30px; max-width: 400px; margin: 40px auto; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2); }
+        .saldo-label { font-size: 0.9em; color: #888; text-transform: uppercase; letter-spacing: 2px; }
+        .saldo-monto { font-size: 3em; color: #d4af37; font-weight: bold; margin: 10px 0; }
+        .btn-pay { background-color: #d4af37; color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 1.1em; transition: 0.3s; text-decoration: none; display: inline-block; }
+        .btn-pay:hover { background-color: #fff; transform: scale(1.05); }
+        table { width: 100%; max-width: 600px; margin: 30px auto; border-collapse: collapse; background: #111; border-radius: 10px; overflow: hidden; }
+        th { background: #d4af37; color: #000; padding: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 0.9em; }
+        .logout { color: #555; text-decoration: none; font-size: 0.8em; margin-top: 20px; display: block; }
     </style>
 </head>
 <body>
-    <img src="{{ url_for('static', filename='logonuevo.png') }}" class="logo-small">
+
+    <h2>Hola, {{ u.nombre if u else 'Usuario' }}</h2>
     
-    <div class="saldo-card">
-        <div class="saldo-label">Saldo Disponible</div>
-        <div class="saldo-monto">Bs. {{ "%.2f"|format(u.saldo) }}</div>
-        <div style="overflow: hidden;">
-            <button class="btn-action btn-recargar" onclick="document.getElementById('modal-recarga').style.display='block'">RECARGAR</button>
-            <button class="btn-action btn-retirar">RETIRAR</button>
-        </div>
+    <div class="bunker-card">
+        <div class="saldo-label">Disponible en Bóveda</div>
+        <div class="saldo-monto">{{ u.saldo if u else '0.00' }} <span style="font-size: 0.4em;">Bs</span></div>
+        <br>
+        <a href="#" class="btn-pay">PAGAR CON QR</a>
     </div>
 
-    <div style="overflow: hidden;">
-        <button class="btn-action btn-pagar" onclick="procesarTransaccion()">PAGAR</button>
-        <button class="btn-action btn-cobrar">COBRAR</button>
-    </div>
+    <h3>MOVIMIENTOS RECIENTES</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>FECHA</th>
+                <th>REF</th>
+                <th>MONTO</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in movimientos %}
+            <tr>
+                <td>{{ m.fecha }}</td>
+                <td>{{ m.referencia }}</td>
+                <td>{{ m.monto }} Bs</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3">No hay movimientos en el búnker aún.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-    <input type="number" id="monto_input" class="input-monto" placeholder="0.00">
+    <a href="/logout" class="logout">SALIR DEL SISTEMA SEGURO</a>
 
-    <div id="modal-recarga" class="recarga-box">
-        <p style="color:#d4af37; font-weight:bold;">PAGO MÓVIL: Banesco | 04126602555 | ID 13496133</p>
-        <form action="/reportar_pago" method="POST" enctype="multipart/form-data">
-            <input type="text" name="referencia" placeholder="Referencia" required style="width:100%; padding:8px; margin-bottom:5px;">
-            <input type="file" name="capture" required style="font-size:10px;">
-            <button type="submit" class="btn-action btn-recargar" style="width:100%; margin-top:10px;">ENVIAR REPORTE</button>
-        </form>
-    </div>
-
-    <audio id="beepSound" src="{{ url_for('static', filename='beep.mp3') }}" preload="auto"></audio>
-
-    <script>
-    function procesarTransaccion() {
-        let monto = document.getElementById('monto_input').value;
-        if(!monto || monto <= 0) return alert("Monto inválido");
-
-        fetch('/procesar_pago', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({monto: monto})
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.success) {
-                document.getElementById('beepSound').play();
-                setTimeout(() => { window.location.href = '/comprobante/' + data.t_id; }, 500);
-            } else { alert(data.message); }
-        });
-    }
-    </script>
 </body>
 </html>
