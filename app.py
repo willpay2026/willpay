@@ -122,8 +122,79 @@ def procesar_pago():
     emisor = cur.fetchone()
     
     if emisor['saldo'] < monto:
+        cur.close() # Cierre preventivo
+        conn.close()
         return jsonify({'success': False, 'message': 'Saldo insuficiente'})
 
     ref_wp = f"WP-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
     cur.execute("UPDATE users SET saldo = saldo - %s WHERE id = %s", (monto, emisor_id))
-    cur.
+    cur.execute("""
+        INSERT INTO transacciones (emisor_id, monto, tipo, referencia, estatus, fecha) 
+        VALUES (%s, %s, 'PAGO_QR', %s, 'EXITOSO', NOW()) RETURNING id
+    """, (emisor_id, monto, ref_wp))
+    
+    t_id = cur.fetchone()['id']
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return jsonify({'success': True, 't_id': t_id})
+
+# --- TICKETS Y PANEL CEO ---
+@app.route('/comprobante/<int:t_id>')
+def comprobante(t_id):
+    if 'user_id' not in session: return redirect(url_for('acceso'))
+    return render_template('user/comprobante.html', t_id=t_id)
+
+@app.route('/panel_ceo')
+def panel_ceo():
+    if 'user_id' not in session or session.get('user_rol') != 'admin':
+        return "Acceso denegado: Solo el CEO tiene acceso aquí.", 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM transacciones WHERE estatus = 'PENDIENTE' ORDER BY fecha DESC")
+    pendientes = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    return render_template('ceo/panel_ceo.html', tasas=SISTEMA_TASAS, pendientes=pendientes, panico=MODO_PANICO)
+
+@app.route('/panico_toggle', methods=['POST'])
+def panico_toggle():
+    global MODO_PANICO
+    MODO_PANICO = not MODO_PANICO
+    return jsonify({'status': MODO_PANICO})
+
+@app.route('/actualizar_tasa', methods=['POST'])
+def actualizar_tasa():
+    data = request.get_json()
+    SISTEMA_TASAS[data['tipo']] = float(data['valor'])
+    return jsonify({'success': True})
+
+@app.route('/reportar_pago', methods=['POST'])
+def reportar_pago():
+    ref = request.form.get('referencia')
+    monto = request.form.get('monto')
+    user_id = session.get('user_id')
+    if not user_id: return redirect(url_for('acceso'))
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO transacciones (emisor_id, monto, referencia, estatus, tipo, fecha) 
+        VALUES (%s, %s, %s, 'PENDIENTE', 'RECARGA', NOW())
+    """, (user_id, monto, ref))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('dashboard'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('acceso'))
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
