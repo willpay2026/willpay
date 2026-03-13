@@ -15,12 +15,10 @@ SISTEMA_TASAS = {
 }
 MODO_PANICO = False 
 
-# --- CONEXIÓN A LA BASE DE DATOS ---
 def get_db():
     db_url = os.environ.get('DATABASE_URL')
     return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
 
-# --- PROTECCIÓN DE SEGURIDAD (BOTÓN DE PÁNICO) ---
 @app.before_request
 def check_mantenimiento():
     rutas_libres = ['panel_ceo', 'static', 'login', 'acceso', 'panico_toggle', 'registro', 'crear_cuenta']
@@ -36,7 +34,6 @@ def splash():
 def acceso():
     return render_template('auth/acceso.html')
 
-# --- ESTA ES LA RUTA QUE FALTABA ---
 @app.route('/registro')
 def registro():
     return render_template('auth/registro.html')
@@ -129,25 +126,4 @@ def procesar_pago():
 
     ref_wp = f"WP-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
     cur.execute("UPDATE users SET saldo = saldo - %s WHERE id = %s", (monto, emisor_id))
-    cur.execute("""
-        INSERT INTO transacciones (emisor_id, monto, tipo, referencia, estatus, fecha) 
-        VALUES (%s, %s, 'PAGO_QR', %s, 'EXITOSO', NOW()) RETURNING id
-    """, (emisor_id, monto, ref_wp))
-    
-    t_id = cur.fetchone()['id']
-    conn.commit()
-    cur.close()
-    conn.close()
-    
-    return jsonify({'success': True, 't_id': t_id})
-
-# --- TICKETS Y PANEL CEO ---
-@app.route('/comprobante/<int:t_id>')
-def comprobante(t_id):
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    return render_template('user/comprobante.html', t_id=t_id)
-
-@app.route('/panel_ceo')
-def panel_ceo():
-    if 'user_id' not in session or session.get('user_rol') != 'admin':
-        return "Acceso den
+    cur.
