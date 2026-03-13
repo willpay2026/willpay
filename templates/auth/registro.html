@@ -3,22 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay Registro</title>
+    <title>Will-Pay | Registro Seguro</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .gold { color: #f1c40f; font-weight: bold; }
-        input { width: 100%; padding: 18px; margin: 10px 0; background: #0d0d0d; border: 1px solid #222; color: #fff; border-radius: 15px; box-sizing: border-box; }
-        .btn-gold { background: #f1c40f; color: #000; border: none; padding: 20px; width: 100%; border-radius: 15px; font-weight: 900; cursor: pointer; }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .main-container { max-width: 450px; margin: auto; }
+        .logo { width: 140px; margin-bottom: 10px; }
+        .gold-title { color: #d4af37; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        label { display: block; text-align: left; font-weight: bold; margin: 15px 0 5px 5px; font-size: 14px; }
+        
+        input, select { 
+            width: 100%; padding: 15px; margin-bottom: 10px; 
+            background: #111; border: 1px solid #333; color: #fff; 
+            border-radius: 10px; box-sizing: border-box; font-size: 16px;
+        }
+
+        .kyc-box { 
+            background: #111; border: 1px solid #333; padding: 15px; 
+            border-radius: 10px; margin-top: 10px; text-align: left;
+        }
+
+        .btn-finalizar { 
+            background: #d4af37; color: #000; border: none; padding: 20px; 
+            width: 100%; border-radius: 10px; font-weight: 900; 
+            cursor: pointer; font-size: 16px; margin-top: 25px; text-transform: uppercase;
+        }
+        
+        .footer-wildon { color: #d4af37; font-size: 12px; margin-top: 40px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
-    <h1 class="gold">CREAR CUENTA</h1>
-    <div style="max-width: 400px; margin: auto;">
-        <input type="text" placeholder="Nombre y Apellido">
-        <input type="text" placeholder="Cédula de Identidad">
-        <input type="text" placeholder="Número de Teléfono">
-        <input type="password" placeholder="Crea tu Contraseña">
-        <button class="btn-gold" onclick="window.location.href='/acceso'">FINALIZAR Y ENTRAR</button>
+
+    <div class="main-container">
+        <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Will-Pay" class="logo">
+        <p class="gold-title">REGISTRO DE USUARIO</p>
+
+        <form action="/crear_cuenta" method="POST" enctype="multipart/form-data">
+            
+            <label>Nombre Completo (Como en Cédula)</label>
+            <input type="text" name="nombre" placeholder="Ej: Wilfredo Donquiz" required>
+
+            <label>Cédula / RIF</label>
+            <input type="text" name="cedula" placeholder="V-13496133" required>
+
+            <label>Teléfono</label>
+            <input type="text" name="telefono" placeholder="04126602555" required>
+
+            <label>Tipo de Usuario / Actividad</label>
+            <select name="tipo_usuario">
+                <option value="personal">Personal (Natural)</option>
+                <option value="actividad">Actividad Económica (Emprendedor)</option>
+                <option value="juridico">Registro Jurídico (Empresa)</option>
+            </select>
+
+            <label>Crea tu PIN de Seguridad (6 números)</label>
+            <input type="password" name="pin" placeholder="••••••" maxlength="6" required>
+
+            <div class="kyc-box">
+                <label>Foto de Cédula (Auditoría Visual)</label>
+                <input type="file" name="foto_cedula" accept="image/*" required>
+                
+                <label>Foto Selfie</label>
+                <input type="file" name="foto_selfie" accept="image/*" required>
+            </div>
+
+            <button type="submit" class="btn-finalizar">FINALIZAR REGISTRO Y GENERAR EXPEDIENTE</button>
+        </form>
+
+        <p class="footer-wildon">CREADO POR WILDON C.A</p>
     </div>
+
 </body>
 </html>
