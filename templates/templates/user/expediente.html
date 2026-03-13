@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Will-Pay | Expediente Digital</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #000; color: #fff; font-family: 'Courier New', Courier, monospace; }
+        .oro-text { color: #D4AF37; }
+        .table-dark { --bs-table-bg: #111; border: 1px solid #333; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container border border-warning p-4 rounded bg-dark">
+        <h2 class="oro-text text-center">📂 EXPEDIENTE ADN: {{ u.nombre }}</h2>
+        <hr class="border-warning">
+        
+        <div class="row mb-4">
+            <div class="col-6">
+                <h6 class="text-secondary">DATOS REGISTRADOS</h6>
+                <p class="small">CÉDULA: {{ u.cedula }}<br>TELÉFONO: {{ u.telefono }}</p>
+            </div>
+            <div class="col-6 text-end">
+                <h6 class="text-secondary">ESTATUS BANCARIO</h6>
+                <p class="small">ID WP-{{ u.id }}<br><span class="text-success">VERIFICADO ✅</span></p>
+            </div>
+        </div>
+
+        <h5 class="oro-text">📑 MOVIMIENTOS RECIENTES</h5>
+        <table class="table table-dark table-striped small">
+            <thead>
+                <tr><th>FECHA</th><th>TIPO</th><th>REF</th><th>MONTO</th></tr>
+            </thead>
+            <tbody>
+                {% for h in historial %}
+                <tr>
+                    <td>{{ h.fecha }}</td>
+                    <td>{{ h.tipo }}</td>
+                    <td>{{ h.referencia }}</td>
+                    <td class="{% if h.tipo=='RECARGA' %}text-success{% else %}text-danger{% endif %}">
+                        {{ "%.2f"|format(h.monto) }} Bs.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button onclick="window.print()" class="btn btn-outline-warning w-100 mt-3">🖨️ DESCARGAR AUDITORÍA</button>
+        <div class="text-center mt-3">
+            <a href="/dashboard" class="text-secondary small">Volver a la Bóveda</a>
+        </div>
+    </div>
+</body>
+</html>
