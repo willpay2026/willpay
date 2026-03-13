@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Will-Pay</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; width: 100vw; overflow-x: hidden; }
+        
+        .container { width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px; }
+        
+        .header { text-align: center; padding: 20px 0; }
+        .logo { width: 150px; }
+
+        .saldo-card { background: #111; width: 100%; padding: 40px 20px; text-align: center; margin-bottom: 2px; }
+        .label { color: #888; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; }
+        .monto { font-size: 3.5rem; font-weight: bold; margin-top: 10px; }
+
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #222; margin-top: 2px; }
+        .btn { background: #111; color: #fff; border: none; padding: 25px; font-size: 1rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn:active { background: #333; }
+        .btn-main { grid-column: span 2; background: #fff; color: #000; }
+
+        #cobro-area { display: none; background: #111; padding: 20px; text-align: center; flex-grow: 1; }
+        .input-monto { width: 100%; background: transparent; border: none; border-bottom: 2px solid #fff; color: #fff; font-size: 2.5rem; text-align: center; padding: 10px; outline: none; margin-bottom: 20px; }
+        #qrcode { background: #fff; padding: 10px; display: inline-block; }
+
+        .footer-link { margin-top: auto; text-align: center; padding: 20px; color: #ff4444; text-decoration: none; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo_shield.png') }}" class="logo">
+        </div>
+
+        <div class="saldo-card">
+            <div class="label">Saldo Disponible</div>
+            <div class="monto">Bs. {{ "{:,.2f}".format(user.saldo if user.saldo else 0) }}</div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-main">RECARGAR</button>
+            <button class="btn" onclick="location.href='/pagar'">PAGAR</button>
+            <button class="btn" onclick="activarCobro()">COBRAR</button>
+        </div>
+
+        <div id="cobro-area">
+            <input type="number" id="monto-input" class="input-monto" placeholder="0.00" oninput="generarQR()">
+            <div id="qrcode"></div>
+        </div>
+
+        <a href="/salir" class="footer-link">CERRAR SESIÓN</a>
+    </div>
+
+    <script>
+        function activarCobro() {
+            document.getElementById('cobro-area').style.display = 'block';
+            document.getElementById('monto-input').focus();
+        }
+        var qrcode = new QRCode(document.getElementById("qrcode"), { width: 200, height: 200 });
+        function generarQR() {
+            var monto = document.getElementById('monto-input').value;
+            if (monto > 0) {
+                qrcode.makeCode("{{ user.cedula }}|" + monto);
+            } else { qrcode.clear(); }
+        }
+    </script>
+</body>
+</html>
