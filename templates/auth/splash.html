@@ -3,76 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | El Legado</title>
+    <title>Will-Pay | Búnker</title>
     <style>
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #000; display: flex;
-            flex-direction: column; /* Cambiado para alinear arriba/abajo */
-            justify-content: space-between; /* Logo al centro, texto abajo */
-            align-items: center;
-            overflow: hidden;
-            font-family: sans-serif;
-            color: #d4af37; /* Dorado de Wildon */
-        }
-
-        #splash-content {
-            flex-grow: 1; /* Empuja el contenido al centro vertical */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            animation: aparecer 1s ease-out forwards;
-        }
-
-        .logo-willpay {
-            width: 280px;
-            max-width: 85vw;
-            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.4));
-        }
-
-        .footer-wildon {
-            padding-bottom: 40px; /* Distancia del borde inferior */
-            font-size: 14px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            opacity: 0;
-            animation: aparecer 1s ease-out 0.5s forwards; /* Aparece un poco después */
-        }
-
-        @keyframes aparecer {
-            0% { opacity: 0; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        
-        /* Clase para el desvanecimiento final */
-        .fade-out {
-            opacity: 0 !important;
-            transition: opacity 1s ease-out;
-        }
+        body { background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .logo-splash { width: 180px; animation: fadeOut 3s forwards; }
+        @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
     </style>
-</head>
-<body id="body-splash">
-
-    <div id="splash-content">
-        <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Will-Pay" class="logo-willpay">
-    </div>
-
-    <div class="footer-wildon">
-        Creado por Wildon C.A
-    </div>
-
     <script>
-        // Total 5 segundos antes de cambiar
-        setTimeout(() => {
-            // Aplicar desvanecimiento a todo el cuerpo
-            document.getElementById('body-splash').classList.add('fade-out');
-            
-            // Esperar 1 segundo de desvanecimiento y redirigir
-            setTimeout(() => {
-                window.location.href = "/acceso";
-            }, 1000);
-        }, 4000); // Espera 4s, el fade-out dura 1s = 5s totales
+        setTimeout(function(){ window.location.href = "/acceso"; }, 3000);
     </script>
+</head>
+<body>
+    <img src="/static/logo_willpay.png" class="logo-splash" alt="Will-Pay">
 </body>
 </html>
