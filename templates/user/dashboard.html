@@ -3,81 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Búnker</title>
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 15px; }
-        .header-logo { margin: 20px 0; }
-        .bunker-card { border: 2px solid #d4af37; border-radius: 25px; padding: 25px; max-width: 380px; margin: 0 auto; position: relative; }
-        .saldo-label { color: #888; font-size: 1.1rem; margin-bottom: 5px; }
-        .saldo-monto { font-size: 3.2rem; font-weight: bold; color: #fff; }
-        .moneda { color: #d4af37; font-size: 2rem; margin-right: 10px; }
-        
-        .btn-main { background: #d4af37; color: #000; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin: 15px 0; text-transform: uppercase; }
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn-sub { background: #333; color: #fff; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-active { background: #d4af37; color: #000; }
-
-        .qr-section { margin: 25px 0; }
-        .qr-frame { background: #fff; padding: 10px; border-radius: 10px; display: inline-block; }
-
-        .movimientos-title { text-transform: uppercase; letter-spacing: 2px; font-size: 1rem; margin-top: 30px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #0a0a0a; border-radius: 15px; overflow: hidden; }
-        th { background: #d4af37; color: #000; padding: 12px; font-size: 0.8rem; }
-        td { padding: 15px; border-bottom: 1px solid #1a1a1a; font-size: 0.9rem; }
-        .logout-link { color: #ff4444; text-decoration: none; display: block; margin-top: 30px; font-size: 0.9rem; }
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .logo { width: 120px; margin-bottom: 10px; }
+        .saludo { font-size: 22px; font-weight: bold; margin-bottom: 20px; }
+        .boveda-card { border: 2px solid #d4af37; border-radius: 25px; width: 100%; max-width: 350px; padding: 20px; text-align: center; box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
+        .label { color: #888; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
+        .monto-grande { font-size: 42px; font-weight: bold; color: #fff; margin: 10px 0; }
+        .monto-grande span { color: #d4af37; font-size: 24px; }
+        .btn-amarillo { background-color: #d4af37; color: #000; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; width: 80%; cursor: pointer; margin-top: 10px; }
+        .tabla-titulo { margin-top: 30px; text-transform: uppercase; font-size: 14px; font-weight: bold; }
+        .tabla-movimientos { width: 100%; max-width: 380px; margin-top: 10px; border-collapse: separate; border-spacing: 0 5px; }
+        .tabla-movimientos th { background-color: #d4af37; color: #000; padding: 10px; font-size: 12px; }
+        .tabla-movimientos td { background-color: #111; padding: 12px; text-align: center; font-size: 11px; border-bottom: 1px solid #222; }
+        .status-exito { color: #4caf50; font-weight: bold; }
+        .logout { color: #666; text-decoration: none; margin-top: 40px; font-size: 12px; }
     </style>
 </head>
 <body>
+    <img src="/static/logonuevo.png" class="logo">
+    <div class="saludo">Hola, {{ u.nombre }}</div>
 
-    <div class="header-logo">
-        <img src="/static/logo_willpay.png" alt="Will-Pay" width="120">
+    <div class="boveda-card">
+        <div class="label">Saldo Disponible</div>
+        <div class="monto-grande">Bs. {{ u.saldo }}</div>
+        <button class="btn-amarillo" onclick="location.href='/recargar'">RECARGAR</button>
     </div>
 
-    <div class="bunker-card">
-        <div class="saldo-label">Saldo Disponible</div>
-        <div class="saldo-monto"><span class="moneda">Bs.</span>{{ "%.2f"|format(u.saldo) }}</div>
-    </div>
-
-    <a href="/recargar" style="text-decoration:none;"><button class="btn-main">RECARGAR</button></a>
-
-    <div class="action-grid">
-        <a href="/pagar_camara" style="text-decoration:none;"><button class="btn-sub btn-active">PAGAR</button></a>
-        <a href="/generar_qr_monto" style="text-decoration:none;"><button class="btn-sub">COBRAR</button></a>
-    </div>
-
-    <div class="qr-section">
-        <div class="qr-frame">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ u.cedula }}" width="150">
-        </div>
-    </div>
-
-    <div class="movimientos-title">Últimos Movimientos</div>
-    <table>
-        <thead>
-            <tr>
-                <th>FECHA</th>
-                <th>REF</th>
-                <th>MONTO</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for m in movimientos %}
-            <tr>
-                <td>{{ m.fecha.strftime('%Y-%m-%d') }}</td>
-                <td>{{ m.referencia }}</td>
-                <td style="color: {% if m.tipo == 'INGRESO' %}#00ff00{% else %}#d4af37{% endif %}; font-weight:bold;">
-                    {{ "+" if m.tipo == 'INGRESO' else "-" }} Bs. {{ m.monto }}
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="3" style="color:#444; padding:30px;">No hay movimientos aún.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+    <div class="tabla-titulo">Últimos Movimientos</div>
+    <table class="tabla-movimientos">
+        <tr><th>FECHA</th><th>REF</th><th>MONTO</th></tr>
+        {% for m in movimientos %}
+        <tr>
+            <td>{{ m.fecha.strftime('%Y-%m-%d') }}</td>
+            <td>{{ m.referencia }}</td>
+            <td>Bs. {{ m.monto }}</td>
+        </tr>
+        {% endfor %}
     </table>
 
-    <a href="/logout" class="logout-link">Cerrar Sesión</a>
-
+    <a href="/logout" class="logout">Cerrar Sesión Segura</a>
 </body>
 </html>
