@@ -3,132 +3,166 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import datetime
-# Necesitarás instalar esta librería: pip install qrcode[pil]
 import qrcode
 import io
 import base64
 
-# 1. INICIO DEL SISTEMA
 app = Flask(__name__)
 app.secret_key = 'willpay_donquiz_2026_legacy'
 
+# --- CONEXIÓN A LA BASE DE DATOS ---
 def get_db():
     db_url = os.environ.get('DATABASE_URL')
     return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
 
+# --- REPARACIÓN AUTOMÁTICA Y CARGA DE DATOS (PARA QUE NO SE JODA NADA) ---
+@app.route('/inyectar_datos')
+def inyectar_datos():
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # 1. Crear tabla de usuarios si no existe
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                nombre VARCHAR(100),
+                cedula VARCHAR(20) UNIQUE,
+                password VARCHAR(20),
+                saldo DECIMAL(12,2) DEFAULT 0.00,
+                rol VARCHAR(20) DEFAULT 'CLIENTE'
+            );
+        """)
+        # 2. Crear tabla de transacciones con TODAS las columnas necesarias
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS transacciones (
+                id SERIAL PRIMARY KEY,
+                emisor VARCHAR(20),
+                receptor VARCHAR(20),
+                monto DECIMAL(12,2),
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                referencia VARCHAR(20),
+                estatus VARCHAR(20) DEFAULT 'EXITOSO',
+                tipo VARCHAR(20) DEFAULT 'EGRESO'
+            );
+        """)
+        # 3. REPARACIÓN: Agregar columnas faltantes si la tabla ya existía
+        cur.execute("ALTER TABLE transacciones ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) DEFAULT 'EGRESO';")
+        cur.execute("ALTER TABLE transacciones ADD COLUMN IF NOT EXISTS estatus VARCHAR(20) DEFAULT 'EXITOSO';")
+        cur.execute("ALTER TABLE transacciones ADD COLUMN IF NOT EXISTS referencia VARCHAR(20);")
+        
+        # 4. Crear usuarios de prueba si no existen
+        cur.execute("INSERT INTO users (nombre, cedula, password, saldo, rol) VALUES ('WILFREDO', '13496133', '1234', 1000.00, 'ADMIN') ON CONFLICT (cedula) DO NOTHING;")
+        cur.execute("INSERT INTO users (nombre, cedula, password, saldo, rol) VALUES ('CLIENTE PRUEBA', '101010', '1122', 500.00, 'CLIENTE') ON CONFLICT (cedula) DO NOTHING;")
+        cur.execute("INSERT INTO users (nombre, cedula, password, saldo, rol) VALUES ('WILL-PAY SERV', '202020', '3344', 0.00, 'COMERCIO') ON CONFLICT (cedula) DO NOTHING;")
+        
+        conn.commit()
+        return "✅ Búnker Actualizado: Columnas creadas y usuarios listos. Ve al /acceso"
+    except Exception as e:
+        return f"Error reparando el búnker: {e}"
+    finally:
+        cur.close()
+        conn.close()
+
 # --- RUTAS DE ACCESO ---
+@app.route('/')
+def index():
+    return redirect(url_for('acceso'))
+
 @app.route('/acceso')
 def acceso():
     return render_template('auth/acceso.html')
 
 @app.route('/login', methods=['POST'])
 def login():
-    identificador = request.form.get('cedula')
+    cedula = request.form.get('cedula')
     pin = request.form.get('pin')
-    
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE cedula = %s", (identificador,))
+    cur.execute("SELECT * FROM users WHERE cedula = %s AND password = %s", (cedula, pin))
     user = cur.fetchone()
     cur.close()
     conn.close()
-
-    if user and user['password'] == pin:
+    if user:
         session['user_id'] = user['id']
-        session['user_rol'] = user['rol']
+        session['cedula'] = user['cedula']
         return redirect(url_for('dashboard'))
-    return "Error: Credenciales no coinciden."
+    return "Credenciales incorrectas."
 
-# --- PANEL DE USUARIO DEFINITIVO (Fusionado con tu Diseño) ---
+# --- DASHBOARD (TU DISEÑO SERIO) ---
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('acceso'))
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cur.fetchone()
+    # Buscamos movimientos por cédula para que salgan ingresos y egresos
+    cur.execute("""
+        SELECT fecha, referencia, monto, estatus, tipo 
+        FROM transacciones 
+        WHERE emisor = %s OR receptor = %s 
+        ORDER BY fecha DESC LIMIT 10
+    """, (user['cedula'], user['cedula']))
+    movimientos = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template('user/dashboard.html', u=user, movimientos=movimientos)
+
+# --- PROCESAR PAGO Y GENERAR COMPROBANTE ---
+@app.route('/procesar_pago', methods=['POST'])
+def procesar_pago():
+    if 'user_id' not in session: return redirect(url_for('acceso'))
     
+    receptor_ced = request.form.get('cedula_receptor')
+    monto = float(request.form.get('monto'))
+    emisor_ced = session['cedula']
+    referencia = f"WP{datetime.datetime.now().strftime('%M%S%f')[:6]}"
+
     conn = get_db()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
-        user = cur.fetchone()
+        # Restar al emisor
+        cur.execute("UPDATE users SET saldo = saldo - %s WHERE cedula = %s AND saldo >= %s", (monto, emisor_ced, monto))
+        if cur.rowcount == 0: return "Saldo insuficiente."
         
-        # Historial para "Movimientos Recientes" (Serio como tu diseño)
+        # Sumar al receptor
+        cur.execute("UPDATE users SET saldo = saldo + %s WHERE cedula = %s", (monto, receptor_ced))
+        
+        # Registrar Transacción (Doble registro para el historial serio)
         cur.execute("""
-            SELECT fecha, referencia, monto, estatus, tipo FROM transacciones 
-            WHERE emisor::text = %s::text OR receptor::text = %s::text 
-            ORDER BY fecha DESC LIMIT 5
-        """, (str(user['id']), str(user['id'])))
-        movimientos = cur.fetchall()
+            INSERT INTO transacciones (emisor, receptor, monto, referencia, tipo, estatus) 
+            VALUES (%s, %s, %s, %s, 'EGRESO', 'EXITOSO')
+        """, (emisor_ced, receptor_ced, monto, referencia))
+        
+        conn.commit()
+        return redirect(url_for('comprobante', ref=referencia))
     except Exception as e:
-        return f"Error en Dashboard: {str(e)}"
+        conn.rollback()
+        return f"Error en transacción: {e}"
     finally:
         cur.close()
         conn.close()
-    
-    return render_template('user/dashboard.html', u=user, movimientos=movimientos)
 
-# --- MOTOR DE PAGOS QR DINÁMICO (Foto 1) ---
-@app.route('/generar_qr_pago', methods=['POST'])
-def generar_qr_pago():
-    if 'user_id' not in session: return jsonify({'status': 'error'})
-    
-    monto = request.form.get('monto')
-    emisor_id = session['user_id']
-    
-    # Datos que irán dentro del QR: emisor_id y monto
-    datos_qr = f"{emisor_id}|{monto}"
-    
-    # Generar la imagen del QR en memoria
-    img = qrcode.make(datos_qr)
-    buf = io.BytesIO()
-    img.save(buf)
-    image_stream = base64.b64encode(buf.getvalue()).decode('utf-8')
-    
-    return jsonify({'status': 'ok', 'qr_image': image_stream})
-
-# --- PROCESAR PAGO DESDE CÁMARA (Foto 1 interactuando) ---
-@app.route('/procesar_pago_qr', methods=['POST'])
-def procesar_pago_qr():
-    # ... (Aquí va la lógica que ya teníamos para restar de uno y sumar a otro, 
-    # pero recibiendo los datos que la cámara escaneó) ...
-    # Al finalizar con éxito, debe retornar el ID de la transacción para el comprobante.
-    transaccion_id = "WP-12345" # Ejemplo
-    return jsonify({'status': 'ok', 'tx_id': transaccion_id})
-
-# --- SISTEMA DE RECARGAS (Foto 2) ---
-@app.route('/recargar')
-def recargar():
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    return render_template('user/recargar.html')
-
-@app.route('/solicitar_recarga', methods=['POST'])
-def solicitar_recarga():
-    # ... (Lógica para registrar la solicitud de recarga en la DB 
-    # con los datos del pago móvil de la Foto 2) ...
-    return redirect(url_for('dashboard'))
-
-# --- GENERADOR DE COMPROBANTES DE AUDITORÍA (Foto 3 y 4) ---
-@app.route('/comprobante/<tx_id>')
-def comprobante(tx_id):
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    
+@app.route('/comprobante/<ref>')
+def comprobante(ref):
     conn = get_db()
     cur = conn.cursor()
-    # Buscar todos los datos de la transacción y de los usuarios involucrados 
-    # para que sea serio para la auditoría (Foto 3)
     cur.execute("""
-        SELECT t.*, u_e.nombre as emisor_nombre, u_r.nombre as receptor_nombre
+        SELECT t.*, u_e.nombre as emisor_nombre, u_r.nombre as receptor_nombre 
         FROM transacciones t
-        JOIN users u_e ON t.emisor::text = u_e.id::text
-        JOIN users u_r ON t.receptor::text = u_r.id::text
+        LEFT JOIN users u_e ON t.emisor = u_e.cedula
+        LEFT JOIN users u_r ON t.receptor = u_r.cedula
         WHERE t.referencia = %s
-    """, (tx_id,))
-    tx_data = cur.fetchone()
+    """, (ref,))
+    tx = cur.fetchone()
     cur.close()
     conn.close()
-    
-    return render_template('user/comprobante.html', tx=tx_data)
+    return render_template('user/comprobante.html', tx=tx)
 
-# --- RUTA DE INYECCIÓN DE EMERGENCIA ---
-# (Mantener la que ya teníamos para crear tablas y usuarios de prueba)
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('acceso'))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
