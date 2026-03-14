@@ -3,28 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay | Auditoría</title>
     <style>
         body { background-color: #1a1a1a; display: flex; justify-content: center; padding: 20px; font-family: monospace; }
-        .ticket { background-color: #fff; width: 100%; max-width: 320px; padding: 20px; border-radius: 15px; color: #000; text-align: center; }
+        .ticket { background-color: #fff; width: 100%; max-width: 300px; padding: 15px; border-radius: 10px; color: #000; text-align: center; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .linea { border-top: 1px dashed #000; margin: 10px 0; }
-        .status-box { background-color: #e8f5e9; color: #2e7d32; padding: 5px; display: inline-block; font-weight: bold; }
-        .btn-fin { background-color: #000; color: #fff; width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; margin-top: 20px; }
+        .status-badge { color: #28a745; font-weight: bold; margin: 10px 0; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px;}
+        .monto-neto { font-size: 24px; font-weight: bold; margin: 15px 0; }
+        .btn-fin { background-color: #000; color: #fff; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
-<body onload="document.getElementById('beep').play()">
-    <audio id="beep" src="/static/beep.mp3"></audio>
+<body onload="reproducirBeep()">
+    <audio id="beep-sound" src="/static/beep.mp3" preload="auto"></audio>
     <div class="ticket">
-        <img src="/static/logonuevo.png" style="width: 60px;">
-        <div style="font-size: 12px; font-weight: bold;">COMPROBANTE ELECTRÓNICO</div>
+        <img src="/static/logo_willpay.png" style="width: 50px;">
+        <div style="font-size: 10px; font-weight: bold;">COMPROBANTE ELECTRÓNICO</div>
         <div class="linea"></div>
-        <div style="text-align: left; font-size: 11px;">
+        <div style="text-align: left; font-size: 10px; text-transform: uppercase;">
             <p>Nro. OPERACIÓN: {{ tx.referencia }}</p>
-            <p>FECHA: {{ tx.fecha }}</p>
-            <p>ESTATUS: <span class="status-box">CERTIFICADO ✅</span></p>
+            <p>FECHA: {{ tx.fecha.strftime('%d/%m/%Y, %H:%M:%S') }}</p>
+            <p>CLIENTE: {{ tx.emisor_nombre }}</p>
+            <p>COMERCIO: {{ tx.receptor_nombre }}</p>
+            <div class="status-badge">ESTATUS: CERTIFICADO ✅</div>
         </div>
         <div class="linea"></div>
-        <div style="font-size: 20px; font-weight: bold;">Bs. {{ tx.monto }}</div>
+        <div class="monto-neto">Bs. {{ "%.2f"|format(tx.monto) }}</div>
         <button class="btn-fin" onclick="location.href='/dashboard'">FINALIZAR</button>
     </div>
+    <script>
+        function reproducirBeep() {
+            var beep = document.getElementById("beep-sound");
+            beep.play().catch(e => console.log("Audio bloqueado:", e));
+        }
+    </script>
 </body>
 </html>
