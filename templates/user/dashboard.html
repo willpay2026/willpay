@@ -4,39 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .logo-header { width: 100px; margin: 15px 0; }
-        .boveda-card { border: 2px solid #d4af37; border-radius: 20px; width: 100%; max-width: 350px; padding: 15px; text-align: center; }
-        .saldo-label { color: #888; font-size: 12px; text-transform: uppercase; }
-        .saldo-monto { font-size: 36px; font-weight: bold; color: #fff; margin: 5px 0; }
-        .btn-action { background-color: #d4af37; color: #000; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; width: 45%; cursor: pointer; margin: 10px 2px; }
-        .btn-cobrar { background-color: #333; color: #fff; }
-        .tabla-movimientos { width: 100%; max-width: 380px; margin-top: 20px; border-collapse: collapse; }
-        .tabla-movimientos th { background-color: #d4af37; color: #000; padding: 10px; font-size: 10px; text-transform: uppercase; }
-        .tabla-movimientos td { padding: 10px; text-align: center; font-size: 10px; border-bottom: 1px solid #1a1a1a; color: #d4af37; }
-        .logout-link { color: #ff4444; text-decoration: none; margin-top: 20px; font-size: 10px; text-transform: uppercase; }
+        body { background-color: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .boveda { border: 2px solid #d4af37; border-radius: 20px; padding: 20px; width: 90%; text-align: center; margin-bottom: 20px; }
+        .saldo { font-size: 32px; font-weight: bold; color: #d4af37; }
+        .btn-group { display: flex; gap: 10px; width: 90%; justify-content: center; }
+        .btn { border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; flex: 1; text-transform: uppercase; }
+        .btn-pagar { background-color: #d4af37; color: #000; }
+        .btn-cobrar { background-color: #333; color: #fff; border: 1px solid #444; }
+        .movimientos { width: 95%; margin-top: 30px; }
+        .tabla { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .tabla th { background-color: #d4af37; color: #000; padding: 8px; }
+        .tabla td { border-bottom: 1px solid #222; padding: 10px; text-align: center; }
     </style>
 </head>
 <body>
-    <img src="/static/logo_willpay.png" class="logo-header">
-    <div class="boveda-card">
-        <div class="saldo-label">Saldo Disponible</div>
-        <div class="saldo-monto">Bs. {{ "%.2f"|format(u.saldo) }}</div>
+    <img src="/static/logo.png" style="width: 120px; margin-bottom: 20px;">
+    <div class="boveda">
+        <p style="color: #888; font-size: 14px;">Saldo Disponible</p>
+        <div class="saldo">Bs. {{ "%.2f"|format(u.saldo) }}</div>
     </div>
-    <div style="width: 100%; max-width: 350px; display: flex; justify-content: space-between;">
-        <button class="btn-action" onclick="location.href='/pagar'">PAGAR</button>
-        <button class="btn-action btn-cobrar" onclick="location.href='/cobrar'">COBRAR</button>
+    
+    <div class="btn-group">
+        <button class="btn btn-pagar" onclick="location.href='/pagar'">Pagar</button>
+        <button class="btn btn-cobrar" onclick="location.href='/cobrar'">Cobrar</button>
     </div>
-    <table class="tabla-movimientos">
-        <tr><th>FECHA</th><th>REF</th><th>MONTO</th></tr>
-        {% for m in movimientos %}
-        <tr>
-            <td>{{ m.fecha.strftime('%Y-%m-%d') }}</td>
-            <td>{{ m.referencia }}</td>
-            <td>Bs. {{ m.monto }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    <a href="/logout" class="logout-link">Cerrar Sesión Segura</a>
+
+    <div class="movimientos">
+        <p style="text-align: center; font-weight: bold;">Últimos Movimientos</p>
+        <table class="tabla">
+            <tr><th>FECHA</th><th>REF</th><th>MONTO</th></tr>
+            {% for m in movimientos %}
+            <tr>
+                <td>{{ m.fecha.strftime('%d/%m') }}</td>
+                <td>{{ m.referencia }}</td>
+                <td>Bs. {{ m.monto }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </body>
 </html>
