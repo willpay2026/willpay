@@ -116,7 +116,36 @@
         </div>
         <button class="btn-accion">GUARDAR CAMBIOS</button>
     </div>
-
+<div class="card" style="margin-top: 20px; text-align: left;">
+        <h3 style="color: var(--oro); font-size: 0.9em; border-bottom: 1px solid #333; padding-bottom: 10px;">
+            <i class="fas fa-history"></i> MOVIMIENTOS EN VIVO (10 EN 10)
+        </h3>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8em;">
+                <thead>
+                    <tr style="color: var(--oro); border-bottom: 2px solid #333;">
+                        <th style="padding: 10px;">USUARIO</th>
+                        <th>TIPO</th>
+                        <th>MONTO</th>
+                        <th>ESTADO</th>
+                        <th>ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #222;">
+                        <td style="padding: 10px;">13496133</td>
+                        <td>RECARGA</td>
+                        <td style="color: var(--verde);">Bs. 500,00</td>
+                        <td><span style="background: #550; padding: 2px 5px; border-radius: 3px;">Pendiente</span></td>
+                        <td>
+                            <button title="Aprobar" style="background: var(--verde); border: none; border-radius: 3px; cursor: pointer;"><i class="fas fa-check"></i></button>
+                            <button title="Ver ADN" style="background: var(--oro); border: none; border-radius: 3px; cursor: pointer;"><i class="fas fa-fingerprint"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <button class="btn-panico">
         <i class="fas fa-radiation"></i> BOTÓN DE PÁNICO
     </button>
