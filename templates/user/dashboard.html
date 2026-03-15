@@ -6,9 +6,6 @@
     <title>Will-Pay | Búnker</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Will-Pay">
-    <link rel="apple-touch-icon" href="/static/logonuevo.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
@@ -21,8 +18,22 @@
         .btn { border: none; padding: 15px; border-radius: 10px; font-weight: bold; flex: 1; cursor: pointer; text-transform: uppercase; font-size: 12px; }
         .btn-pagar { background: var(--dorado); color: #000; }
         .btn-cobrar { background: #222; color: #fff; border: 1px solid #444; }
+        
+        /* MODALES */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        .modal-content { background: #111; padding: 20px; border-radius: 15px; border: 1px solid var(--dorado); width: 80%; max-width: 300px; text-align: center; }
+        .modal-content { background: #111; padding: 20px; border-radius: 15px; border: 1px solid var(--dorado); width: 85%; max-width: 320px; text-align: center; }
+        
+        /* ESTILO TICKET (Como la imagen) */
+        .ticket { background: #fff; color: #000; padding: 20px; border-radius: 10px; font-family: monospace; text-align: left; }
+        .ticket-header { text-align: center; margin-bottom: 10px; }
+        .ticket-logo { width: 80px; margin-bottom: 5px; }
+        .sep { border-top: 1px dashed #000; margin: 10px 0; }
+        .ticket-info p { margin: 3px 0; font-size: 11px; }
+        .monto-neto { text-align: center; margin: 15px 0; }
+        .monto-neto h4 { margin: 0; font-size: 12px; }
+        .monto-neto h2 { margin: 5px 0; font-size: 24px; }
+        .ticket-footer { text-align: center; font-size: 9px; color: #666; margin-top: 10px; }
+        
         input { width: 100%; padding: 10px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; box-sizing: border-box; border-radius: 8px; }
         #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
         .historial { width: 100%; max-width: 350px; margin-top: 20px; }
@@ -39,8 +50,8 @@
     </div>
 
     <div class="btn-group">
-        <button class="btn btn-pagar" onclick="abrirModal('modalPagar')">📤 PAGAR (QR)</button>
-        <button class="btn btn-cobrar" onclick="abrirModal('modalCobrar')">📥 COBRAR (Cámara)</button>
+        <button class="btn btn-pagar" onclick="abrirModal('modalPagar')">📤 PAGAR</button>
+        <button class="btn btn-cobrar" onclick="abrirModal('modalCobrar')">📥 COBRAR</button>
     </div>
 
     <div class="historial">
@@ -56,11 +67,10 @@
     <div id="modalPagar" class="modal">
         <div class="modal-content">
             <h3 style="color:var(--dorado)">GENERAR PAGO</h3>
-            <p style="font-size: 10px; color: #888;">Ingresa el monto para que te cobren</p>
             <input type="number" id="montoPagar" placeholder="Monto Bs.">
             <button class="btn btn-pagar" style="width:100%" onclick="generarQR()">MOSTRAR CÓDIGO</button>
             <div id="qr-result" style="margin-top:15px; display: flex; justify-content: center;"></div>
-            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer; font-size: 13px;">← Volver</p>
+            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer;">← Volver</p>
         </div>
     </div>
 
@@ -68,76 +78,90 @@
         <div class="modal-content">
             <h3 style="color:var(--dorado)">ESCANEAR CLIENTE</h3>
             <div id="reader"></div>
-            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer; font-size: 13px;">Cancelar</p>
+            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer;">Cancelar</p>
+        </div>
+    </div>
+
+    <div id="modalTicket" class="modal">
+        <div class="modal-content" style="background:transparent; border:none;">
+            <div class="ticket">
+                <div class="ticket-header">
+                    <img src="/static/logonuevo.png" class="ticket-logo"><br>
+                    <b style="font-size: 14px;">Will-Pay</b><br>
+                    <small>Tu Billetera Digital de Confianza</small><br>
+                    <div style="background:#000; color:#fff; display:inline-block; padding:2px 10px; margin-top:5px; font-size:10px;">COMPROBANTE ELECTRÓNICO</div>
+                </div>
+                <div class="sep"></div>
+                <div class="ticket-info">
+                    <p><b>Nro. OPERACIÓN:</b> <span id="t-ref"></span></p>
+                    <p><b>FECHA/HORA:</b> <span id="t-fecha"></span></p>
+                    <p><b>CLIENTE:</b> <span id="t-cliente"></span></p>
+                    <p><b>COMERCIO:</b> WILL-PAY SERV.</p>
+                    <p><b>ESTATUS:</b> <span style="color:green">CERTIFICADO ✅</span></p>
+                </div>
+                <div class="sep"></div>
+                <div class="monto-neto">
+                    <h4>MONTO NETO</h4>
+                    <h2>Bs. <span id="t-monto"></span></h2>
+                </div>
+                <div class="sep"></div>
+                <div class="ticket-footer">
+                    Este ticket sirve como respaldo para auditorías contables de la red Will-Pay.
+                </div>
+            </div>
+            <button class="btn" style="background:#000; color:#fff; width:100%; margin-top:15px;" onclick="location.reload()">FINALIZAR</button>
         </div>
     </div>
 
     <div id="modalRecargar" class="modal">
         <div class="modal-content">
-            <h3 style="color:var(--dorado)">RECARGAR SALDO</h3>
+            <h3 style="color:var(--dorado)">RECARGAR</h3>
             <form action="/notificar_pago" method="POST" enctype="multipart/form-data">
                 <input type="number" name="monto" placeholder="Monto Bs." required step="0.01">
                 <input type="text" name="referencia" placeholder="Ref. Bancaria" required>
-                <label style="font-size: 10px; color: #888; display: block; margin-bottom: 5px;">Adjuntar Capture del Banco:</label>
                 <input type="file" name="capture" accept="image/*" required style="font-size:10px;">
-                <button type="submit" class="btn btn-pagar" style="width:100%; margin-top: 10px;">ENVIAR REPORTE</button>
+                <button type="submit" class="btn btn-pagar" style="width:100%; margin-top:10px;">ENVIAR</button>
             </form>
-            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer; font-size: 13px;">Cerrar</p>
+            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer;">Cerrar</p>
         </div>
     </div>
 
     <script>
         let html5QrCode;
-
-        // FUNCIÓN QUIRÚRGICA PARA EL SONIDO (BEEP)
         function sonarBeep() {
             try {
                 const context = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = context.createOscillator();
                 const gain = context.createGain();
-                osc.connect(gain);
-                gain.connect(context.destination);
-                osc.type = "sine";
-                osc.frequency.value = 880; 
+                osc.connect(gain); gain.connect(context.destination);
+                osc.type = "sine"; osc.frequency.value = 880; 
                 gain.gain.setValueAtTime(0, context.currentTime);
                 gain.gain.linearRampToValueAtTime(0.5, context.currentTime + 0.05);
                 gain.gain.linearRampToValueAtTime(0, context.currentTime + 0.3);
-                osc.start();
-                osc.stop(context.currentTime + 0.3);
-            } catch(e) { console.log("Audio no soportado"); }
+                osc.start(); osc.stop(context.currentTime + 0.3);
+            } catch(e) {}
         }
-        
+
         function abrirModal(id) {
             document.getElementById(id).style.display = 'flex';
             if(id === 'modalCobrar') { 
                 html5QrCode = new Html5Qrcode("reader");
                 html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                    
-                    // ACCIONES AL DETECTAR QR
                     sonarBeep();
-                    if (navigator.vibrate) navigator.vibrate(100);
-
                     const [emisor, monto] = text.split('|');
-                    if(confirm(`¿Confirmas el cobro de Bs. ${monto} a la cuenta ${emisor}?`)) {
+                    if(confirm(`¿Cobrar Bs. ${monto}?`)) {
                         fetch('/ejecutar_pago', {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({emisor: emisor, monto: monto})
                         }).then(r => r.json()).then(d => {
-                            if(d.status==='ok'){ 
-                                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                                
-                                // COMPROBANTE DE AUDITORÍA DETALLADO
-                                alert(`✅ TRANSACCIÓN EXITOSA\n\n` +
-                                      `Referencia: ${d.referencia || 'Generando...'}\n` +
-                                      `Emisor: ${emisor}\n` +
-                                      `Receptor: {{ u.cedula }}\n` +
-                                      `Monto: Bs. ${monto}\n` +
-                                      `Fecha: ${new Date().toLocaleString()}`);
-                                      
-                                location.reload(); 
-                            }
-                            else { alert("❌ ERROR: " + d.msg); }
+                            if(d.status==='ok'){
+                                document.getElementById('t-ref').innerText = d.referencia;
+                                document.getElementById('t-fecha').innerText = new Date().toLocaleString();
+                                document.getElementById('t-cliente').innerText = emisor;
+                                document.getElementById('t-monto').innerText = parseFloat(monto).toFixed(2);
+                                document.getElementById('modalTicket').style.display = 'flex';
+                            } else { alert("Error: " + d.msg); }
                         });
                     }
                     cerrarModales();
@@ -146,18 +170,14 @@
         }
 
         function cerrarModales() {
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            if(html5QrCode) {
-                html5QrCode.stop().catch(() => {});
-            }
-            document.getElementById('qr-result').innerHTML = '';
+            document.querySelectorAll('.modal').forEach(m => { if(m.id !== 'modalTicket') m.style.display = 'none'; });
+            if(html5QrCode) html5QrCode.stop().catch(()=>{});
         }
 
         function generarQR() {
             const m = document.getElementById('montoPagar').value;
-            if(!m) return alert("Por favor ingresa un monto válido");
-            const data = `{{ u.cedula }}|${m}`;
-            document.getElementById('qr-result').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${data}" style="background:white; padding:10px; border-radius:10px; border: 2px solid var(--dorado);">`;
+            if(!m) return alert("Ingresa monto");
+            document.getElementById('qr-result').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ u.cedula }}|${m}" style="background:#fff; padding:10px; border-radius:5px;">`;
         }
     </script>
 </body>
