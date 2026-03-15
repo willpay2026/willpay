@@ -38,6 +38,16 @@ with app.app_context():
 
 @app.route('/')
 def index():
+    # Cambiado para que coincida con tu imagen: carpeta auth
+    return render_template('auth/splash.html')
+
+@app.route('/acceso')
+def login_page():
+    # También apuntando a la carpeta auth como en tu estructura
+    return render_template('auth/acceso.html')
+    
+@app.route('/')
+def index():
     # Eliminado 'common/'. Ahora busca splash.html en la raíz de templates
     return render_template('splash.html')
 
