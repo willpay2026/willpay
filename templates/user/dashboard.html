@@ -3,181 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Búnker</title>
+    <title>Will-Pay | Panel</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root {
-            --dorado: #d4af37;
-            --negro-puro: #000000;
-            --gris-oscuro: #111111;
-            --blanco: #ffffff;
-            --dorado-glow: rgba(212, 175, 55, 0.2);
-        }
-
-        body { 
-            background-color: var(--negro-puro); 
-            color: var(--blanco); 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 20px;
-            margin: 0;
-        }
-
-        /* Logo con estilo */
-        .logo-container { margin: 30px 0; }
-        .logo { width: 140px; filter: drop-shadow(0px 0px 8px var(--dorado-glow)); }
-
-        /* La Bóveda (Card de Saldo) */
-        .boveda { 
-            border: 2px solid var(--dorado); 
-            border-radius: 28px; 
-            padding: 30px; 
-            width: 90%; 
-            max-width: 380px;
-            text-align: center; 
-            background: linear-gradient(145deg, #0a0a0a, #000000);
-            box-shadow: 0px 15px 35px rgba(0, 0, 0, 0.8), 0px 0px 15px var(--dorado-glow);
-            margin-bottom: 25px;
-            position: relative;
-        }
-
-        .label-saldo { color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px; }
+        :root { --dorado: #d4af37; --negro: #000; --gris: #111; }
+        body { background: var(--negro); color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .logo { width: 130px; margin: 20px 0; }
+        .boveda { border: 2px solid var(--dorado); border-radius: 25px; padding: 25px; width: 90%; max-width: 380px; text-align: center; margin-bottom: 20px; background: #050505; }
+        .saldo { font-size: 38px; font-weight: bold; color: var(--dorado); }
+        .btn-group { display: flex; gap: 10px; width: 90%; max-width: 380px; }
+        .btn { border: none; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; flex: 1; text-transform: uppercase; }
+        .btn-pagar { background: var(--dorado); color: #000; }
+        .btn-cobrar { background: var(--gris); color: #fff; border: 1px solid #333; }
         
-        .saldo { 
-            font-size: 42px; 
-            font-weight: 800; 
-            color: var(--blanco); 
-            margin: 10px 0;
-        }
-        .saldo span { color: var(--dorado); }
-
-        .btn-recarga {
-            background-color: var(--dorado);
-            color: var(--negro-puro);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-weight: bold;
-            font-size: 11px;
-            cursor: pointer;
-            margin-top: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Botones de Acción Pagar/Cobrar */
-        .btn-group { display: flex; gap: 12px; width: 90%; max-width: 380px; justify-content: center; }
+        /* Estilo de las Ventanas Modales */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .modal-content { background: var(--gris); width: 85%; max-width: 350px; padding: 25px; border-radius: 20px; border: 1px solid var(--dorado); text-align: center; }
+        input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; font-size: 18px; text-align: center; box-sizing: border-box; }
+        .btn-cerrar { color: #888; margin-top: 20px; cursor: pointer; font-size: 14px; text-decoration: underline; }
         
-        .btn { 
-            border: none; 
-            padding: 20px; 
-            border-radius: 18px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            flex: 1; 
-            text-transform: uppercase; 
-            font-size: 13px;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-pagar { 
-            background-color: var(--dorado); 
-            color: var(--negro-puro);
-        }
-
-        .btn-cobrar { 
-            background-color: var(--gris-oscuro); 
-            color: var(--blanco); 
-            border: 1px solid #222; 
-        }
-
-        .btn:active { transform: scale(0.96); opacity: 0.9; }
-
-        /* Tabla de Auditoría (Limpia) */
-        .movimientos { width: 100%; max-width: 420px; margin-top: 45px; }
-        
-        .titulo-seccion { 
-            text-align: center; 
-            font-size: 12px; 
-            font-weight: bold; 
-            color: var(--dorado);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-            opacity: 0.8;
-        }
-
-        .tabla { width: 100%; border-collapse: collapse; }
-        
-        .tabla th { 
-            border-bottom: 1px solid #222;
-            color: #444; 
-            padding: 12px; 
-            font-size: 10px; 
-            text-align: center;
-        }
-        
-        .tabla td { 
-            border-bottom: 1px solid #111; 
-            padding: 18px 10px; 
-            text-align: center; 
-            font-size: 12px;
-            color: #888;
-        }
-
-        .monto-tabla { color: var(--blanco); font-weight: bold; font-size: 14px; }
-        .ref-tabla { font-family: monospace; color: #555; }
+        #reader { width: 100%; border-radius: 15px; overflow: hidden; border: 2px solid var(--dorado); }
+        #qr-result img { background: white; padding: 10px; border-radius: 10px; margin-top: 15px; }
     </style>
 </head>
 <body>
-
-    <div class="logo-container">
-        <img src="/static/logonuevo.png" class="logo" alt="Will-Pay">
-    </div>
-
+    <img src="/static/logonuevo.png" class="logo">
+    
     <div class="boveda">
-        <p class="label-saldo">Fondo Disponible</p>
-        <div class="saldo">Bs. <span>{{ "%.2f"|format(u.saldo) }}</span></div>
-        <button class="btn-recarga" onclick="location.href='/recargar'">Notificar Pago</button>
+        <p style="color: #666; font-size: 12px; letter-spacing: 2px;">SALDO DISPONIBLE</p>
+        <div class="saldo">Bs. {{ "%.2f"|format(u.saldo) }}</div>
     </div>
     
     <div class="btn-group">
-        <button class="btn btn-pagar" onclick="location.href='/pagar'">Pagar</button>
-        <button class="btn btn-cobrar" onclick="location.href='/cobrar'">Cobrar</button>
+        <button class="btn btn-pagar" onclick="abrirPagar()">Pagar</button>
+        <button class="btn btn-cobrar" onclick="abrirCobrar()">Cobrar</button>
     </div>
 
-    <div class="movimientos">
-        <p class="titulo-seccion">Registro de Auditoría</p>
-        <table class="tabla">
-            <thead>
-                <tr>
-                    <th>FECHA</th>
-                    <th>REFERENCIA</th>
-                    <th>VALOR</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for m in movimientos %}
-                <tr>
-                    <td>{{ m.fecha.strftime('%d/%m') }}</td>
-                    <td class="ref-tabla">{{ m.referencia }}</td>
-                    <td class="monto-tabla">Bs. {{ "%.2f"|format(m.monto) }}</td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="3" style="padding: 40px; font-style: italic; color: #222;">Sin historial disponible</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div id="modalCobrar" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--dorado);">GENERAR COBRO</h3>
+            <input type="number" id="montoCobro" placeholder="0.00">
+            <button class="btn btn-pagar" style="width: 100%;" onclick="generarQR()">Crear Código QR</button>
+            <div id="qr-result"></div>
+            <div class="btn-cerrar" onclick="cerrarModales()">Cancelar</div>
+        </div>
     </div>
 
-    <div style="margin: 60px 0 20px 0; color: #222; font-size: 9px; letter-spacing: 4px; text-transform: uppercase;">
-        Will-Pay Digital Legacy
+    <div id="modalPagar" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--dorado);">ESCANEAR PARA PAGAR</h3>
+            <div id="reader"></div>
+            <div class="btn-cerrar" onclick="cerrarModales()">Cerrar Cámara</div>
+        </div>
     </div>
 
+    <script>
+        let html5QrCode;
+
+        function abrirCobrar() { document.getElementById('modalCobrar').style.display = 'flex'; }
+        
+        function generarQR() {
+            const monto = document.getElementById('montoCobro').value;
+            if(!monto) return alert("Pon un monto");
+            const data = `{{ u.cedula }}|${monto}`;
+            const qrDiv = document.getElementById('qr-result');
+            qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data}">`;
+        }
+
+        async function abrirPagar() {
+            document.getElementById('modalPagar').style.display = 'flex';
+            html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+                const [receptor, monto] = decodedText.split('|');
+                if(confirm(`¿Deseas pagar Bs. ${monto} a la cédula ${receptor}?`)) {
+                    procesarPago(receptor, monto);
+                }
+                cerrarModales();
+            });
+        }
+
+        function procesarPago(receptor, monto) {
+            fetch('/ejecutar_pago', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({receptor: receptor, monto: monto})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'ok') {
+                    alert("¡Pago Exitoso!");
+                    location.reload();
+                } else {
+                    alert("Error: " + data.msg);
+                }
+            });
+        }
+
+        function cerrarModales() {
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            if(html5QrCode) html5QrCode.stop();
+            document.getElementById('qr-result').innerHTML = '';
+        }
+    </script>
 </body>
 </html>
