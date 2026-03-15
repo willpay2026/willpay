@@ -34,11 +34,9 @@ class Movimiento(db.Model):
 with app.app_context():
     db.create_all()
 
-# --- RUTAS DE ACCESO ---
-
 @app.route('/')
 def index():
-    # CAMBIO AQUÍ: Ahora carga el Splash en lugar de saltar al login
+    # Carga el Splash de 5 segundos
     return render_template('common/splash.html')
 
 @app.route('/acceso')
