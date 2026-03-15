@@ -3,44 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will-Pay | Búnker</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .boveda { border: 2px solid #d4af37; border-radius: 20px; padding: 20px; width: 90%; text-align: center; margin-bottom: 20px; }
-        .saldo { font-size: 32px; font-weight: bold; color: #d4af37; }
-        .btn-group { display: flex; gap: 10px; width: 90%; justify-content: center; }
-        .btn { border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; flex: 1; text-transform: uppercase; }
-        .btn-pagar { background-color: #d4af37; color: #000; }
-        .btn-cobrar { background-color: #333; color: #fff; border: 1px solid #444; }
-        .movimientos { width: 95%; margin-top: 30px; }
-        .tabla { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .tabla th { background-color: #d4af37; color: #000; padding: 8px; }
-        .tabla td { border-bottom: 1px solid #222; padding: 10px; text-align: center; }
+        :root {
+            --dorado: #d4af37;
+            --negro-puro: #000000;
+            --gris-oscuro: #1a1a1a;
+            --blanco: #ffffff;
+        }
+
+        body { 
+            background-color: var(--negro-puro); 
+            color: var(--blanco); 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px;
+            margin: 0;
+        }
+
+        /* Estilo del Logo */
+        .logo-container { margin: 20px 0; }
+        .logo { width: 130px; filter: drop-shadow(0px 0px 5px rgba(212, 175, 55, 0.3)); }
+
+        /* La Bóveda de Saldo */
+        .boveda { 
+            border: 2px solid var(--dorado); 
+            border-radius: 25px; 
+            padding: 25px; 
+            width: 90%; 
+            max-width: 400px;
+            text-align: center; 
+            background: linear-gradient(145deg, #0f0f0f, #000000);
+            box-shadow: 0px 10px 30px rgba(212, 175, 55, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .label-saldo { color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        
+        .saldo { 
+            font-size: 40px; 
+            font-weight: 800; 
+            color: var(--blanco); 
+            margin: 10px 0;
+            text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
+        }
+        .saldo span { color: var(--dorado); }
+
+        /* Botón Recargar dentro de la Bóveda */
+        .btn-recarga {
+            background-color: var(--dorado);
+            color: var(--negro-puro);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 15px;
+            text-transform: uppercase;
+        }
+
+        /* Botones Principales */
+        .btn-group { display: flex; gap: 15px; width: 90%; max-width: 400px; justify-content: center; }
+        
+        .btn { 
+            border: none; 
+            padding: 18px; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            flex: 1; 
+            text-transform: uppercase; 
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-pagar { 
+            background-color: var(--dorado); 
+            color: var(--negro-puro);
+            box-shadow: 0px 4px 15px rgba(212, 175, 55, 0.2);
+        }
+
+        .btn-cobrar { 
+            background-color: var(--gris-oscuro); 
+            color: var(--blanco); 
+            border: 1px solid #333; 
+        }
+
+        .btn:active { transform: scale(0.95); }
+
+        /* Tabla de Movimientos */
+        .movimientos { width: 100%; max-width: 450px; margin-top: 40px; }
+        
+        .titulo-seccion { 
+            text-align: left; 
+            font-size: 14px; 
+            font-weight: bold; 
+            color: var(--dorado);
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 3px solid var(--dorado);
+        }
+
+        .tabla { width: 100%; border-collapse: collapse; background-color: #050505; border-radius: 15px; overflow: hidden; }
+        
+        .tabla th { 
+            background-color: var(--gris-oscuro); 
+            color: var(--dorado); 
+            padding: 12px; 
+            font-size: 11px; 
+            text-align: center;
+        }
+        
+        .tabla td { 
+            border-bottom: 1px solid #111; 
+            padding: 15px 10px; 
+            text-align: center; 
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .monto-tabla { color: var(--blanco); font-weight: bold; }
     </style>
 </head>
 <body>
-    <img src="/static/logo.png" style="width: 120px; margin-bottom: 20px;">
+
+    <div class="logo-container">
+        <img src="/static/logo.png" class="logo" alt="Will-Pay">
+    </div>
+
     <div class="boveda">
-        <p style="color: #888; font-size: 14px;">Saldo Disponible</p>
-        <div class="saldo">Bs. {{ "%.2f"|format(u.saldo) }}</div>
+        <p class="label-saldo">Saldo Disponible</p>
+        <div class="saldo">Bs. <span>{{ "%.2f"|format(u.saldo) }}</span></div>
+        <button class="btn-recarga" onclick="location.href='/recargar'">+ Recargar Saldo</button>
     </div>
     
     <div class="btn-group">
-        <button class="btn btn-pagar" onclick="location.href='/pagar'">Pagar</button>
-        <button class="btn btn-cobrar" onclick="location.href='/cobrar'">Cobrar</button>
+        <button class="btn btn-pagar" onclick="location.href='/pagar'">
+            <span style="font-size: 18px; margin-right: 5px;">📷</span> Pagar
+        </button>
+        <button class="btn btn-cobrar" onclick="location.href='/cobrar'">
+            <span style="font-size: 18px; margin-right: 5px;">💰</span> Cobrar
+        </button>
     </div>
 
     <div class="movimientos">
-        <p style="text-align: center; font-weight: bold;">Últimos Movimientos</p>
+        <p class="titulo-seccion">Historial de Auditoría</p>
         <table class="tabla">
-            <tr><th>FECHA</th><th>REF</th><th>MONTO</th></tr>
-            {% for m in movimientos %}
-            <tr>
-                <td>{{ m.fecha.strftime('%d/%m') }}</td>
-                <td>{{ m.referencia }}</td>
-                <td>Bs. {{ m.monto }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-</body>
-</html>
+            <thead>
+                <tr>
+                    <th>FECHA</th>
+                    <th>REFERENCIA</th>
+                    <th>MONTO</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimientos %}
+                <tr>
+                    <td>{{ m.fecha.strftime('%d/%
