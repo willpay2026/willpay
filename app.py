@@ -34,26 +34,24 @@ class Movimiento(db.Model):
 with app.app_context():
     db.create_all()
 
-# --- RUTAS DE ACCESO (ESTRUCTURA SEGÚN GITHUB) ---
+# --- RUTAS DE ACCESO (CORREGIDAS SEGÚN TU ESTRUCTURA) ---
 
 @app.route('/')
 def index():
-    # Apunta a templates/auth/splash.html según tu captura
     return render_template('auth/splash.html')
 
 @app.route('/acceso')
 def login_page():
-    # Apunta a templates/auth/acceso.html según tu captura
     return render_template('auth/acceso.html')
 
 @app.route('/registro')
 def registro_page():
-    # Si registro está fuera de auth, quita el 'auth/'
     return render_template('auth/registro.html')
 
 @app.route('/terminos')
 def terminos():
-    return render_template('terminos.html')
+    # CORRECCIÓN AQUÍ: Se agrega 'auth/' para que coincida con tu GitHub
+    return render_template('auth/terminos.html')
 
 # --- LÓGICA DE USUARIO ---
 
