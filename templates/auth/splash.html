@@ -5,30 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay</title>
     <style>
-        body { 
-            background-color: #000; 
-            margin: 0; 
-            height: 100vh; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            overflow: hidden;
-        }
-        .logo-splash {
-            width: 200px; /* Ajusta el tamaño a tu gusto */
-            height: auto;
-            display: block;
-        }
+        /* Pantalla negra total sin scroll */
+        body { background: #000; margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        img { max-width: 80%; height: auto; }
     </style>
 </head>
 <body>
 
-    <img src="{{ url_for('static', filename='logonuevo.png') }}" class="logo-splash">
+    <img src="/static/logonuevo.png">
 
     <script>
-        // Redirección exacta a los 5 segundos (5000 milisegundos)
+        // Salto automático a los 5 segundos
         setTimeout(function() {
-            window.location.href = "{{ url_for('login_page') }}";
+            window.location.href = "/acceso";
         }, 5000);
     </script>
 </body>
