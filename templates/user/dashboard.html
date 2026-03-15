@@ -165,4 +165,22 @@
             <tbody>
                 {% for m in movimientos %}
                 <tr>
-                    <td>{{ m.fecha.strftime('%d/%
+                    <td>{{ m.fecha.strftime('%d/%m') }}</td>
+                    <td style="font-family: monospace; color: #888;">{{ m.referencia }}</td>
+                    <td class="monto-tabla">Bs. {{ "%.2f"|format(m.monto) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" style="color: #444; padding: 30px;">Sin movimientos recientes</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 50px; color: #333; font-size: 10px; letter-spacing: 1px;">
+        WILL-PAY © 2026 | EL LEGADO
+    </div>
+
+</body>
+</html>
