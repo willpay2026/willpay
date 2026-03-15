@@ -13,15 +13,15 @@
         .saldo { font-size: 40px; font-weight: 800; color: #fff; }
         .saldo span { color: var(--dorado); }
         .btn-group { display: flex; gap: 12px; width: 90%; max-width: 380px; }
-        .btn { border: none; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; flex: 1; text-transform: uppercase; font-size: 13px; transition: 0.2s; }
+        .btn { border: none; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; flex: 1; text-transform: uppercase; font-size: 13px; }
         .btn-pagar { background: var(--dorado); color: #000; }
         .btn-cobrar { background: var(--gris); color: #fff; border: 1px solid #333; }
         
-        /* VENTANAS MODALES (ELEGANCIA) */
+        /* VENTANAS MODALES */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         .modal-content { background: #0a0a0a; width: 85%; max-width: 350px; padding: 30px; border-radius: 25px; border: 1px solid var(--dorado); text-align: center; }
         input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 12px; border: 1px solid #222; background: #000; color: #fff; font-size: 20px; text-align: center; }
-        #reader { width: 100%; border-radius: 15px; overflow: hidden; border: 2px solid var(--dorado); margin-bottom: 15px; }
+        #reader { width: 100%; border-radius: 15px; overflow: hidden; border: 2px solid var(--dorado); }
     </style>
 </head>
 <body>
@@ -29,9 +29,9 @@
     <img src="/static/logonuevo.png" class="logo">
     
     <div class="boveda">
-        <p style="color: #666; font-size: 11px; letter-spacing: 2px; margin-bottom: 10px;">FONDO DISPONIBLE</p>
+        <p style="color: #666; font-size: 11px; letter-spacing: 2px;">FONDO DISPONIBLE</p>
         <div class="saldo">Bs. <span>{{ "%.2f"|format(u.saldo) }}</span></div>
-        <button onclick="location.href='/recargar'" style="background: none; border: 1px solid #333; color: #888; padding: 5px 15px; border-radius: 20px; font-size: 10px; margin-top: 15px; cursor: pointer;">NOTIFICAR PAGO</button>
+        <button onclick="location.href='/recargar'" style="background:none; border:1px solid #333; color:#555; padding:5px 10px; border-radius:20px; font-size:9px; margin-top:10px;">Notificar Pago</button>
     </div>
     
     <div class="btn-group">
@@ -41,20 +41,19 @@
 
     <div id="modalCobrar" class="modal">
         <div class="modal-content">
-            <h3 style="color: var(--dorado); margin-top: 0;">COBRAR</h3>
-            <p style="color: #888; font-size: 12px;">Ingresa el monto a recibir</p>
+            <h3 style="color:var(--dorado);">COBRAR</h3>
             <input type="number" id="montoCobro" placeholder="0.00">
-            <button class="btn btn-pagar" style="width: 100%;" onclick="generarQR()">Generar Código QR</button>
-            <div id="qr-result" style="margin-top: 20px;"></div>
-            <p onclick="cerrarModales()" style="color: #444; margin-top: 20px; cursor: pointer;">Cerrar</p>
+            <button class="btn btn-pagar" style="width:100%" onclick="generarQR()">Generar QR</button>
+            <div id="qr-result" style="margin-top:20px;"></div>
+            <p onclick="cerrarModales()" style="color:#555; cursor:pointer; margin-top:20px;">Cerrar</p>
         </div>
     </div>
 
     <div id="modalPagar" class="modal">
         <div class="modal-content">
-            <h3 style="color: var(--dorado); margin-top: 0;">ESCANEAR QR</h3>
+            <h3 style="color:var(--dorado);">ESCANEAR QR</h3>
             <div id="reader"></div>
-            <p onclick="cerrarModales()" style="color: #444; margin-top: 20px; cursor: pointer;">Cancelar</p>
+            <p onclick="cerrarModales()" style="color:#555; cursor:pointer; margin-top:20px;">Cancelar</p>
         </div>
     </div>
 
@@ -65,7 +64,7 @@
         
         function cerrarModales() {
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            if(html5QrCode) html5QrCode.stop();
+            if(html5QrCode) html5QrCode.stop().catch(() => {});
             document.getElementById('qr-result').innerHTML = '';
         }
 
@@ -89,8 +88,8 @@
                     })
                     .then(res => res.json())
                     .then(res => {
-                        if(res.status === 'ok') { alert("PAGO EXITOSO"); location.reload(); }
-                        else { alert("ERROR: " + res.msg); }
+                        if(res.status === 'ok') { alert("✅ PAGO EXITOSO"); location.reload(); }
+                        else { alert("❌ ERROR: " + res.msg); }
                     });
                 }
                 cerrarModales();
