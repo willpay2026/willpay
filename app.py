@@ -1,138 +1,143 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-import os, psycopg2, datetime
-from psycopg2.extras import RealDictCursor
-from werkzeug.utils import secure_filename
+from flask_sqlalchemy import SQLAlchemy
+import os
+from datetime import datetime
+import random
 
 app = Flask(__name__)
-app.secret_key = 'willpay_donquiz_2026_legacy'
+app.secret_key = 'willpay_master_ultra_key'
 
-UPLOAD_FOLDER = 'static/captures'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Configuración de Base de Datos (Render usa DATABASE_URL)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///willpay.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def get_db():
-    db_url = os.environ.get('DATABASE_URL')
-    return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
+db = SQLAlchemy(app)
+
+# --- MODELOS DE DATOS ---
+
+class Usuario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100))
+    cedula = db.Column(db.String(20), unique=True)
+    password = db.Column(db.String(100))
+    saldo = db.Column(db.Float, default=0.0)
+    # Datos de Retiro
+    banco = db.Column(db.String(50))
+    telefono_pago = db.Column(db.String(20))
+    cedula_pago = db.Column(db.String(20))
+
+class Movimiento(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
+    tipo = db.Column(db.String(50)) # PAGO, COBRO, RECARGA, RETIRO
+    monto = db.Column(db.Float)
+    referencia = db.Column(db.String(20))
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --- INICIALIZACIÓN ---
+with app.app_context():
+    # db.drop_all() # <--- Úsalo una vez si quieres resetear todo por los cambios de banco
+    db.create_all()
+
+# --- RUTAS ---
 
 @app.route('/')
 def index():
-    return render_template('auth/splash.html')
+    return redirect(url_for('login_page'))
 
 @app.route('/acceso')
-def acceso():
-    return render_template('auth/acceso.html')
+def login_page():
+    return render_template('login.html')
 
-@app.route('/registro', methods=['GET', 'POST'])
-def registro():
-    if request.method == 'POST':
-        nombre = request.form.get('nombre')
-        cedula = request.form.get('cedula')
-        pin = request.form.get('pin')
-        conn = get_db(); cur = conn.cursor()
-        try:
-            cur.execute("INSERT INTO users (nombre, cedula, password, saldo) VALUES (%s, %s, %s, 0.00)", (nombre, cedula, pin))
-            conn.commit()
-            return redirect(url_for('acceso'))
-        except Exception as e:
-            conn.rollback()
-            return f"Error: La cédula ya existe."
-        finally:
-            cur.close(); conn.close()
-    return render_template('auth/registro.html')
+@app.route('/registro')
+def registro_page():
+    return render_template('registro.html')
 
 @app.route('/login', methods=['POST'])
 def login():
-    cedula = request.form.get('cedula')
-    pin = request.form.get('pin')
-    conn = get_db(); cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE cedula = %s AND password = %s", (cedula, pin))
-    user = cur.fetchone(); cur.close(); conn.close()
+    cedula = request.form['cedula']
+    password = request.form['password']
+    user = Usuario.query.filter_by(cedula=cedula, password=password).first()
     if user:
-        session['user_id'] = user['id']
-        session['cedula'] = user['cedula']
-        session['nombre'] = user['nombre']
+        session['user_id'] = user.id
         return redirect(url_for('dashboard'))
-    return "PIN o Cédula incorrecta."
+    return "Credenciales incorrectas"
+
+@app.route('/register', methods=['POST'])
+def register():
+    try:
+        nuevo = Usuario(
+            nombre=request.form['nombre'],
+            cedula=request.form['cedula'],
+            password=request.form['password'],
+            banco=request.form['banco'],
+            telefono_pago=request.form['telefono_pago'],
+            cedula_pago=request.form['cedula_pago'],
+            saldo=0.0
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        return redirect(url_for('login_page'))
+    except:
+        return "Error: La cédula ya existe."
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    conn = get_db(); cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
-    user = cur.fetchone()
-    cur.execute("SELECT fecha, referencia, monto, estatus, tipo FROM transacciones WHERE emisor = %s OR receptor = %s ORDER BY fecha DESC LIMIT 10", (user['cedula'], user['cedula']))
-    movs = cur.fetchall(); cur.close(); conn.close()
-    return render_template('user/dashboard.html', u=user, movimientos=movs)
+    if 'user_id' not in session: return redirect(url_for('login_page'))
+    u = Usuario.query.get(session['user_id'])
+    movs = Movimiento.query.filter_by(user_id=u.id).order_by(Movimiento.fecha.desc()).limit(10).all()
+    return render_template('dashboard.html', u=u, movimientos=movs)
 
 @app.route('/ejecutar_pago', methods=['POST'])
 def ejecutar_pago():
-    if 'user_id' not in session: return jsonify({'status': 'error', 'msg': 'Sesión cerrada'})
     data = request.json
-    emisor_cedula = data.get('emisor') # El que mostró el QR
+    emisor_cedula = data.get('emisor')
     monto = float(data.get('monto'))
-    receptor_cedula = session['cedula'] # Tú (el que escanea) recibes
+    receptor_id = session.get('user_id')
     
-    if receptor_cedula == emisor_cedula:
-        return jsonify({'status': 'error', 'msg': 'No puedes cobrarte a ti mismo'})
-
-    conn = get_db(); cur = conn.cursor()
-    try:
-        cur.execute("SELECT saldo FROM users WHERE cedula = %s", (emisor_cedula,))
-        fila = cur.fetchone()
-        if not fila or fila['saldo'] < monto:
-            return jsonify({'status': 'error', 'msg': 'Saldo insuficiente en la cuenta de origen'})
-
-        cur.execute("UPDATE users SET saldo = saldo - %s WHERE cedula = %s", (monto, emisor_cedula))
-        cur.execute("UPDATE users SET saldo = saldo + %s WHERE cedula = %s", (monto, receptor_cedula))
+    emisor = Usuario.query.filter_by(cedula=emisor_cedula).first()
+    receptor = Usuario.query.get(receptor_id)
+    
+    if emisor and emisor.saldo >= monto:
+        ref = f"WP-{random.randint(100000, 999999)}"
+        # Restar al que paga
+        emisor.saldo -= monto
+        # Sumar al que cobra
+        receptor.saldo += monto
         
-        ref = f"WP{datetime.datetime.now().strftime('%M%S%f')[:6].upper()}"
-        cur.execute("INSERT INTO transacciones (emisor, receptor, monto, referencia, estatus, tipo) VALUES (%s, %s, %s, %s, 'EXITOSO', 'TRANSFERENCIA')", (emisor_cedula, receptor_cedula, monto, ref))
-        conn.commit()
-        return jsonify({'status': 'ok', 'ref': ref})
-    except Exception as e:
-        conn.rollback(); return jsonify({'status': 'error', 'msg': str(e)})
-    finally:
-        cur.close(); conn.close()
+        # Guardar movimientos para auditoría
+        m1 = Movimiento(user_id=emisor.id, tipo="PAGO ENVIADO", monto=monto, referencia=ref)
+        m2 = Movimiento(user_id=receptor.id, tipo="PAGO RECIBIDO", monto=monto, referencia=ref)
+        
+        db.session.add(m1)
+        db.session.add(m2)
+        db.session.commit()
+        return jsonify({'status': 'ok', 'referencia': ref})
+    
+    return jsonify({'status': 'error', 'msg': 'Saldo insuficiente o usuario no existe'})
 
-@app.route('/notificar_pago', methods=['POST'])
-def notificar_pago():
-    if 'user_id' not in session: return redirect(url_for('acceso'))
-    monto = request.form.get('monto')
-    ref_bancaria = request.form.get('referencia')
-    file = request.files['capture']
-    if file:
-        filename = secure_filename(f"{session['cedula']}_{ref_bancaria}.png")
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        conn = get_db(); cur = conn.cursor()
-        cur.execute("INSERT INTO transacciones (emisor, receptor, monto, referencia, estatus, tipo) VALUES (%s, 'SISTEMA', %s, %s, 'PENDIENTE', 'RECARGA')", (session['cedula'], monto, ref_bancaria))
-        conn.commit(); cur.close(); conn.close()
-    return redirect(url_for('dashboard'))
-
-# --- PANEL CEO PARA WILFREDO ---
-@app.route('/admin_panel')
-def admin_panel():
-    if session.get('cedula') != '13496133': return "Acceso Denegado"
-    conn = get_db(); cur = conn.cursor()
-    cur.execute("SELECT * FROM transacciones WHERE estatus = 'PENDIENTE'")
-    pendientes = cur.fetchall(); cur.close(); conn.close()
-    return render_template('admin/panel.html', pendientes=pendientes)
-
-@app.route('/aprobar/<int:t_id>')
-def aprobar(t_id):
-    if session.get('cedula') != '13496133': return "Error"
-    conn = get_db(); cur = conn.cursor()
-    cur.execute("SELECT emisor, monto FROM transacciones WHERE id = %s", (t_id,))
-    t = cur.fetchone()
-    cur.execute("UPDATE users SET saldo = saldo + %s WHERE cedula = %s", (t['monto'], t['emisor']))
-    cur.execute("UPDATE transacciones SET estatus = 'EXITOSO' WHERE id = %s", (t_id,))
-    conn.commit(); cur.close(); conn.close()
-    return redirect(url_for('admin_panel'))
+@app.route('/solicitar_retiro', methods=['POST'])
+def solicitar_retiro():
+    if 'user_id' not in session: return redirect(url_for('login_page'))
+    u = Usuario.query.get(session['user_id'])
+    monto = float(request.form['monto'])
+    
+    if u.saldo >= monto:
+        ref = f"RET-{random.randint(1000, 9999)}"
+        u.saldo -= monto
+        # Registramos el retiro en el historial
+        mov = Movimiento(user_id=u.id, tipo="RETIRO SOLICITADO", monto=monto, referencia=ref)
+        db.session.add(mov)
+        db.session.commit()
+        # Aquí podrías enviar un correo o mensaje de que alguien pidió retiro
+        return redirect(url_for('dashboard'))
+    
+    return "Saldo insuficiente para retirar"
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('acceso'))
+    return redirect(url_for('login_page'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    app.run(debug=True)
