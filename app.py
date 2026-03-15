@@ -34,7 +34,7 @@ class Movimiento(db.Model):
 with app.app_context():
     db.create_all()
 
-# --- RUTAS DE ACCESO (CORREGIDAS SEGÚN TU ESTRUCTURA) ---
+# --- CAMBIO AQUÍ: RUTAS CON CARPETAS (SEGÚN TU GITHUB) ---
 
 @app.route('/')
 def index():
@@ -50,7 +50,7 @@ def registro_page():
 
 @app.route('/terminos')
 def terminos():
-    # CORRECCIÓN AQUÍ: Se agrega 'auth/' para que coincida con tu GitHub
+    # Este era el que daba el error 500
     return render_template('auth/terminos.html')
 
 # --- LÓGICA DE USUARIO ---
@@ -81,14 +81,15 @@ def register():
         db.session.commit()
         return redirect(url_for('login_page'))
     except:
-        return "Error: Datos incorrectos."
+        return "Error: Datos incorrectos o usuario ya existe."
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login_page'))
     u = Usuario.query.get(session['user_id'])
     movs = Movimiento.query.filter_by(user_id=u.id).order_by(Movimiento.fecha.desc()).limit(10).all()
-    return render_template('dashboard.html', u=u, movimientos=movs)
+    # CAMBIO: Dashboard está en la carpeta 'user'
+    return render_template('user/dashboard.html', u=u, movimientos=movs)
 
 @app.route('/admin_panel')
 def admin_panel():
@@ -98,7 +99,8 @@ def admin_panel():
     usuarios = Usuario.query.all()
     total_red = sum(user.saldo for user in usuarios)
     retiros = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
-    return render_template('panel_maestro.html', usuarios=usuarios, total_red=total_red, retiros_pendientes=retiros)
+    # CAMBIO: Panel Maestro está en la carpeta 'ceo'
+    return render_template('ceo/panel_maestro.html', usuarios=usuarios, total_red=total_red, retiros_pendientes=retiros)
 
 @app.route('/logout')
 def logout():
