@@ -3,60 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Registro Seguro</title>
+    <title>Will-Pay | Registro</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .main-container { max-width: 450px; margin: auto; }
-        .logo { width: 140px; margin-bottom: 10px; }
-        .gold-title { color: #d4af37; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-        label { display: block; text-align: left; font-weight: bold; margin: 15px 0 5px 5px; font-size: 13px; color: #d4af37; }
-        input, select { width: 100%; padding: 15px; margin-bottom: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; }
-        .kyc-box { background: #111; border: 1px solid #d4af37; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: left; }
-        .terms-box { font-size: 12px; color: #aaa; text-align: left; margin: 15px 0; display: flex; align-items: center; }
-        .btn-finalizar { background: #d4af37; color: #000; border: none; padding: 20px; width: 100%; border-radius: 10px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
-        .footer-wildon { color: #d4af37; font-size: 11px; margin-top: 40px; letter-spacing: 2px; }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #111; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
+        .btn-crear { background: #d4af37; color: #000; font-weight: bold; border: none; padding: 15px; width: 100%; border-radius: 10px; cursor: pointer; margin-top: 15px; }
+        .banca-box { border: 1px solid #d4af37; padding: 15px; border-radius: 12px; margin-top: 15px; background: #050505; text-align: left; width: 100%; max-width: 320px; }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <img src="{{ url_for('static', filename='logonuevo.png') }}" alt="Will-Pay" class="logo">
-        <p class="gold-title">REGISTRO DE USUARIO</p>
+    <img src="/static/logonuevo.png" style="width: 100px; margin-bottom: 20px;">
+    <h2 style="color: #d4af37;">CREAR CUENTA</h2>
+    
+    <form action="/register" method="POST" style="width: 100%; max-width: 320px;">
+        <input type="text" name="nombre" placeholder="Nombre Completo" required>
+        <input type="text" name="cedula" placeholder="Cédula de Identidad" required>
+        <input type="password" name="password" placeholder="Contraseña de acceso" required>
 
-        <form action="/crear_cuenta" method="POST" enctype="multipart/form-data">
-            <label>Nombre Completo (Como en Cédula)</label>
-            <input type="text" name="nombre" required>
-
-            <label>Cédula / RIF</label>
-            <input type="text" name="cedula" required>
-
-            <label>Teléfono</label>
-            <input type="text" name="telefono" required>
-
-            <label>Tipo de Usuario / Actividad</label>
-            <select name="tipo_usuario">
-                <option value="personal">Personal (Natural)</option>
-                <option value="actividad">Actividad Económica (Emprendedor)</option>
-                <option value="juridico">Registro Jurídico (Empresa)</option>
+        <div class="banca-box">
+            <p style="color: #d4af37; font-size: 11px; margin: 0 0 10px 0; font-weight: bold;">DATOS DE PAGO MÓVIL (PARA RETIROS)</p>
+            <select name="banco" required>
+                <option value="" disabled selected>Selecciona tu Banco</option>
+                <option value="BANESCO">BANESCO</option>
+                <option value="MERCANTIL">MERCANTIL</option>
+                <option value="PROVINCIAL">PROVINCIAL</option>
+                <option value="VENEZUELA">VENEZUELA</option>
+                <option value="BNC">BNC</option>
+                <option value="BANCAMIGA">BANCAMIGA</option>
             </select>
+            <input type="text" name="telefono_pago" placeholder="Teléfono Pago Móvil" required>
+            <input type="text" name="cedula_pago" placeholder="Cédula del Titular" required>
+        </div>
 
-            <label>Crea tu PIN de Seguridad (6 números)</label>
-            <input type="password" name="pin" maxlength="6" required>
-
-            <div class="kyc-box">
-                <label style="color: #fff;">Foto de Cédula (Auditoría Visual)</label>
-                <input type="file" name="foto_cedula" accept="image/*" required>
-                <label style="color: #fff;">Foto Selfie</label>
-                <input type="file" name="foto_selfie" accept="image/*" required>
-            </div>
-
-            <div class="terms-box">
-                <input type="checkbox" id="acepto" required style="width: 20px; margin-right: 10px;">
-                <label for="acepto" style="color: #aaa; margin: 0;">Acepto los <a href="/terminos" style="color: #d4af37;">Términos y Condiciones</a> y el cobro de comisiones por transacción.</label>
-            </div>
-
-            <button type="submit" class="btn-finalizar">FINALIZAR REGISTRO Y GENERAR EXPEDIENTE</button>
-        </form>
-        <p class="footer-wildon">CREADO POR WILDON C.A</p>
-    </div>
+        <button type="submit" class="btn-crear">REGISTRARSE</button>
+        <a href="/acceso" style="color: #555; display: block; text-align: center; margin-top: 15px; text-decoration: none; font-size: 12px;">Volver al inicio</a>
+    </form>
 </body>
 </html>
