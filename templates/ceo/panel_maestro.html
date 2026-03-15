@@ -7,41 +7,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --oro: #D4AF37; --negro: #000000; --gris: #1a1a1a; --verde: #00ff00; --rojo: #ff0000; }
-        body { background-color: var(--negro); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding-bottom: 50px; text-align: center; }
+        body { background-color: var(--negro); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 50px; text-align: center; }
         
-        /* CABECERA CEO */
         .header { padding: 20px; border-bottom: 2px solid var(--oro); margin-bottom: 20px; }
         .logo { width: 100px; margin-bottom: 10px; filter: drop-shadow(0 0 10px var(--oro)); }
-        .dna-id { color: var(--oro); font-size: 0.8em; letter-spacing: 2px; margin-bottom: 5px; }
+        .dna-id { color: var(--oro); font-size: 0.8em; letter-spacing: 2px; }
         .ceo-name { font-size: 1.5em; font-weight: bold; text-transform: uppercase; }
 
-        /* CONTROLES DE PORCENTAJE GENERAL */
         .controles-globales { display: flex; justify-content: space-around; background: var(--gris); margin: 15px; padding: 15px; border-radius: 10px; border: 1px solid #333; }
         .control-item { display: flex; flex-direction: column; }
-        .control-label { font-size: 0.7em; color: var(--oro); margin-bottom: 5px; }
+        .control-label { font-size: 0.7em; color: var(--oro); }
         .control-box { background: black; border: 1px solid var(--oro); color: var(--oro); padding: 5px; border-radius: 5px; font-weight: bold; }
 
-        /* BÚNKER DE SALDOS */
-        .card { background: var(--gris); margin: 15px; padding: 20px; border-radius: 15px; border-left: 5px solid var(--oro); position: relative; }
-        .saldo-main { border: 2px solid var(--oro); padding: 30px; margin: 10px; border-radius: 15px; }
-        .monto-gigante { font-size: 2.5em; font-weight: bold; display: block; }
-        .sub-label { color: #666; font-size: 0.8em; text-transform: uppercase; margin-top: 5px; }
-        .card.transaccion { border-left-color: #ffcc00; }
-        .card.ganancia { border-left-color: var(--verde); }
+        .saldo-main { border: 2px solid var(--oro); padding: 30px; margin: 15px; border-radius: 15px; }
+        .monto-gigante { font-size: 2.5em; font-weight: bold; display: block; color: white; }
+        .sub-label { color: #888; font-size: 0.7em; text-transform: uppercase; }
 
-        /* CONSEJO DE SOCIOS (Los 5 Espacios) */
-        .socios-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px; }
-        .socio-card { background: #111; border: 1px solid #444; padding: 10px; border-radius: 10px; }
-        .socio-card.active { border-color: silver; }
-        .socio-label { font-size: 0.6em; color: #888; display: block; }
-        .socio-input { width: 50px; background: black; border: 1px solid silver; color: white; text-align: center; border-radius: 5px; }
+        .card { background: var(--gris); margin: 15px; padding: 20px; border-radius: 15px; border-left: 5px solid var(--oro); text-align: left; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 10px; }
+        th { color: var(--oro); border-bottom: 2px solid #333; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #222; }
 
-        /* RECARGA Y AUTOMATIZACIÓN */
-        .btn-accion { background: var(--oro); color: black; border: none; padding: 15px; width: 90%; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .switch-group { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #111; margin: 5px 15px; border-radius: 8px; }
-
-        /* BOTÓN DE PÁNICO */
-        .btn-panico { background: var(--rojo); color: white; border: none; padding: 20px; width: 90%; border-radius: 50px; font-weight: bold; font-size: 1.2em; margin-top: 30px; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+        .btn-accion { background: var(--oro); color: black; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-panico { background: var(--rojo); color: white; border: none; padding: 20px; width: 90%; border-radius: 50px; font-weight: bold; font-size: 1.2em; margin-top: 30px; box-shadow: 0 0 20px rgba(255,0,0,0.5); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -49,82 +38,23 @@
     <div class="header">
         <img src="https://i.imgur.com/W2SAnCq.png" class="logo" alt="Will-Pay">
         <div class="dna-id">ID DNA CEO-0001 - FUNDADOR</div>
-        <div class="ceo-name">WILFREDO DONQUIZ</div>
-    </div>
-
-    <div class="controles-globales">
-        <div class="control-item">
-            <span class="control-label">% PAGOS</span>
-            <div class="control-box">0.5%</div>
-        </div>
-        <div class="control-item">
-            <span class="control-label">% RETIROS</span>
-            <div class="control-box">1.0%</div>
-        </div>
-        <div class="control-item">
-            <span class="control-label">% ACT. ECON.</span>
-            <div class="control-box">0.0%</div>
-        </div>
+        <div class="ceo-name">{{ u.nombre }}</div>
     </div>
 
     <div class="saldo-main">
-        <span class="sub-label" style="color: var(--oro)">SALDO EN Bs.</span>
-        <span class="monto-gigante">0.000,00</span>
-        <span class="sub-label">CAPITAL TOTAL EN BÚNKER</span>
+        <span class="sub-label" style="color: var(--oro)">CAPITAL TOTAL EN RED</span>
+        <span class="monto-gigante">Bs. {{ "{:,.2f}".format(total_red) }}</span>
     </div>
 
     <div class="card">
-        <span class="sub-label">DINERO DEPOSITADO</span>
-        <div style="font-size: 1.5em;">Bs. 0,00</div>
-    </div>
-
-    <div class="card transaccion">
-        <span class="sub-label">EN TRANSACCIÓN</span>
-        <div style="font-size: 1.5em;">Bs. 0,00</div>
-    </div>
-
-    <div class="card ganancia">
-        <span class="sub-label" style="color: var(--verde)">NETO GANANCIAS (LEGADO)</span>
-        <div style="font-size: 1.5em;">Bs. 0,00</div>
-    </div>
-
-    <h3 style="color: var(--oro); font-size: 0.9em; margin-top: 20px;">CONSEJO DE SOCIOS (RESERVADO)</h3>
-    <div class="socios-grid">
-        <div class="socio-card active">
-            <span class="socio-label">SOCIO 01</span>
-            <input type="text" class="socio-input" value="0%">
-            <span class="socio-label">PARTICIPACIÓN</span>
-        </div>
-        <div class="socio-card">
-            <span class="socio-label">SOCIO 02</span>
-            <input type="text" class="socio-input" placeholder="0%">
-            <span class="socio-label">DISPONIBLE</span>
-        </div>
-        <div class="socio-card"><span class="socio-label">SOCIO 03</span><input type="text" class="socio-input" disabled></div>
-        <div class="socio-card"><span class="socio-label">SOCIO 04</span><input type="text" class="socio-input" disabled></div>
-        <div class="socio-card"><span class="socio-label">SOCIO 05</span><input type="text" class="socio-input" disabled></div>
-    </div>
-
-    <div class="card">
-        <div class="switch-group">
-            <span>Auto-Aprobación Saldo</span>
-            <input type="checkbox">
-        </div>
-        <div class="switch-group">
-            <span>Auto-Aprobación Retiro</span>
-            <input type="checkbox">
-        </div>
-        <button class="btn-accion">GUARDAR CAMBIOS</button>
-    </div>
-<div class="card" style="margin-top: 20px; text-align: left;">
-        <h3 style="color: var(--oro); font-size: 0.9em; border-bottom: 1px solid #333; padding-bottom: 10px;">
-            <i class="fas fa-history"></i> MOVIMIENTOS EN VIVO (10 EN 10)
+        <h3 style="color: var(--oro); font-size: 0.9em; margin: 0 0 10px 0;">
+            <i class="fas fa-history"></i> RADAR DE ACTIVIDAD (ÚLTIMOS 10)
         </h3>
         <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.8em;">
+            <table>
                 <thead>
-                    <tr style="color: var(--oro); border-bottom: 2px solid #333;">
-                        <th style="padding: 10px;">USUARIO</th>
+                    <tr>
+                        <th>USUARIO</th>
                         <th>TIPO</th>
                         <th>MONTO</th>
                         <th>ESTADO</th>
@@ -132,22 +62,37 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr style="border-bottom: 1px solid #222;">
-                        <td style="padding: 10px;">13496133</td>
-                        <td>RECARGA</td>
-                        <td style="color: var(--verde);">Bs. 500,00</td>
-                        <td><span style="background: #550; padding: 2px 5px; border-radius: 3px;">Pendiente</span></td>
+                    {% for mov in movimientos %}
+                    <tr>
+                        <td>{{ mov.user_id }}</td>
+                        <td>{{ mov.tipo }}</td>
+                        <td style="color: var(--verde);">Bs. {{ "{:,.2f}".format(mov.monto) }}</td>
                         <td>
-                            <button title="Aprobar" style="background: var(--verde); border: none; border-radius: 3px; cursor: pointer;"><i class="fas fa-check"></i></button>
-                            <button title="Ver ADN" style="background: var(--oro); border: none; border-radius: 3px; cursor: pointer;"><i class="fas fa-fingerprint"></i></button>
+                            <span style="background: {% if mov.status == 'PENDIENTE' %}#550{% else %}#050{% endif %}; padding: 3px 6px; border-radius: 4px; font-size: 0.9em;">
+                                {{ mov.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if mov.status == 'PENDIENTE' %}
+                            <a href="/aprobar_movimiento/{{ mov.id }}" style="color: var(--verde); margin-right: 10px; text-decoration: none;">
+                                <i class="fas fa-check-circle fa-lg"></i>
+                            </a>
+                            {% endif %}
+                            <i class="fas fa-fingerprint fa-lg" style="color: var(--oro); cursor: pointer;"></i>
                         </td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+
+    <div class="card">
+        <button class="btn-accion">CONFIGURAR COMISIONES GENERALES</button>
+    </div>
+
     <button class="btn-panico">
-        <i class="fas fa-radiation"></i> BOTÓN DE PÁNICO
+        <i class="fas fa-radiation"></i> ACTIVAR PROTOCOLO DE PÁNICO
     </button>
 
 </body>
