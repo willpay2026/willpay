@@ -5,22 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay | Acceso</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .login-card { width: 90%; max-width: 320px; text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #111; color: #fff; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; }
-        .btn-login { background: #d4af37; color: #000; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        a { color: #d4af37; text-decoration: none; font-size: 13px; margin-top: 20px; display: block; }
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
+        .container { width: 90%; max-width: 350px; text-align: center; }
+        
+        .logo { width: 180px; margin-bottom: 10px; }
+        .tagline { color: #d4af37; font-size: 14px; margin-bottom: 50px; }
+        
+        h2 { color: #d4af37; font-size: 18px; letter-spacing: 1px; margin-bottom: 30px; text-transform: uppercase; }
+        
+        .label-text { color: #555; font-size: 16px; margin-bottom: 15px; font-weight: bold; }
+        
+        input { 
+            width: 100%; 
+            padding: 18px; 
+            margin-bottom: 15px; 
+            background: #e8f0fe; /* El tono claro que se ve en la imagen */
+            color: #000; 
+            border: none; 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .btn-login { 
+            background: #d4af37; 
+            color: #000; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 18px; 
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+        
+        .footer-link { color: #d4af37; text-decoration: none; font-size: 15px; margin-top: 30px; display: block; }
+        
+        .credits { color: #d4af37; font-size: 14px; margin-top: 80px; opacity: 0.8; }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <img src="/static/logonuevo.png" style="width: 130px; margin-bottom: 30px;">
+
+    <div class="container">
+        <img src="/static/logonuevo.png" class="logo">
+        <div class="tagline">Tu Billetera Digital de Confianza</div>
+
+        <h2>ACCESO AL PANEL</h2>
+
+        <div class="label-text">Nombre y Apellido</div>
+
         <form action="/login" method="POST">
-            <input type="text" name="cedula" placeholder="Cédula de Identidad" required>
-            <input type="password" name="password" placeholder="Contraseña" required>
-            <button type="submit" class="btn-login">ENTRAR AL BÚNKER</button>
+            <input type="text" name="cedula" placeholder="Número de Telf" required>
+            <input type="password" name="password" placeholder="PIN" required>
+            
+            <button type="submit" class="btn-login">ENTRAR</button>
         </form>
-        <a href="/registro">¿No tienes cuenta? Regístrate aquí</a>
+
+        <a href="/registro" class="footer-link">¿No tienes cuenta? Regístrate aquí</a>
+
+        <div class="credits">Creado por Wildon C.A</div>
     </div>
+
 </body>
 </html>
