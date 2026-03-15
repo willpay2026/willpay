@@ -93,14 +93,46 @@ def dashboard():
 
 @app.route('/admin_panel')
 def admin_panel():
-    if 'user_id' not in session: return redirect(url_for('login_page'))
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    
     u = Usuario.query.get(session['user_id'])
-    if u.cedula != '13496133': return "Acceso prohibido."
+    if u.cedula != '13496133':
+        return "Acceso prohibido."
+
+    # 1. Calculamos el CAPITAL TOTAL en el Búnker
     usuarios = Usuario.query.all()
     total_red = sum(user.saldo for user in usuarios)
-    retiros = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
-    # CAMBIO: Panel Maestro está en la carpeta 'ceo'
-    return render_template('ceo/panel_maestro.html', usuarios=usuarios, total_red=total_red, retiros_pendientes=retiros)
+
+    # 2. Traemos TODA la actividad en vivo (Recargas, Pagos, Retiros)
+    # Buscamos los últimos 10 movimientos de la tabla Movimiento
+    movimientos_vivos = Movimiento.query.order_by(Movimiento.id.desc()).limit(10).all()
+
+    # 3. Filtramos los retiros pendientes específicamente para gestión rápida
+    retiros_pendientes = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
+
+    return render_template('ceo/panel_maestro.html', 
+                           u=u,
+                           usuarios=usuarios, 
+                           total_red=total_red, 
+                           movimientos=movimientos_vivos,
+                           retiros_pendientes=retiros_pendientes)
+
+@app.route('/aprobar_movimiento/<int:id>')
+def aprobar_movimiento(id):
+    if 'cedula' not in session or session['cedula'] != '13496133':
+        return "No autorizado"
+    
+    mov = Movimiento.query.get(id)
+    if mov and mov.status == 'PENDIENTE':
+        user = Usuario.query.get(mov.user_id)
+        # Sumamos el saldo al usuario
+        user.saldo += mov.monto
+        # Cambiamos el estatus del movimiento
+        mov.status = 'APROBADO'
+        db.session.commit()
+        
+    return redirect(url_for('admin_panel'))
 
 @app.route('/logout')
 def logout():
