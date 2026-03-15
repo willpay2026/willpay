@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Búnker</title>
+    <title>Will-Pay | Cargando</title>
     <style>
-        body { background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .logo-splash { width: 180px; animation: fadeOut 3s forwards; }
-        @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+        body { background: #000; height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; overflow: hidden; }
+        .fade-in { animation: fadeIn 2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .logo { width: 180px; filter: drop-shadow(0 0 15px #d4af37); }
     </style>
-    <script>
-        setTimeout(function(){ window.location.href = "/acceso"; }, 3000);
-    </script>
 </head>
 <body>
-    <img src="/static/logo_willpay.png" class="logo-splash" alt="Will-Pay">
+    <img src="/static/logonuevo.png" class="logo fade-in">
+    <script>
+        setTimeout(() => { window.location.href = "/acceso"; }, 4000);
+    </script>
 </body>
 </html>
