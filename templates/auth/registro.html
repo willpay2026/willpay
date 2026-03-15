@@ -5,38 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay | Registro</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #111; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
-        .btn-crear { background: #d4af37; color: #000; font-weight: bold; border: none; padding: 15px; width: 100%; border-radius: 10px; cursor: pointer; margin-top: 15px; }
-        .banca-box { border: 1px solid #d4af37; padding: 15px; border-radius: 12px; margin-top: 15px; background: #050505; text-align: left; width: 100%; max-width: 320px; }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 400px; text-align: left; }
+        .logo { width: 125px; display: block; margin: 0 auto 20px auto; }
+        h2 { color: #d4af37; text-align: center; font-size: 18px; text-transform: uppercase; margin-bottom: 25px; }
+        
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
+        input, select { 
+            width: 100%; padding: 12px; margin-bottom: 20px; 
+            background: #111; color: #fff; border: 1px solid #333; 
+            border-radius: 8px; box-sizing: border-box; 
+        }
+        
+        /* Estilo para carga de archivos (Auditoría Visual) */
+        .file-box { background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 20px; }
+        .file-label { font-size: 13px; color: #fff; font-weight: bold; margin-bottom: 5px; display: block; }
+        
+        .section-title { color: #d4af37; font-size: 12px; font-weight: bold; margin: 10px 0; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        
+        .btn-finalizar { 
+            background: #d4af37; color: #000; font-weight: bold; border: none; 
+            padding: 18px; width: 100%; border-radius: 10px; cursor: pointer; 
+            margin-top: 10px; font-size: 14px; text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
-    <img src="/static/logonuevo.png" style="width: 100px; margin-bottom: 20px;">
-    <h2 style="color: #d4af37;">CREAR CUENTA</h2>
-    
-    <form action="/register" method="POST" style="width: 100%; max-width: 320px;">
-        <input type="text" name="nombre" placeholder="Nombre Completo" required>
-        <input type="text" name="cedula" placeholder="Cédula de Identidad" required>
-        <input type="password" name="password" placeholder="Contraseña de acceso" required>
 
-        <div class="banca-box">
-            <p style="color: #d4af37; font-size: 11px; margin: 0 0 10px 0; font-weight: bold;">DATOS DE PAGO MÓVIL (PARA RETIROS)</p>
+    <div class="container">
+        <img src="/static/logonuevo.png" class="logo" alt="Will-Pay">
+        <h2>Registro de Usuario</h2>
+
+        <form action="/register" method="POST" enctype="multipart/form-data">
+            
+            <label>Nombre Completo (Como en Cédula)</label>
+            <input type="text" name="nombre" required>
+
+            <label>Cédula / RIF</label>
+            <input type="text" name="cedula" required>
+
+            <label>Teléfono</label>
+            <input type="text" name="telefono" required>
+
+            <label>Tipo de Usuario / Actividad</label>
+            <input type="text" name="actividad" placeholder="Ej: Comerciante, Particular">
+
+            <label>Crea tu PIN de Seguridad (6 números)</label>
+            <input type="password" name="password" maxlength="6" required>
+
+            <div class="section-title">DATOS PARA RETIRO (PAGO MÓVIL)</div>
+            
+            <label>Banco</label>
             <select name="banco" required>
                 <option value="" disabled selected>Selecciona tu Banco</option>
                 <option value="BANESCO">BANESCO</option>
                 <option value="MERCANTIL">MERCANTIL</option>
                 <option value="PROVINCIAL">PROVINCIAL</option>
                 <option value="VENEZUELA">VENEZUELA</option>
-                <option value="BNC">BNC</option>
                 <option value="BANCAMIGA">BANCAMIGA</option>
             </select>
-            <input type="text" name="telefono_pago" placeholder="Teléfono Pago Móvil" required>
-            <input type="text" name="cedula_pago" placeholder="Cédula del Titular" required>
-        </div>
 
-        <button type="submit" class="btn-crear">REGISTRARSE</button>
-        <a href="/acceso" style="color: #555; display: block; text-align: center; margin-top: 15px; text-decoration: none; font-size: 12px;">Volver al inicio</a>
-    </form>
+            <label>Teléfono Pago Móvil</label>
+            <input type="text" name="telefono_pago" required>
+
+            <label>Cédula del Titular (Pago Móvil)</label>
+            <input type="text" name="cedula_pago" required>
+
+            <div class="file-box">
+                <span class="file-label">Foto de Cédula (Auditoría Visual)</span>
+                <input type="file" name="foto_cedula" style="margin-bottom: 0;">
+            </div>
+
+            <div class="file-box">
+                <span class="file-label">Foto Selfie</span>
+                <input type="file" name="foto_selfie" style="margin-bottom: 0;">
+            </div>
+
+            <button type="submit" class="btn-finalizar">Finalizar Registro y Generar Expediente</button>
+            
+            <a href="/acceso" style="color: #555; display: block; text-align: center; margin-top: 20px; text-decoration: none; font-size: 12px;">Volver al Acceso</a>
+        </form>
+    </div>
+
 </body>
 </html>
