@@ -3,60 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Control CEO</title>
+    <title>Will-Pay | CEO</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; margin: 0; }
-        .header { border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: #111; border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: center; }
-        .stat-card h3 { color: #d4af37; margin: 0; font-size: 12px; text-transform: uppercase; }
-        .stat-card p { font-size: 20px; font-weight: bold; margin: 5px 0 0 0; }
-        
-        .seccion { margin-top: 30px; }
-        h2 { color: #d4af37; font-size: 18px; border-left: 4px solid #d4af37; padding-left: 10px; }
-        
-        .tabla-retiros { width: 100%; border-collapse: collapse; background: #0a0a0a; border-radius: 10px; overflow: hidden; }
-        .tabla-retiros th { background: #222; color: #d4af37; padding: 12px; text-align: left; font-size: 11px; }
-        .tabla-retiros td { padding: 12px; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
-        
-        .btn-accion { background: #d4af37; color: #000; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; }
-        .pago-movil-info { font-size: 11px; color: #888; margin-top: 4px; }
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
+        .stat-box { background: #111; border: 1px solid #d4af37; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { color: #d4af37; text-align: left; border-bottom: 1px solid #333; padding: 10px; font-size: 12px; }
+        td { padding: 10px; border-bottom: 1px solid #1a1a1a; font-size: 12px; }
+        .btn-aprobar { background: #d4af37; color: #000; border: none; padding: 8px; border-radius: 5px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="/static/logonuevo.png" style="width: 70px;">
-        <span style="color:#d4af37; font-weight:bold;">MODO CEO</span>
+    <div class="stat-box">
+        <h3 style="margin:0; color:#d4af37;">TOTAL EN RED</h3>
+        <h2 style="margin:10px 0;">Bs. {{ "%.2f"|format(total_red) }}</h2>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Usuarios</h3>
-            <p>{{ usuarios|length }}</p>
-        </div>
-        <div class="stat-card">
-            <h3>Saldo en Red</h3>
-            <p>Bs. {{ "%.2f"|format(total_red) }}</p>
-        </div>
-    </div>
-
-    <div class="seccion">
-        <h2>SOLICITUDES DE RETIRO</h2>
-        <table class="tabla-retiros">
-            <thead>
-                <tr>
-                    <th>USUARIO</th>
-                    <th>MONTO</th>
-                    <th>DATOS DE PAGO</th>
-                    <th>ACCIÓN</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in retiros_pendientes %}
-                <tr>
-                    <td><b>{{ r.usuario.nombre }}</b><br><small>{{ r.usuario.cedula }}</small></td>
-                    <td style="color:#d4af37; font-weight:bold;">Bs. {{ "%.2f"|format(r.monto) }}</td>
-                    <td>
-                        <div class="pago-movil-info">
-                            <b>{{ r.usuario.banco }}</b><br>
-                            {{ r.usuario.telefono_pago }}<br>
+    <h3 style="color:#d4af37; border-bottom: 1px solid #333;">RETIROS PENDIENTES</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>CLIENTE</th>
+                <th>MONTO</th>
+                <th>PAGO MÓVIL</th>
+                <th>ACCIÓN</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in retiros_pendientes %}
+            <tr>
+                <td>{{ r.usuario.nombre }}<br><small>{{ r.usuario.cedula }}</small></td>
+                <td style="color:#d4af37;">Bs. {{ "%.2f"|format(r.monto) }}</td>
+                <td>{{ r.usuario.banco }}<br>{{ r.usuario.telefono_pago }}<br>V-{{ r.usuario.cedula_pago }}</td>
+                <td>
+                    <form action="/confirmar_pago_ceo" method="POST">
+                        <input type="hidden" name="mov_id" value="{{ r.id }}">
+                        <button type="submit" class="btn-aprobar">MARCAR PAGADO</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center; padding:20px; color:#555;">No hay retiros pendientes</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
