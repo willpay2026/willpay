@@ -3,49 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | CEO</title>
+    <title>Will-Pay | Búnker CEO-0001</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
-        .stat-box { background: #111; border: 1px solid #d4af37; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { color: #d4af37; text-align: left; border-bottom: 1px solid #333; padding: 10px; font-size: 12px; }
-        td { padding: 10px; border-bottom: 1px solid #1a1a1a; font-size: 12px; }
-        .btn-aprobar { background: #d4af37; color: #000; border: none; padding: 8px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        :root { --oro: #D4AF37; --negro: #000000; --gris: #1a1a1a; --verde: #00ff00; --rojo: #ff0000; }
+        body { background-color: var(--negro); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding-bottom: 50px; text-align: center; }
+        
+        /* CABECERA CEO */
+        .header { padding: 20px; border-bottom: 2px solid var(--oro); margin-bottom: 20px; }
+        .logo { width: 100px; margin-bottom: 10px; filter: drop-shadow(0 0 10px var(--oro)); }
+        .dna-id { color: var(--oro); font-size: 0.8em; letter-spacing: 2px; margin-bottom: 5px; }
+        .ceo-name { font-size: 1.5em; font-weight: bold; text-transform: uppercase; }
+
+        /* CONTROLES DE PORCENTAJE GENERAL */
+        .controles-globales { display: flex; justify-content: space-around; background: var(--gris); margin: 15px; padding: 15px; border-radius: 10px; border: 1px solid #333; }
+        .control-item { display: flex; flex-direction: column; }
+        .control-label { font-size: 0.7em; color: var(--oro); margin-bottom: 5px; }
+        .control-box { background: black; border: 1px solid var(--oro); color: var(--oro); padding: 5px; border-radius: 5px; font-weight: bold; }
+
+        /* BÚNKER DE SALDOS */
+        .card { background: var(--gris); margin: 15px; padding: 20px; border-radius: 15px; border-left: 5px solid var(--oro); position: relative; }
+        .saldo-main { border: 2px solid var(--oro); padding: 30px; margin: 10px; border-radius: 15px; }
+        .monto-gigante { font-size: 2.5em; font-weight: bold; display: block; }
+        .sub-label { color: #666; font-size: 0.8em; text-transform: uppercase; margin-top: 5px; }
+        .card.transaccion { border-left-color: #ffcc00; }
+        .card.ganancia { border-left-color: var(--verde); }
+
+        /* CONSEJO DE SOCIOS (Los 5 Espacios) */
+        .socios-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px; }
+        .socio-card { background: #111; border: 1px solid #444; padding: 10px; border-radius: 10px; }
+        .socio-card.active { border-color: silver; }
+        .socio-label { font-size: 0.6em; color: #888; display: block; }
+        .socio-input { width: 50px; background: black; border: 1px solid silver; color: white; text-align: center; border-radius: 5px; }
+
+        /* RECARGA Y AUTOMATIZACIÓN */
+        .btn-accion { background: var(--oro); color: black; border: none; padding: 15px; width: 90%; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .switch-group { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #111; margin: 5px 15px; border-radius: 8px; }
+
+        /* BOTÓN DE PÁNICO */
+        .btn-panico { background: var(--rojo); color: white; border: none; padding: 20px; width: 90%; border-radius: 50px; font-weight: bold; font-size: 1.2em; margin-top: 30px; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
     </style>
 </head>
 <body>
-    <div class="stat-box">
-        <h3 style="margin:0; color:#d4af37;">TOTAL EN RED</h3>
-        <h2 style="margin:10px 0;">Bs. {{ "%.2f"|format(total_red) }}</h2>
+
+    <div class="header">
+        <img src="https://i.imgur.com/W2SAnCq.png" class="logo" alt="Will-Pay">
+        <div class="dna-id">ID DNA CEO-0001 - FUNDADOR</div>
+        <div class="ceo-name">WILFREDO DONQUIZ</div>
     </div>
 
-    <h3 style="color:#d4af37; border-bottom: 1px solid #333;">RETIROS PENDIENTES</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>CLIENTE</th>
-                <th>MONTO</th>
-                <th>PAGO MÓVIL</th>
-                <th>ACCIÓN</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in retiros_pendientes %}
-            <tr>
-                <td>{{ r.usuario.nombre }}<br><small>{{ r.usuario.cedula }}</small></td>
-                <td style="color:#d4af37;">Bs. {{ "%.2f"|format(r.monto) }}</td>
-                <td>{{ r.usuario.banco }}<br>{{ r.usuario.telefono_pago }}<br>V-{{ r.usuario.cedula_pago }}</td>
-                <td>
-                    <form action="/confirmar_pago_ceo" method="POST">
-                        <input type="hidden" name="mov_id" value="{{ r.id }}">
-                        <button type="submit" class="btn-aprobar">MARCAR PAGADO</button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" style="text-align:center; padding:20px; color:#555;">No hay retiros pendientes</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="controles-globales">
+        <div class="control-item">
+            <span class="control-label">% PAGOS</span>
+            <div class="control-box">0.5%</div>
+        </div>
+        <div class="control-item">
+            <span class="control-label">% RETIROS</span>
+            <div class="control-box">1.0%</div>
+        </div>
+        <div class="control-item">
+            <span class="control-label">% ACT. ECON.</span>
+            <div class="control-box">0.0%</div>
+        </div>
+    </div>
+
+    <div class="saldo-main">
+        <span class="sub-label" style="color: var(--oro)">SALDO EN Bs.</span>
+        <span class="monto-gigante">0.000,00</span>
+        <span class="sub-label">CAPITAL TOTAL EN BÚNKER</span>
+    </div>
+
+    <div class="card">
+        <span class="sub-label">DINERO DEPOSITADO</span>
+        <div style="font-size: 1.5em;">Bs. 0,00</div>
+    </div>
+
+    <div class="card transaccion">
+        <span class="sub-label">EN TRANSACCIÓN</span>
+        <div style="font-size: 1.5em;">Bs. 0,00</div>
+    </div>
+
+    <div class="card ganancia">
+        <span class="sub-label" style="color: var(--verde)">NETO GANANCIAS (LEGADO)</span>
+        <div style="font-size: 1.5em;">Bs. 0,00</div>
+    </div>
+
+    <h3 style="color: var(--oro); font-size: 0.9em; margin-top: 20px;">CONSEJO DE SOCIOS (RESERVADO)</h3>
+    <div class="socios-grid">
+        <div class="socio-card active">
+            <span class="socio-label">SOCIO 01</span>
+            <input type="text" class="socio-input" value="0%">
+            <span class="socio-label">PARTICIPACIÓN</span>
+        </div>
+        <div class="socio-card">
+            <span class="socio-label">SOCIO 02</span>
+            <input type="text" class="socio-input" placeholder="0%">
+            <span class="socio-label">DISPONIBLE</span>
+        </div>
+        <div class="socio-card"><span class="socio-label">SOCIO 03</span><input type="text" class="socio-input" disabled></div>
+        <div class="socio-card"><span class="socio-label">SOCIO 04</span><input type="text" class="socio-input" disabled></div>
+        <div class="socio-card"><span class="socio-label">SOCIO 05</span><input type="text" class="socio-input" disabled></div>
+    </div>
+
+    <div class="card">
+        <div class="switch-group">
+            <span>Auto-Aprobación Saldo</span>
+            <input type="checkbox">
+        </div>
+        <div class="switch-group">
+            <span>Auto-Aprobación Retiro</span>
+            <input type="checkbox">
+        </div>
+        <button class="btn-accion">GUARDAR CAMBIOS</button>
+    </div>
+
+    <button class="btn-panico">
+        <i class="fas fa-radiation"></i> BOTÓN DE PÁNICO
+    </button>
+
 </body>
 </html>
