@@ -5,9 +5,10 @@ from datetime import datetime
 import random
 
 app = Flask(__name__)
-app.secret_key = 'willpay_master_ultra_key'
+app.secret_key = 'willpay_ultra_secret_2026'
 
-# Configuración de Base de Datos (Render usa DATABASE_URL)
+# Configuración de Base de Datos para Render
+# Si usas PostgreSQL en Render, la variable se saca del entorno
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///willpay.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -21,7 +22,7 @@ class Usuario(db.Model):
     cedula = db.Column(db.String(20), unique=True)
     password = db.Column(db.String(100))
     saldo = db.Column(db.Float, default=0.0)
-    # Datos de Retiro
+    # CAMPOS BANCARIOS PARA RETIRO
     banco = db.Column(db.String(50))
     telefono_pago = db.Column(db.String(20))
     cedula_pago = db.Column(db.String(20))
@@ -36,10 +37,11 @@ class Movimiento(db.Model):
 
 # --- INICIALIZACIÓN ---
 with app.app_context():
-    # db.drop_all() # <--- Úsalo una vez si quieres resetear todo por los cambios de banco
+    # Solo descomenta la siguiente línea si necesitas borrar todo y empezar de cero
+    # db.drop_all() 
     db.create_all()
 
-# --- RUTAS ---
+# --- RUTAS DE ACCESO (Carpeta templates/auth) ---
 
 @app.route('/')
 def index():
@@ -47,11 +49,13 @@ def index():
 
 @app.route('/acceso')
 def login_page():
-    return render_template('login.html')
+    # Apunta a templates/auth/acceso.html
+    return render_template('auth/acceso.html')
 
 @app.route('/registro')
 def registro_page():
-    return render_template('registro.html')
+    # Apunta a templates/auth/registro.html
+    return render_template('auth/registro.html')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -61,7 +65,7 @@ def login():
     if user:
         session['user_id'] = user.id
         return redirect(url_for('dashboard'))
-    return "Credenciales incorrectas"
+    return "Credenciales incorrectas. <a href='/acceso'>Volver</a>"
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -78,15 +82,19 @@ def register():
         db.session.add(nuevo)
         db.session.commit()
         return redirect(url_for('login_page'))
-    except:
-        return "Error: La cédula ya existe."
+    except Exception as e:
+        return f"Error al registrar: La cédula ya existe o faltan datos."
+
+# --- RUTAS DE USUARIO (Carpeta templates/user) ---
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login_page'))
     u = Usuario.query.get(session['user_id'])
+    # Traemos los últimos 10 movimientos
     movs = Movimiento.query.filter_by(user_id=u.id).order_by(Movimiento.fecha.desc()).limit(10).all()
-    return render_template('dashboard.html', u=u, movimientos=movs)
+    # Apunta a templates/user/dashboard.html
+    return render_template('user/dashboard.html', u=u, movimientos=movs)
 
 @app.route('/ejecutar_pago', methods=['POST'])
 def ejecutar_pago():
@@ -100,12 +108,9 @@ def ejecutar_pago():
     
     if emisor and emisor.saldo >= monto:
         ref = f"WP-{random.randint(100000, 999999)}"
-        # Restar al que paga
         emisor.saldo -= monto
-        # Sumar al que cobra
         receptor.saldo += monto
         
-        # Guardar movimientos para auditoría
         m1 = Movimiento(user_id=emisor.id, tipo="PAGO ENVIADO", monto=monto, referencia=ref)
         m2 = Movimiento(user_id=receptor.id, tipo="PAGO RECIBIDO", monto=monto, referencia=ref)
         
@@ -114,7 +119,7 @@ def ejecutar_pago():
         db.session.commit()
         return jsonify({'status': 'ok', 'referencia': ref})
     
-    return jsonify({'status': 'error', 'msg': 'Saldo insuficiente o usuario no existe'})
+    return jsonify({'status': 'error', 'msg': 'Saldo insuficiente o cliente no encontrado'})
 
 @app.route('/solicitar_retiro', methods=['POST'])
 def solicitar_retiro():
@@ -125,14 +130,27 @@ def solicitar_retiro():
     if u.saldo >= monto:
         ref = f"RET-{random.randint(1000, 9999)}"
         u.saldo -= monto
-        # Registramos el retiro en el historial
         mov = Movimiento(user_id=u.id, tipo="RETIRO SOLICITADO", monto=monto, referencia=ref)
         db.session.add(mov)
         db.session.commit()
-        # Aquí podrías enviar un correo o mensaje de que alguien pidió retiro
         return redirect(url_for('dashboard'))
+    return "Saldo insuficiente."
+
+# --- RUTA CEO (Carpeta templates/ceo) ---
+
+@app.route('/admin_panel')
+def admin_panel():
+    # Solo entra si el usuario es Wilfredo (ID 13496133)
+    if 'user_id' not in session: return redirect(url_for('login_page'))
+    u = Usuario.query.get(session['user_id'])
+    if u.cedula != '13496133': 
+        return "Acceso denegado. Solo para el CEO."
     
-    return "Saldo insuficiente para retirar"
+    usuarios = Usuario.query.all()
+    total_red = sum(user.saldo for user in usuarios)
+    retiros = Movimiento.query.filter_by(tipo="RETIRO SOLICITADO").all()
+    
+    return render_template('ceo/panel_maestro.html', usuarios=usuarios, total_red=total_red, retiros_pendientes=retiros)
 
 @app.route('/logout')
 def logout():
