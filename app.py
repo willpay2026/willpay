@@ -34,36 +34,28 @@ class Movimiento(db.Model):
 with app.app_context():
     db.create_all()
 
-# --- RUTAS DE ACCESO CORREGIDAS ---
+# --- RUTAS DE ACCESO (ESTRUCTURA SEGÚN GITHUB) ---
 
 @app.route('/')
 def index():
-    # Cambiado para que coincida con tu imagen: carpeta auth
+    # Apunta a templates/auth/splash.html según tu captura
     return render_template('auth/splash.html')
 
 @app.route('/acceso')
 def login_page():
-    # También apuntando a la carpeta auth como en tu estructura
+    # Apunta a templates/auth/acceso.html según tu captura
     return render_template('auth/acceso.html')
-    
-@app.route('/')
-def index():
-    # Eliminado 'common/'. Ahora busca splash.html en la raíz de templates
-    return render_template('splash.html')
-
-@app.route('/acceso')
-def login_page():
-    # Eliminado 'auth/'. Ahora busca acceso.html en la raíz de templates
-    return render_template('acceso.html')
 
 @app.route('/registro')
 def registro_page():
-    # Eliminado 'auth/'. Ahora busca registro.html en la raíz de templates
-    return render_template('registro.html')
+    # Si registro está fuera de auth, quita el 'auth/'
+    return render_template('auth/registro.html')
 
 @app.route('/terminos')
 def terminos():
     return render_template('terminos.html')
+
+# --- LÓGICA DE USUARIO ---
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -98,8 +90,6 @@ def dashboard():
     if 'user_id' not in session: return redirect(url_for('login_page'))
     u = Usuario.query.get(session['user_id'])
     movs = Movimiento.query.filter_by(user_id=u.id).order_by(Movimiento.fecha.desc()).limit(10).all()
-    # Si dashboard.html está en una carpeta 'user', déjalo así, 
-    # pero si falla, quítale el 'user/' también.
     return render_template('dashboard.html', u=u, movimientos=movs)
 
 @app.route('/admin_panel')
