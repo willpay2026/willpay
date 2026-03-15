@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay | Búnker</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Will-Pay">
+    <link rel="apple-touch-icon" href="/static/logonuevo.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --dorado: #d4af37; --negro: #000; }
@@ -93,7 +101,11 @@
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({emisor: emisor, monto: monto})
                         }).then(r => r.json()).then(d => {
-                            if(d.status==='ok'){ alert("✅ COBRO EXITOSO"); location.reload(); }
+                            if(d.status==='ok'){ 
+                                if (navigator.vibrate) navigator.vibrate(100);
+                                alert("✅ COBRO EXITOSO"); 
+                                location.reload(); 
+                            }
                             else { alert("❌ ERROR: " + d.msg); }
                         });
                     }
