@@ -9,14 +9,15 @@
         :root {
             --dorado: #d4af37;
             --negro-puro: #000000;
-            --gris-oscuro: #1a1a1a;
+            --gris-oscuro: #111111;
             --blanco: #ffffff;
+            --dorado-glow: rgba(212, 175, 55, 0.2);
         }
 
         body { 
             background-color: var(--negro-puro); 
             color: var(--blanco); 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
@@ -24,111 +25,111 @@
             margin: 0;
         }
 
-        /* Estilo del Logo */
-        .logo-container { margin: 20px 0; }
-        .logo { width: 130px; filter: drop-shadow(0px 0px 5px rgba(212, 175, 55, 0.3)); }
+        /* Logo con estilo */
+        .logo-container { margin: 30px 0; }
+        .logo { width: 140px; filter: drop-shadow(0px 0px 8px var(--dorado-glow)); }
 
-        /* La Bóveda de Saldo */
+        /* La Bóveda (Card de Saldo) */
         .boveda { 
             border: 2px solid var(--dorado); 
-            border-radius: 25px; 
-            padding: 25px; 
+            border-radius: 28px; 
+            padding: 30px; 
             width: 90%; 
-            max-width: 400px;
+            max-width: 380px;
             text-align: center; 
-            background: linear-gradient(145deg, #0f0f0f, #000000);
-            box-shadow: 0px 10px 30px rgba(212, 175, 55, 0.1);
+            background: linear-gradient(145deg, #0a0a0a, #000000);
+            box-shadow: 0px 15px 35px rgba(0, 0, 0, 0.8), 0px 0px 15px var(--dorado-glow);
             margin-bottom: 25px;
+            position: relative;
         }
 
-        .label-saldo { color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .label-saldo { color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px; }
         
         .saldo { 
-            font-size: 40px; 
+            font-size: 42px; 
             font-weight: 800; 
             color: var(--blanco); 
             margin: 10px 0;
-            text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
         }
         .saldo span { color: var(--dorado); }
 
-        /* Botón Recargar dentro de la Bóveda */
         .btn-recarga {
             background-color: var(--dorado);
             color: var(--negro-puro);
             border: none;
-            padding: 10px 25px;
+            padding: 10px 20px;
             border-radius: 50px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
-            transition: transform 0.2s;
             margin-top: 15px;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* Botones Principales */
-        .btn-group { display: flex; gap: 15px; width: 90%; max-width: 400px; justify-content: center; }
+        /* Botones de Acción Pagar/Cobrar */
+        .btn-group { display: flex; gap: 12px; width: 90%; max-width: 380px; justify-content: center; }
         
         .btn { 
             border: none; 
-            padding: 18px; 
-            border-radius: 15px; 
+            padding: 20px; 
+            border-radius: 18px; 
             font-weight: bold; 
             cursor: pointer; 
             flex: 1; 
             text-transform: uppercase; 
-            font-size: 14px;
-            transition: all 0.3s;
+            font-size: 13px;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
         }
 
         .btn-pagar { 
             background-color: var(--dorado); 
             color: var(--negro-puro);
-            box-shadow: 0px 4px 15px rgba(212, 175, 55, 0.2);
         }
 
         .btn-cobrar { 
             background-color: var(--gris-oscuro); 
             color: var(--blanco); 
-            border: 1px solid #333; 
+            border: 1px solid #222; 
         }
 
-        .btn:active { transform: scale(0.95); }
+        .btn:active { transform: scale(0.96); opacity: 0.9; }
 
-        /* Tabla de Movimientos */
-        .movimientos { width: 100%; max-width: 450px; margin-top: 40px; }
+        /* Tabla de Auditoría (Limpia) */
+        .movimientos { width: 100%; max-width: 420px; margin-top: 45px; }
         
         .titulo-seccion { 
-            text-align: left; 
-            font-size: 14px; 
+            text-align: center; 
+            font-size: 12px; 
             font-weight: bold; 
             color: var(--dorado);
             text-transform: uppercase;
-            margin-bottom: 15px;
-            padding-left: 10px;
-            border-left: 3px solid var(--dorado);
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            opacity: 0.8;
         }
 
-        .tabla { width: 100%; border-collapse: collapse; background-color: #050505; border-radius: 15px; overflow: hidden; }
+        .tabla { width: 100%; border-collapse: collapse; }
         
         .tabla th { 
-            background-color: var(--gris-oscuro); 
-            color: var(--dorado); 
+            border-bottom: 1px solid #222;
+            color: #444; 
             padding: 12px; 
-            font-size: 11px; 
+            font-size: 10px; 
             text-align: center;
         }
         
         .tabla td { 
             border-bottom: 1px solid #111; 
-            padding: 15px 10px; 
+            padding: 18px 10px; 
             text-align: center; 
-            font-size: 13px;
-            color: #ccc;
+            font-size: 12px;
+            color: #888;
         }
 
-        .monto-tabla { color: var(--blanco); font-weight: bold; }
+        .monto-tabla { color: var(--blanco); font-weight: bold; font-size: 14px; }
+        .ref-tabla { font-family: monospace; color: #555; }
     </style>
 </head>
 <body>
@@ -138,48 +139,44 @@
     </div>
 
     <div class="boveda">
-        <p class="label-saldo">Saldo Disponible</p>
+        <p class="label-saldo">Fondo Disponible</p>
         <div class="saldo">Bs. <span>{{ "%.2f"|format(u.saldo) }}</span></div>
-        <button class="btn-recarga" onclick="location.href='/recargar'">+ Recargar Saldo</button>
+        <button class="btn-recarga" onclick="location.href='/recargar'">Notificar Pago</button>
     </div>
     
     <div class="btn-group">
-        <button class="btn btn-pagar" onclick="location.href='/pagar'">
-            <span style="font-size: 18px; margin-right: 5px;">📷</span> Pagar
-        </button>
-        <button class="btn btn-cobrar" onclick="location.href='/cobrar'">
-            <span style="font-size: 18px; margin-right: 5px;">💰</span> Cobrar
-        </button>
+        <button class="btn btn-pagar" onclick="location.href='/pagar'">Pagar</button>
+        <button class="btn btn-cobrar" onclick="location.href='/cobrar'">Cobrar</button>
     </div>
 
     <div class="movimientos">
-        <p class="titulo-seccion">Historial de Auditoría</p>
+        <p class="titulo-seccion">Registro de Auditoría</p>
         <table class="tabla">
             <thead>
                 <tr>
                     <th>FECHA</th>
                     <th>REFERENCIA</th>
-                    <th>MONTO</th>
+                    <th>VALOR</th>
                 </tr>
             </thead>
             <tbody>
                 {% for m in movimientos %}
                 <tr>
                     <td>{{ m.fecha.strftime('%d/%m') }}</td>
-                    <td style="font-family: monospace; color: #888;">{{ m.referencia }}</td>
+                    <td class="ref-tabla">{{ m.referencia }}</td>
                     <td class="monto-tabla">Bs. {{ "%.2f"|format(m.monto) }}</td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="3" style="color: #444; padding: 30px;">Sin movimientos recientes</td>
+                    <td colspan="3" style="padding: 40px; font-style: italic; color: #222;">Sin historial disponible</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <div style="margin-top: 50px; color: #333; font-size: 10px; letter-spacing: 1px;">
-        WILL-PAY © 2026 | EL LEGADO
+    <div style="margin: 60px 0 20px 0; color: #222; font-size: 9px; letter-spacing: 4px; text-transform: uppercase;">
+        Will-Pay Digital Legacy
     </div>
 
 </body>
