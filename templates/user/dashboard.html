@@ -88,12 +88,35 @@
 
     <script>
         let html5QrCode;
+
+        // FUNCIÓN QUIRÚRGICA PARA EL SONIDO (BEEP)
+        function sonarBeep() {
+            try {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = context.createOscillator();
+                const gain = context.createGain();
+                osc.connect(gain);
+                gain.connect(context.destination);
+                osc.type = "sine";
+                osc.frequency.value = 880; 
+                gain.gain.setValueAtTime(0, context.currentTime);
+                gain.gain.linearRampToValueAtTime(0.5, context.currentTime + 0.05);
+                gain.gain.linearRampToValueAtTime(0, context.currentTime + 0.3);
+                osc.start();
+                osc.stop(context.currentTime + 0.3);
+            } catch(e) { console.log("Audio no soportado"); }
+        }
         
         function abrirModal(id) {
             document.getElementById(id).style.display = 'flex';
             if(id === 'modalCobrar') { 
                 html5QrCode = new Html5Qrcode("reader");
-                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 200 }, (text) => {
+                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+                    
+                    // ACCIONES AL DETECTAR QR
+                    sonarBeep();
+                    if (navigator.vibrate) navigator.vibrate(100);
+
                     const [emisor, monto] = text.split('|');
                     if(confirm(`¿Confirmas el cobro de Bs. ${monto} a la cuenta ${emisor}?`)) {
                         fetch('/ejecutar_pago', {
@@ -102,8 +125,16 @@
                             body: JSON.stringify({emisor: emisor, monto: monto})
                         }).then(r => r.json()).then(d => {
                             if(d.status==='ok'){ 
-                                if (navigator.vibrate) navigator.vibrate(100);
-                                alert("✅ COBRO EXITOSO"); 
+                                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                                
+                                // COMPROBANTE DE AUDITORÍA DETALLADO
+                                alert(`✅ TRANSACCIÓN EXITOSA\n\n` +
+                                      `Referencia: ${d.referencia || 'Generando...'}\n` +
+                                      `Emisor: ${emisor}\n` +
+                                      `Receptor: {{ u.cedula }}\n` +
+                                      `Monto: Bs. ${monto}\n` +
+                                      `Fecha: ${new Date().toLocaleString()}`);
+                                      
                                 location.reload(); 
                             }
                             else { alert("❌ ERROR: " + d.msg); }
