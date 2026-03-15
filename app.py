@@ -34,22 +34,26 @@ class Movimiento(db.Model):
 with app.app_context():
     db.create_all()
 
+# --- RUTAS DE ACCESO CORREGIDAS ---
+
 @app.route('/')
 def index():
-    # Carga el Splash de 5 segundos
-    return render_template('common/splash.html')
+    # Eliminado 'common/'. Ahora busca splash.html en la raíz de templates
+    return render_template('splash.html')
 
 @app.route('/acceso')
 def login_page():
-    return render_template('auth/acceso.html')
+    # Eliminado 'auth/'. Ahora busca acceso.html en la raíz de templates
+    return render_template('acceso.html')
 
 @app.route('/registro')
 def registro_page():
-    return render_template('auth/registro.html')
+    # Eliminado 'auth/'. Ahora busca registro.html en la raíz de templates
+    return render_template('registro.html')
 
 @app.route('/terminos')
 def terminos():
-    return render_template('common/terminos.html')
+    return render_template('terminos.html')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -84,7 +88,9 @@ def dashboard():
     if 'user_id' not in session: return redirect(url_for('login_page'))
     u = Usuario.query.get(session['user_id'])
     movs = Movimiento.query.filter_by(user_id=u.id).order_by(Movimiento.fecha.desc()).limit(10).all()
-    return render_template('user/dashboard.html', u=u, movimientos=movs)
+    # Si dashboard.html está en una carpeta 'user', déjalo así, 
+    # pero si falla, quítale el 'user/' también.
+    return render_template('dashboard.html', u=u, movimientos=movs)
 
 @app.route('/admin_panel')
 def admin_panel():
@@ -94,7 +100,7 @@ def admin_panel():
     usuarios = Usuario.query.all()
     total_red = sum(user.saldo for user in usuarios)
     retiros = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
-    return render_template('ceo/panel_maestro.html', usuarios=usuarios, total_red=total_red, retiros_pendientes=retiros)
+    return render_template('panel_maestro.html', usuarios=usuarios, total_red=total_red, retiros_pendientes=retiros)
 
 @app.route('/logout')
 def logout():
