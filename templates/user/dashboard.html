@@ -4,181 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay | Búnker</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
-
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --dorado: #d4af37; --negro: #000; }
-        body { background: var(--negro); color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .boveda { border: 2px solid var(--dorado); border-radius: 20px; padding: 20px; width: 100%; max-width: 350px; text-align: center; margin-bottom: 20px; }
+        body { background: var(--negro); color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .boveda { border: 2px solid var(--dorado); border-radius: 20px; padding: 20px; width: 100%; max-width: 350px; text-align: center; margin-bottom: 20px; box-sizing: border-box; }
         .btn-group { display: flex; gap: 10px; width: 100%; max-width: 350px; margin-bottom: 10px; }
-        .btn { border: none; padding: 15px; border-radius: 10px; font-weight: bold; flex: 1; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+        .btn { border: none; padding: 15px; border-radius: 10px; font-weight: bold; flex: 1; cursor: pointer; text-transform: uppercase; font-size: 11px; }
         .btn-pagar { background: var(--dorado); color: #000; }
         .btn-cobrar { background: #222; color: #fff; border: 1px solid #444; }
-        
-        /* MODALES */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         .modal-content { background: #111; padding: 20px; border-radius: 15px; border: 1px solid var(--dorado); width: 85%; max-width: 320px; text-align: center; }
-        
-        /* ESTILO TICKET (Como la imagen) */
-        .ticket { background: #fff; color: #000; padding: 20px; border-radius: 10px; font-family: monospace; text-align: left; }
-        .ticket-header { text-align: center; margin-bottom: 10px; }
-        .ticket-logo { width: 80px; margin-bottom: 5px; }
-        .sep { border-top: 1px dashed #000; margin: 10px 0; }
-        .ticket-info p { margin: 3px 0; font-size: 11px; }
-        .monto-neto { text-align: center; margin: 15px 0; }
-        .monto-neto h4 { margin: 0; font-size: 12px; }
-        .monto-neto h2 { margin: 5px 0; font-size: 24px; }
-        .ticket-footer { text-align: center; font-size: 9px; color: #666; margin-top: 10px; }
-        
-        input { width: 100%; padding: 10px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; box-sizing: border-box; border-radius: 8px; }
-        #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
-        .historial { width: 100%; max-width: 350px; margin-top: 20px; }
-        .item { border-bottom: 1px solid #222; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
+        .item { width: 100%; max-width: 350px; border-bottom: 1px solid #222; padding: 12px 0; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
-    <img src="/static/logonuevo.png" style="width: 100px; margin-bottom: 20px;">
+    <img src="/static/logonuevo.png" style="width: 80px; margin-bottom: 20px;">
     
     <div class="boveda">
-        <p style="font-size: 12px; color: #888;">SALDO DISPONIBLE</p>
-        <h2 style="font-size: 30px; margin: 5px 0;">Bs. {{ "%.2f"|format(u.saldo) }}</h2>
-        <button class="btn" style="background:#111; color:var(--dorado); width:100%; margin-top:10px; border:1px solid var(--dorado);" onclick="abrirModal('modalRecargar')">⚡ NOTIFICAR RECARGA</button>
+        <p style="font-size: 11px; color: #888; margin: 0;">SALDO DISPONIBLE</p>
+        <h2 style="font-size: 34px; margin: 10px 0;">Bs. {{ "%.2f"|format(u.saldo) }}</h2>
+        <button class="btn" style="background:#111; color:var(--dorado); border:1px solid var(--dorado); width:100%" onclick="abrirModal('modalRetirar')">🏦 RETIRAR A PAGO MÓVIL</button>
     </div>
 
     <div class="btn-group">
-        <button class="btn btn-pagar" onclick="abrirModal('modalPagar')">📤 PAGAR</button>
-        <button class="btn btn-cobrar" onclick="abrirModal('modalCobrar')">📥 COBRAR</button>
+        <button class="btn btn-pagar" onclick="abrirModal('modalPagar')">📤 PAGAR (QR)</button>
+        <button class="btn btn-cobrar" onclick="abrirModal('modalCobrar')">📥 COBRAR (CÁMARA)</button>
     </div>
 
-    <div class="historial">
-        <p style="color: #444; font-size: 12px; font-weight: bold; border-bottom: 1px solid #222; padding-bottom: 5px;">MOVIMIENTOS RECIENTES</p>
+    <div style="width:100%; max-width:350px; margin-top:20px;">
+        <p style="color:#444; font-size:11px; font-weight:bold; text-transform:uppercase;">Historial de Movimientos</p>
         {% for m in movimientos %}
         <div class="item">
-            <span style="font-size: 12px;">{{ m.tipo }}<br><small style="color:#444;">Ref: {{ m.referencia }}</small></span>
-            <span style="color: var(--dorado); font-weight: bold;">Bs. {{ "%.2f"|format(m.monto) }}</span>
+            <span style="font-size:12px;">{{ m.tipo }}<br><small style="color:#444;">{{ m.fecha.strftime('%d/%m %H:%M') }}</small></span>
+            <span style="color:var(--dorado); font-weight:bold;">Bs. {{ "%.2f"|format(m.monto) }}</span>
         </div>
         {% endfor %}
     </div>
 
-    <div id="modalPagar" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--dorado)">GENERAR PAGO</h3>
-            <input type="number" id="montoPagar" placeholder="Monto Bs.">
-            <button class="btn btn-pagar" style="width:100%" onclick="generarQR()">MOSTRAR CÓDIGO</button>
-            <div id="qr-result" style="margin-top:15px; display: flex; justify-content: center;"></div>
-            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer;">← Volver</p>
-        </div>
-    </div>
-
-    <div id="modalCobrar" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--dorado)">ESCANEAR CLIENTE</h3>
-            <div id="reader"></div>
-            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer;">Cancelar</p>
-        </div>
-    </div>
-
-    <div id="modalTicket" class="modal">
-        <div class="modal-content" style="background:transparent; border:none;">
-            <div class="ticket">
-                <div class="ticket-header">
-                    <img src="/static/logonuevo.png" class="ticket-logo"><br>
-                    <b style="font-size: 14px;">Will-Pay</b><br>
-                    <small>Tu Billetera Digital de Confianza</small><br>
-                    <div style="background:#000; color:#fff; display:inline-block; padding:2px 10px; margin-top:5px; font-size:10px;">COMPROBANTE ELECTRÓNICO</div>
-                </div>
-                <div class="sep"></div>
-                <div class="ticket-info">
-                    <p><b>Nro. OPERACIÓN:</b> <span id="t-ref"></span></p>
-                    <p><b>FECHA/HORA:</b> <span id="t-fecha"></span></p>
-                    <p><b>CLIENTE:</b> <span id="t-cliente"></span></p>
-                    <p><b>COMERCIO:</b> WILL-PAY SERV.</p>
-                    <p><b>ESTATUS:</b> <span style="color:green">CERTIFICADO ✅</span></p>
-                </div>
-                <div class="sep"></div>
-                <div class="monto-neto">
-                    <h4>MONTO NETO</h4>
-                    <h2>Bs. <span id="t-monto"></span></h2>
-                </div>
-                <div class="sep"></div>
-                <div class="ticket-footer">
-                    Este ticket sirve como respaldo para auditorías contables de la red Will-Pay.
-                </div>
-            </div>
-            <button class="btn" style="background:#000; color:#fff; width:100%; margin-top:15px;" onclick="location.reload()">FINALIZAR</button>
-        </div>
-    </div>
-
-    <div id="modalRecargar" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--dorado)">RECARGAR</h3>
-            <form action="/notificar_pago" method="POST" enctype="multipart/form-data">
-                <input type="number" name="monto" placeholder="Monto Bs." required step="0.01">
-                <input type="text" name="referencia" placeholder="Ref. Bancaria" required>
-                <input type="file" name="capture" accept="image/*" required style="font-size:10px;">
-                <button type="submit" class="btn btn-pagar" style="width:100%; margin-top:10px;">ENVIAR</button>
-            </form>
-            <p onclick="cerrarModales()" style="color:#555; margin-top:15px; cursor:pointer;">Cerrar</p>
-        </div>
-    </div>
+    <div id="modalRetirar" class="modal"><div class="modal-content">
+        <h3 style="color:var(--dorado)">SOLICITAR RETIRO</h3>
+        <p style="font-size:11px; color:#888;">Se enviará a: {{ u.banco }}<br>{{ u.telefono_pago }}</p>
+        <form action="/solicitar_retiro" method="POST">
+            <input type="number" name="monto" placeholder="Monto Bs." required step="0.01" max="{{ u.saldo }}">
+            <button type="submit" class="btn btn-pagar" style="width:100%">CONFIRMAR RETIRO</button>
+        </form>
+        <p onclick="cerrarModales()" style="cursor:pointer; color:#555; margin-top:15px;">Cancelar</p>
+    </div></div>
 
     <script>
-        let html5QrCode;
-        function sonarBeep() {
-            try {
-                const context = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = context.createOscillator();
-                const gain = context.createGain();
-                osc.connect(gain); gain.connect(context.destination);
-                osc.type = "sine"; osc.frequency.value = 880; 
-                gain.gain.setValueAtTime(0, context.currentTime);
-                gain.gain.linearRampToValueAtTime(0.5, context.currentTime + 0.05);
-                gain.gain.linearRampToValueAtTime(0, context.currentTime + 0.3);
-                osc.start(); osc.stop(context.currentTime + 0.3);
-            } catch(e) {}
-        }
-
-        function abrirModal(id) {
-            document.getElementById(id).style.display = 'flex';
-            if(id === 'modalCobrar') { 
-                html5QrCode = new Html5Qrcode("reader");
-                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                    sonarBeep();
-                    const [emisor, monto] = text.split('|');
-                    if(confirm(`¿Cobrar Bs. ${monto}?`)) {
-                        fetch('/ejecutar_pago', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({emisor: emisor, monto: monto})
-                        }).then(r => r.json()).then(d => {
-                            if(d.status==='ok'){
-                                document.getElementById('t-ref').innerText = d.referencia;
-                                document.getElementById('t-fecha').innerText = new Date().toLocaleString();
-                                document.getElementById('t-cliente').innerText = emisor;
-                                document.getElementById('t-monto').innerText = parseFloat(monto).toFixed(2);
-                                document.getElementById('modalTicket').style.display = 'flex';
-                            } else { alert("Error: " + d.msg); }
-                        });
-                    }
-                    cerrarModales();
-                });
-            }
-        }
-
-        function cerrarModales() {
-            document.querySelectorAll('.modal').forEach(m => { if(m.id !== 'modalTicket') m.style.display = 'none'; });
-            if(html5QrCode) html5QrCode.stop().catch(()=>{});
-        }
-
-        function generarQR() {
-            const m = document.getElementById('montoPagar').value;
-            if(!m) return alert("Ingresa monto");
-            document.getElementById('qr-result').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ u.cedula }}|${m}" style="background:#fff; padding:10px; border-radius:5px;">`;
-        }
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function cerrarModales() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
     </script>
 </body>
 </html>
