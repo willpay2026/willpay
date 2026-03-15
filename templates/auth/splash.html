@@ -3,22 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Bienvenido</title>
+    <title>Will-Pay</title>
     <style>
-        body { background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0; font-family: sans-serif; overflow: hidden; }
-        .logo { width: 150px; animation: scaleUp 2s infinite alternate; }
-        @keyframes scaleUp { from { transform: scale(1); } to { transform: scale(1.1); } }
-        .vision { color: #d4af37; margin-top: 20px; letter-spacing: 3px; font-weight: bold; }
+        body { 
+            background-color: #000; 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden;
+        }
+        .logo-splash {
+            width: 200px; /* Ajusta el tamaño a tu gusto */
+            height: auto;
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <img src="/static/logonuevo.png" class="logo">
-    <div class="vision">WILL-PAY</div>
-    <p style="font-size: 10px; color: #444; margin-top: 50px;">EL LEGADO DE FALCÓN</p>
+
+    <img src="{{ url_for('static', filename='logonuevo.png') }}" class="logo-splash">
 
     <script>
-        // Después de 5 segundos, salta al acceso
-        setTimeout(() => { window.location.href = "/acceso"; }, 3000);
+        // Redirección exacta a los 5 segundos (5000 milisegundos)
+        setTimeout(function() {
+            window.location.href = "{{ url_for('login_page') }}";
+        }, 5000);
     </script>
 </body>
 </html>
