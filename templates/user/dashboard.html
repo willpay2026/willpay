@@ -6,21 +6,29 @@
     <title>Will-Pay | Búnker</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root { --dorado: #d4af37; --negro: #000; --gris: #111; }
+        :root { --dorado: #d4af37; --negro: #000; --gris: #111; --verde: #28a745; }
         body { background: var(--negro); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .logo { width: 130px; margin: 20px 0; filter: drop-shadow(0 0 8px rgba(212,175,55,0.2)); }
-        .boveda { border: 2px solid var(--dorado); border-radius: 25px; padding: 25px; width: 90%; max-width: 380px; text-align: center; margin-bottom: 25px; background: linear-gradient(145deg, #0a0a0a, #000); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .saldo { font-size: 40px; font-weight: 800; color: #fff; }
-        .saldo span { color: var(--dorado); }
-        .btn-group { display: flex; gap: 12px; width: 90%; max-width: 380px; }
-        .btn { border: none; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; flex: 1; text-transform: uppercase; font-size: 13px; }
-        .btn-pagar { background: var(--dorado); color: #000; }
-        .btn-cobrar { background: var(--gris); color: #fff; border: 1px solid #333; }
+        .logo { width: 120px; margin: 15px 0; }
         
-        /* VENTANAS MODALES */
+        .boveda { border: 2px solid var(--dorado); border-radius: 25px; padding: 25px; width: 90%; max-width: 380px; text-align: center; background: #050505; margin-bottom: 20px; }
+        .saldo { font-size: 35px; font-weight: bold; color: #fff; }
+        .saldo span { color: var(--dorado); }
+        
+        .btn-group { display: flex; gap: 10px; width: 95%; max-width: 400px; margin-bottom: 25px; }
+        .btn { border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; flex: 1; text-transform: uppercase; font-size: 12px; }
+        .btn-pagar { background: var(--dorado); color: #000; } /* Genera QR */
+        .btn-cobrar { background: var(--gris); color: #fff; border: 1px solid #333; } /* Abre Cámara */
+        .btn-recargar { background: #1a1a1a; color: var(--dorado); border: 1px solid var(--dorado); margin-top: 10px; width: 100%; }
+
+        /* Historial */
+        .historial { width: 95%; max-width: 400px; text-align: left; }
+        .transaccion { background: #0a0a0a; padding: 12px; border-radius: 10px; margin-bottom: 8px; border-left: 3px solid var(--dorado); display: flex; justify-content: space-between; align-items: center; }
+        .monto-historial { font-weight: bold; color: var(--dorado); }
+
+        /* Modales */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        .modal-content { background: #0a0a0a; width: 85%; max-width: 350px; padding: 30px; border-radius: 25px; border: 1px solid var(--dorado); text-align: center; }
-        input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 12px; border: 1px solid #222; background: #000; color: #fff; font-size: 20px; text-align: center; }
+        .modal-content { background: #0a0a0a; width: 85%; max-width: 350px; padding: 25px; border-radius: 20px; border: 1px solid var(--dorado); text-align: center; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #222; background: #000; color: #fff; box-sizing: border-box; }
         #reader { width: 100%; border-radius: 15px; overflow: hidden; border: 2px solid var(--dorado); }
     </style>
 </head>
@@ -29,66 +37,95 @@
     <img src="/static/logonuevo.png" class="logo">
     
     <div class="boveda">
-        <p style="color: #666; font-size: 11px; letter-spacing: 2px;">FONDO DISPONIBLE</p>
+        <p style="color: #666; font-size: 11px; letter-spacing: 2px;">SALDO DISPONIBLE</p>
         <div class="saldo">Bs. <span>{{ "%.2f"|format(u.saldo) }}</span></div>
-        <button onclick="location.href='/recargar'" style="background:none; border:1px solid #333; color:#555; padding:5px 10px; border-radius:20px; font-size:9px; margin-top:10px;">Notificar Pago</button>
+        <button class="btn btn-recargar" onclick="abrirModal('modalRecargar')">⚡ NOTIFICAR RECARGA</button>
     </div>
     
     <div class="btn-group">
-        <button class="btn btn-pagar" onclick="abrirPagar()">📷 Pagar</button>
-        <button class="btn btn-cobrar" onclick="abrirCobrar()">💰 Cobrar</button>
+        <button class="btn btn-pagar" onclick="abrirModal('modalPagar')">📤 PAGAR (QR)</button>
+        <button class="btn btn-cobrar" onclick="abrirModal('modalCobrar')">📥 COBRAR (Cámara)</button>
     </div>
 
-    <div id="modalCobrar" class="modal">
+    <div class="historial">
+        <h4 style="color: #555; margin-bottom: 10px;">ÚLTIMOS MOVIMIENTOS</h4>
+        {% for m in movimientos %}
+        <div class="transaccion">
+            <div>
+                <div style="font-size: 13px;">{{ m.tipo }}</div>
+                <div style="font-size: 10px; color: #555;">Ref: {{ m.referencia }}</div>
+            </div>
+            <div class="monto-historial">Bs. {{ "%.2f"|format(m.monto) }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="modalPagar" class="modal">
         <div class="modal-content">
-            <h3 style="color:var(--dorado);">COBRAR</h3>
-            <input type="number" id="montoCobro" placeholder="0.00">
-            <button class="btn btn-pagar" style="width:100%" onclick="generarQR()">Generar QR</button>
+            <h3 style="color: var(--dorado);">GENERAR PAGO</h3>
+            <input type="number" id="montoPagar" placeholder="Monto a pagar">
+            <button class="btn btn-pagar" style="width:100%" onclick="generarQR()">MOSTRAR QR</button>
             <div id="qr-result" style="margin-top:20px;"></div>
             <p onclick="cerrarModales()" style="color:#555; cursor:pointer; margin-top:20px;">Cerrar</p>
         </div>
     </div>
 
-    <div id="modalPagar" class="modal">
+    <div id="modalCobrar" class="modal">
         <div class="modal-content">
-            <h3 style="color:var(--dorado);">ESCANEAR QR</h3>
+            <h3 style="color: var(--dorado);">ESCANEAR PARA COBRAR</h3>
             <div id="reader"></div>
             <p onclick="cerrarModales()" style="color:#555; cursor:pointer; margin-top:20px;">Cancelar</p>
+        </div>
+    </div>
+
+    <div id="modalRecargar" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--dorado);">NOTIFICAR PAGO</h3>
+            <form action="/notificar_pago" method="POST" enctype="multipart/form-data">
+                <input type="number" name="monto" placeholder="Monto transferido" required step="0.01">
+                <input type="text" name="referencia" placeholder="Referencia bancaria" required>
+                <label style="color: #888; font-size: 12px; display: block; margin-top: 10px;">Adjuntar Capture:</label>
+                <input type="file" name="capture" accept="image/*" required>
+                <button type="submit" class="btn btn-pagar" style="width:100%; margin-top:10px;">ENVIAR RECARGA</button>
+            </form>
+            <p onclick="cerrarModales()" style="color:#555; cursor:pointer; margin-top:20px;">Cerrar</p>
         </div>
     </div>
 
     <script>
         let html5QrCode;
 
-        function abrirCobrar() { document.getElementById('modalCobrar').style.display = 'flex'; }
-        
+        function abrirModal(id) {
+            document.getElementById(id).style.display = 'flex';
+            if(id === 'modalCobrar') { activarCamara(); }
+        }
+
         function cerrarModales() {
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            if(html5QrCode) html5QrCode.stop().catch(() => {});
+            if(html5QrCode) html5QrCode.stop().catch(()=>{});
             document.getElementById('qr-result').innerHTML = '';
         }
 
         function generarQR() {
-            const monto = document.getElementById('montoCobro').value;
-            if(!monto) return alert("Ingresa un monto");
+            const monto = document.getElementById('montoPagar').value;
+            if(!monto) return alert("Ingresa el monto");
             const data = `{{ u.cedula }}|${monto}`;
             document.getElementById('qr-result').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${data}" style="background:white; padding:10px; border-radius:10px;">`;
         }
 
-        async function abrirPagar() {
-            document.getElementById('modalPagar').style.display = 'flex';
+        function activarCamara() {
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                const [receptor, monto] = text.split('|');
-                if(confirm(`¿Pagar Bs. ${monto} a la cuenta ${receptor}?`)) {
+                const [emisor, monto] = text.split('|');
+                if(confirm(`¿Cobrar Bs. ${monto} a la cuenta ${emisor}?`)) {
                     fetch('/ejecutar_pago', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({receptor: receptor, monto: monto})
+                        body: JSON.stringify({emisor: emisor, monto: monto}) // El emisor es el del QR
                     })
                     .then(res => res.json())
                     .then(res => {
-                        if(res.status === 'ok') { alert("✅ PAGO EXITOSO"); location.reload(); }
+                        if(res.status === 'ok') { alert("✅ COBRO EXITOSO"); location.reload(); }
                         else { alert("❌ ERROR: " + res.msg); }
                     });
                 }
