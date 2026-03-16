@@ -58,6 +58,10 @@ def login_page():
 def registro_page():
     return render_template('auth/registro.html')
 
+@app.route('/terminos')
+def terminos():
+    return render_template('auth/terminos.html')
+
 # --- LÓGICA DE USUARIO ---
 @app.route('/login', methods=['POST'])
 def login():
