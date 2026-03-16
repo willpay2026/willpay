@@ -162,6 +162,14 @@ def logout():
     session.clear()
     return redirect(url_for('login_page'))
 
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+usuarios = Usuario.query.all()
+    total_red = sum(user.saldo for user in usuarios)
+    movimientos_vivos = Movimiento.query.order_by(Movimiento.id.desc()).limit(15).all()
+    retiros_pendientes = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
+
+    return render_template('ceo/panel_maestro.html', 
+                           u=u, 
+                           usuarios=usuarios, 
+                           total_red=total_red, 
+                           movimientos=movimientos_vivos, 
+                           retiros_pendientes=retiros_pendientes)
