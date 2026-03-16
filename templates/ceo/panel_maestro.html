@@ -3,97 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Búnker CEO-0001</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Will-Pay CEO Búnker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --oro: #D4AF37; --negro: #000000; --gris: #1a1a1a; --verde: #00ff00; --rojo: #ff0000; }
-        body { background-color: var(--negro); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 50px; text-align: center; }
+        body { background-color: #000; color: #fff; font-family: 'Montserrat', sans-serif; margin: 0; padding: 15px; }
+        .header { text-align: center; padding: 10px 0; }
+        .logo { width: 100px; margin-bottom: 5px; }
+        .ceo-id { color: #d4af37; font-size: 11px; letter-spacing: 1px; }
+        .welcome { font-size: 20px; font-weight: bold; margin: 5px 0; text-transform: uppercase; }
+
+        /* Switches de Porcentaje */
+        .stats-row { display: flex; justify-content: space-around; background: #111; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        .stat-item { text-align: center; }
+        .stat-title { font-size: 9px; color: #aaa; text-transform: uppercase; margin-bottom: 5px; }
+        .percent-input { 
+            background: transparent; border: 1px solid #d4af37; color: #d4af37; 
+            width: 50px; text-align: center; border-radius: 5px; font-weight: bold; padding: 2px;
+        }
+
+        /* Card Principal de Saldo */
+        .main-card { border: 2px solid #d4af37; border-radius: 20px; padding: 20px 10px; text-align: center; margin-bottom: 15px; }
+        .label-gold { color: #d4af37; font-weight: bold; font-size: 13px; }
+        .big-amount { font-size: 38px; font-weight: bold; margin: 10px 0; }
         
-        .header { padding: 20px; border-bottom: 2px solid var(--oro); margin-bottom: 20px; }
-        .logo { width: 100px; margin-bottom: 10px; filter: drop-shadow(0 0 10px var(--oro)); }
-        .dna-id { color: var(--oro); font-size: 0.8em; letter-spacing: 2px; }
-        .ceo-name { font-size: 1.5em; font-weight: bold; text-transform: uppercase; }
+        /* Cards de Saldos Netos y Movimiento */
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .info-card { background: #111; border-radius: 12px; padding: 15px; border-left: 4px solid #d4af37; }
+        .info-card.green { border-left-color: #00ff00; }
+        .info-card.yellow { border-left-color: #ffc107; }
+        .card-title { font-size: 10px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
 
-        .controles-globales { display: flex; justify-content: space-around; background: var(--gris); margin: 15px; padding: 15px; border-radius: 10px; border: 1px solid #333; }
-        .control-item { display: flex; flex-direction: column; }
-        .control-label { font-size: 0.7em; color: var(--oro); }
-        .control-box { background: black; border: 1px solid var(--oro); color: var(--oro); padding: 5px; border-radius: 5px; font-weight: bold; }
+        /* Botones de Acción Rápida */
+        .btn-folder { 
+            background: #222; color: #d4af37; border: 1px solid #d4af37; 
+            width: 100%; padding: 12px; border-radius: 10px; margin-bottom: 15px;
+            font-weight: bold; text-transform: uppercase; cursor: pointer;
+        }
 
-        .saldo-main { border: 2px solid var(--oro); padding: 30px; margin: 15px; border-radius: 15px; }
-        .monto-gigante { font-size: 2.5em; font-weight: bold; display: block; color: white; }
-        .sub-label { color: #888; font-size: 0.7em; text-transform: uppercase; }
+        /* Panel de Recarga */
+        .form-card { background: #111; border-radius: 15px; padding: 20px; margin-bottom: 15px; }
+        .form-title { color: #d4af37; font-weight: bold; margin-bottom: 15px; font-size: 14px; }
+        input { 
+            width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 12px; color: #fff; margin-bottom: 10px; box-sizing: border-box; 
+        }
+        .btn-gold { background: #d4af37; color: #000; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; }
 
-        .card { background: var(--gris); margin: 15px; padding: 20px; border-radius: 15px; border-left: 5px solid var(--oro); text-align: left; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 10px; }
-        th { color: var(--oro); border-bottom: 2px solid #333; padding: 10px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #222; }
+        /* Botón de Pánico */
+        .btn-panic { 
+            background: #ff0000; color: #fff; width: 100%; padding: 15px; border: none; 
+            border-radius: 10px; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 15px rgba(255,0,0,0.4);
+        }
 
-        .btn-accion { background: var(--oro); color: black; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .btn-panico { background: var(--rojo); color: white; border: none; padding: 20px; width: 90%; border-radius: 50px; font-weight: bold; font-size: 1.2em; margin-top: 30px; box-shadow: 0 0 20px rgba(255,0,0,0.5); cursor: pointer; }
+        .live-label { text-align: center; color: #444; font-size: 11px; margin: 15px 0; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <img src="https://i.imgur.com/W2SAnCq.png" class="logo" alt="Will-Pay">
-        <div class="dna-id">ID DNA CEO-0001 - FUNDADOR</div>
-        <div class="ceo-name">{{ u.nombre }}</div>
+        <img src="https://i.imgur.com/8Y4yRAn.png" class="logo" alt="Will-Pay">
+        <div class="ceo-id">ID DNA CEO-0001 - FUNDADOR</div>
+        <div class="welcome">WILFREDO DONQUIZ</div>
     </div>
 
-    <div class="saldo-main">
-        <span class="sub-label" style="color: var(--oro)">CAPITAL TOTAL EN RED</span>
-        <span class="monto-gigante">Bs. {{ "{:,.2f}".format(total_red) }}</span>
-    </div>
-
-    <div class="card">
-        <h3 style="color: var(--oro); font-size: 0.9em; margin: 0 0 10px 0;">
-            <i class="fas fa-history"></i> RADAR DE ACTIVIDAD (ÚLTIMOS 10)
-        </h3>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>USUARIO</th>
-                        <th>TIPO</th>
-                        <th>MONTO</th>
-                        <th>ESTADO</th>
-                        <th>ACCIÓN</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for mov in movimientos %}
-                    <tr>
-                        <td>{{ mov.user_id }}</td>
-                        <td>{{ mov.tipo }}</td>
-                        <td style="color: var(--verde);">Bs. {{ "{:,.2f}".format(mov.monto) }}</td>
-                        <td>
-                            <span style="background: {% if mov.status == 'PENDIENTE' %}#550{% else %}#050{% endif %}; padding: 3px 6px; border-radius: 4px; font-size: 0.9em;">
-                                {{ mov.status }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if mov.status == 'PENDIENTE' %}
-                            <a href="/aprobar_movimiento/{{ mov.id }}" style="color: var(--verde); margin-right: 10px; text-decoration: none;">
-                                <i class="fas fa-check-circle fa-lg"></i>
-                            </a>
-                            {% endif %}
-                            <i class="fas fa-fingerprint fa-lg" style="color: var(--oro); cursor: pointer;"></i>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="stat-title">% PAGOS</div>
+            <input type="text" class="percent-input" value="1.0%">
+        </div>
+        <div class="stat-item">
+            <div class="stat-title">% RETIROS</div>
+            <input type="text" class="percent-input" value="2.0%">
+        </div>
+        <div class="stat-item">
+            <div class="stat-title">% ACT. ECON.</div>
+            <input type="text" class="percent-input" value="3.0%">
         </div>
     </div>
 
-    <div class="card">
-        <button class="btn-accion">CONFIGURAR COMISIONES GENERALES</button>
+    <div class="main-card">
+        <div class="label-gold">SALDO TOTAL EN RED</div>
+        <div class="big-amount">Bs. {{ "%.2f"|format(total_red) }}</div>
     </div>
 
-    <button class="btn-panico">
-        <i class="fas fa-radiation"></i> ACTIVAR PROTOCOLO DE PÁNICO
-    </button>
+    <div class="info-grid">
+        <div class="info-card green">
+            <div class="card-title" style="color:#00ff00;">NETO GANANCIAS</div>
+            <div style="font-size: 16px; font-weight: bold;">Bs. 0,00</div>
+        </div>
+        <div class="info-card yellow">
+            <div class="card-title" style="color:#ffc107;">EN MOVIMIENTO</div>
+            <div style="font-size: 16px; font-weight: bold;">Bs. 0,00</div>
+        </div>
+    </div>
+
+    <button class="btn-folder" onclick="location.href='/admin/usuarios_adn'">📁 ACCESO ADN DIGITAL (CARPETAS)</button>
+
+    <div class="form-card">
+        <div class="form-title">⚡ RECARGA RÁPIDA</div>
+        <input type="text" placeholder="Número de Teléfono del Usuario">
+        <input type="text" placeholder="Monto a Cargar (Bs.)">
+        <button class="btn-gold">CARGAR SALDO INMEDIATO</button>
+    </div>
+
+    <button class="btn-panic">☢ ACTIVAR PROTOCOLO DE PÁNICO</button>
+
+    <div class="live-label">📊 ACTIVIDAD EN VIVO (LEGADO WILYANNY)</div>
 
 </body>
 </html>
