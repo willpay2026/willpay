@@ -40,9 +40,9 @@ class Movimiento(db.Model):
     usuario = db.relationship('Usuario', backref='movimientos')
 
 with app.app_context():
-    db.drop_all() 
-    db.create_all()
-
+    # db.drop_all()  <-- ESTE ES EL QUE MATA LOS DATOS, DÉJALO COMENTADO
+    db.create_all()  # Este solo crea lo que falta, no borra nada.
+    
 # --- RUTAS DE NAVEGACIÓN ---
 @app.route('/')
 def index():
