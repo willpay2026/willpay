@@ -34,6 +34,8 @@ class Movimiento(db.Model):
     usuario = db.relationship('Usuario', backref='movimientos')
 
 with app.app_context():
+    # Esto obliga a la base de datos a actualizarse con la columna 'status'
+    db.drop_all() 
     db.create_all()
 
 # --- RUTAS DE NAVEGACIÓN ---
