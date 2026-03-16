@@ -1,114 +1,59 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay CEO Búnker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #000; color: #fff; font-family: 'Montserrat', sans-serif; margin: 0; padding: 15px; }
-        .header { text-align: center; padding: 10px 0; }
-        .logo { width: 100px; margin-bottom: 5px; }
-        .ceo-id { color: #d4af37; font-size: 11px; letter-spacing: 1px; }
-        .welcome { font-size: 20px; font-weight: bold; margin: 5px 0; text-transform: uppercase; }
-
-        /* Switches de Porcentaje */
-        .stats-row { display: flex; justify-content: space-around; background: #111; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
-        .stat-item { text-align: center; }
-        .stat-title { font-size: 9px; color: #aaa; text-transform: uppercase; margin-bottom: 5px; }
-        .percent-input { 
-            background: transparent; border: 1px solid #d4af37; color: #d4af37; 
-            width: 50px; text-align: center; border-radius: 5px; font-weight: bold; padding: 2px;
-        }
-
-        /* Card Principal de Saldo */
-        .main-card { border: 2px solid #d4af37; border-radius: 20px; padding: 20px 10px; text-align: center; margin-bottom: 15px; }
-        .label-gold { color: #d4af37; font-weight: bold; font-size: 13px; }
-        .big-amount { font-size: 38px; font-weight: bold; margin: 10px 0; }
-        
-        /* Cards de Saldos Netos y Movimiento */
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .info-card { background: #111; border-radius: 12px; padding: 15px; border-left: 4px solid #d4af37; }
-        .info-card.green { border-left-color: #00ff00; }
-        .info-card.yellow { border-left-color: #ffc107; }
-        .card-title { font-size: 10px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
-
-        /* Botones de Acción Rápida */
-        .btn-folder { 
-            background: #222; color: #d4af37; border: 1px solid #d4af37; 
-            width: 100%; padding: 12px; border-radius: 10px; margin-bottom: 15px;
-            font-weight: bold; text-transform: uppercase; cursor: pointer;
-        }
-
-        /* Panel de Recarga */
-        .form-card { background: #111; border-radius: 15px; padding: 20px; margin-bottom: 15px; }
-        .form-title { color: #d4af37; font-weight: bold; margin-bottom: 15px; font-size: 14px; }
-        input { 
-            width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
-            padding: 12px; color: #fff; margin-bottom: 10px; box-sizing: border-box; 
-        }
-        .btn-gold { background: #d4af37; color: #000; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; }
-
-        /* Botón de Pánico */
-        .btn-panic { 
-            background: #ff0000; color: #fff; width: 100%; padding: 15px; border: none; 
-            border-radius: 10px; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 15px rgba(255,0,0,0.4);
-        }
-
-        .live-label { text-align: center; color: #444; font-size: 11px; margin: 15px 0; font-weight: bold; }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <img src="https://i.imgur.com/8Y4yRAn.png" class="logo" alt="Will-Pay">
-        <div class="ceo-id">ID DNA CEO-0001 - FUNDADOR</div>
-        <div class="welcome">WILFREDO DONQUIZ</div>
-    </div>
-
-    <div class="stats-row">
-        <div class="stat-item">
-            <div class="stat-title">% PAGOS</div>
-            <input type="text" class="percent-input" value="1.0%">
+<div class="form-card" style="border: 1px solid #d4af37; background: #0a0a0a;">
+    <div class="form-title" style="color: #d4af37;">🤝 PUESTOS ESTRATÉGICOS (SOCIOS)</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="socio-box">
+            <span class="socio-label">SOCIO 1</span>
+            <input type="number" step="0.1" value="{{ u.socio1_rate }}" placeholder="%">
         </div>
-        <div class="stat-item">
-            <div class="stat-title">% RETIROS</div>
-            <input type="text" class="percent-input" value="2.0%">
+        <div class="socio-box">
+            <span class="socio-label">SOCIO 2</span>
+            <input type="number" step="0.1" value="{{ u.socio2_rate }}" placeholder="%">
         </div>
-        <div class="stat-item">
-            <div class="stat-title">% ACT. ECON.</div>
-            <input type="text" class="percent-input" value="3.0%">
+        <div class="socio-box">
+            <span class="socio-label">SOCIO 3</span>
+            <input type="number" step="0.1" value="{{ u.socio3_rate }}" placeholder="%">
+        </div>
+        <div class="socio-box">
+            <span class="socio-label">SOCIO 4</span>
+            <input type="number" step="0.1" value="{{ u.socio4_rate }}" placeholder="%">
+        </div>
+        <div class="socio-box" style="grid-column: span 2;">
+            <span class="socio-label">SOCIO 5</span>
+            <input type="number" step="0.1" value="{{ u.socio5_rate }}" placeholder="%">
         </div>
     </div>
+</div>
 
-    <div class="main-card">
-        <div class="label-gold">SALDO TOTAL EN RED</div>
-        <div class="big-amount">Bs. {{ "%.2f"|format(total_red) }}</div>
+<div class="form-card">
+    <div class="form-title">⚙️ MODALIDAD DEL BÚNKER</div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <span style="font-size: 12px;">AUTO-APROBACIÓN CARGAS</span>
+        <label class="switch">
+            <input type="checkbox" {% if u.auto_aprobacion %}checked{% endif %}>
+            <span class="slider"></span>
+        </label>
     </div>
 
-    <div class="info-grid">
-        <div class="info-card green">
-            <div class="card-title" style="color:#00ff00;">NETO GANANCIAS</div>
-            <div style="font-size: 16px; font-weight: bold;">Bs. 0,00</div>
-        </div>
-        <div class="info-card yellow">
-            <div class="card-title" style="color:#ffc107;">EN MOVIMIENTO</div>
-            <div style="font-size: 16px; font-weight: bold;">Bs. 0,00</div>
-        </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px;">AUTO-APROBACIÓN RETIROS</span>
+        <label class="switch">
+            <input type="checkbox" {% if u.auto_retiros %}checked{% endif %}>
+            <span class="slider"></span>
+        </label>
     </div>
+</div>
 
-    <button class="btn-folder" onclick="location.href='/admin/usuarios_adn'">📁 ACCESO ADN DIGITAL (CARPETAS)</button>
-
-    <div class="form-card">
-        <div class="form-title">⚡ RECARGA RÁPIDA</div>
-        <input type="text" placeholder="Número de Teléfono del Usuario">
-        <input type="text" placeholder="Monto a Cargar (Bs.)">
-        <button class="btn-gold">CARGAR SALDO INMEDIATO</button>
-    </div>
-
-    <button class="btn-panic">☢ ACTIVAR PROTOCOLO DE PÁNICO</button>
-
-    <div class="live-label">📊 ACTIVIDAD EN VIVO (LEGADO WILYANNY)</div>
-
-</body>
-</html>
+<style>
+    .socio-box { background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; }
+    .socio-label { font-size: 10px; color: #888; margin-bottom: 5px; }
+    .socio-box input { background: transparent; border: none; border-bottom: 1px solid #d4af37; color: #d4af37; text-align: center; font-weight: bold; }
+    
+    /* El switch dorado */
+    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #d4af37; }
+    input:checked + .slider:before { transform: translateX(20px); }
+</style>
