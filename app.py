@@ -181,6 +181,17 @@ def admin_panel():
                            total_red=total_red, 
                            movimientos=movimientos_vivos, 
                            retiros_pendientes=retiros_pendientes)
+# ... (línea 183) retiros_pendientes=retiros_pendientes)
+
+@app.route('/admin/usuarios_adn')
+def usuarios_adn():
+    if 'user_id' not in session: return redirect(url_for('login_page'))
+    u_ceo = Usuario.query.get(session['user_id'])
+    if not u_ceo or u_ceo.cedula != '13496133': 
+        return "ACCESO DENEGADO"
+
+    todos_los_usuarios = Usuario.query.order_by(Usuario.nombre).all()
+    return render_template('ceo/usuarios_adn.html', usuarios=todos_los_usuarios)
 
 @app.route('/logout')
 def logout():
