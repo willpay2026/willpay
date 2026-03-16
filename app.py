@@ -13,13 +13,20 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- MODELOS ---
+# --- MODELOS ESTRATÉGICOS (CON SEGMENTACIÓN DE COMISIONES) ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
     cedula = db.Column(db.String(20), unique=True)
     password = db.Column(db.String(100))
     saldo = db.Column(db.Float, default=0.0)
+    
+    # Nuevas neuronas del Cerebro: Identidad y %
+    tipo_usuario = db.Column(db.String(50)) # Personal, Tecnico o Juridico
+    actividad_economica = db.Column(db.String(100)) # Oficio o Nombre del Negocio
+    rif_juridico = db.Column(db.String(20)) # Para empresas
+    comision_rate = db.Column(db.Float, default=0.0) # El porcentaje que tú mandas
+    
     banco = db.Column(db.String(50))
     telefono_pago = db.Column(db.String(20))
     cedula_pago = db.Column(db.String(20))
