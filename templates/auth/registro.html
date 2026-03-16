@@ -47,8 +47,12 @@
             <label>Teléfono</label>
             <input type="text" name="telefono" required>
 
-            <label>Tipo de Usuario / Actividad</label>
-            <input type="text" name="actividad" placeholder="Ej: Comerciante, Particular">
+            <label>Tipo de Usuario / Perfil Económico</label>
+<select name="actividad" class="form-control" required style="background: #1a1a1a; color: gold; border: 1px solid #333; padding: 10px; border-radius: 5px; width: 100%;">
+    <option value="PERSONAL">Usuario Personal (1.2% Comisión)</option>
+    <option value="TECNICO">Servicio Técnico / Oficios (1.8% Comisión)</option>
+    <option value="JURIDICO">Comercio / Empresa / RIF (3.0% Comisión)</option>
+</select>
 
             <label>Crea tu PIN de Seguridad (6 números)</label>
             <input type="password" name="password" maxlength="6" required>
