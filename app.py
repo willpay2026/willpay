@@ -52,7 +52,7 @@ class Movimiento(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     usuario = db.relationship('Usuario', backref='movimientos')
 with app.app_context():
-    db.drop_all()   # <-- ESTA ES LA QUE LIMPIA TODO LO VIEJO
+    # db.drop_all()   # <-- ESTA ES LA QUE LIMPIA TODO LO VIEJO
     db.create_all() # <-- ESTA CREA LAS TABLAS NUEVAS
 
 # --- RUTAS DE NAVEGACIÓN ---
