@@ -52,8 +52,33 @@ def index():
 def login_page():
     return render_template('auth/acceso.html')
 
-@app.route('/registro')
+@app.route('/registro', methods=['GET', 'POST'])
 def registro_page():
+    if request.method == 'POST':
+        try:
+            tipo = request.form.get('tipo_usuario', 'PERSONAL')
+            comision = 0.0
+            if tipo == 'TECNICO': comision = 1.5
+            elif tipo == 'JURIDICO': comision = 3.0
+
+            nuevo = Usuario(
+                nombre=request.form['nombre'],
+                cedula=request.form['cedula'],
+                password=request.form['password'],
+                tipo_usuario=tipo,
+                actividad_economica=request.form.get('actividad_economica'),
+                rif_juridico=request.form.get('rif_juridico'),
+                comision_rate=comision,
+                banco=request.form['banco'],
+                telefono_pago=request.form['telefono_pago'],
+                cedula_pago=request.form['cedula_pago'],
+                saldo=0.0
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            return redirect(url_for('login_page'))
+        except Exception as e:
+            return f"Error en registro: {str(e)}"
     return render_template('auth/registro.html')
 
 @app.route('/terminos')
