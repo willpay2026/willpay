@@ -21,11 +21,11 @@ class Usuario(db.Model):
     password = db.Column(db.String(100))
     saldo = db.Column(db.Float, default=0.0)
     
-    # Nuevas neuronas del Cerebro: Identidad y %
+    # Neuronas de Identidad
     tipo_usuario = db.Column(db.String(50)) # Personal, Tecnico o Juridico
     actividad_economica = db.Column(db.String(100)) # Oficio o Nombre del Negocio
     rif_juridico = db.Column(db.String(20)) # Para empresas
-    comision_rate = db.Column(db.Float, default=0.0) # El porcentaje que tú mandas
+    comision_rate = db.Column(db.Float, default=0.0) # Porcentaje de comisión
     
     banco = db.Column(db.String(50))
     telefono_pago = db.Column(db.String(20))
@@ -41,7 +41,7 @@ class Movimiento(db.Model):
     usuario = db.relationship('Usuario', backref='movimientos')
 
 with app.app_context():
-    # Esto obliga a la base de datos a actualizarse con la columna 'status'
+    # Limpieza para actualizar columnas (Borrar estas líneas tras el primer despliegue exitoso)
     db.drop_all() 
     db.create_all()
 
@@ -58,10 +58,6 @@ def login_page():
 def registro_page():
     return render_template('auth/registro.html')
 
-@app.route('/terminos')
-def terminos():
-    return render_template('auth/terminos.html')
-
 # --- LÓGICA DE USUARIO ---
 @app.route('/login', methods=['POST'])
 def login():
@@ -70,17 +66,27 @@ def login():
     user = Usuario.query.filter_by(cedula=cedula, password=password).first()
     if user:
         session['user_id'] = user.id
-        session['cedula'] = user.cedula # Guardamos cedula para validaciones admin
         return redirect(url_for('dashboard'))
     return "Credenciales incorrectas. <a href='/acceso'>Volver</a>"
 
 @app.route('/register', methods=['POST'])
 def register():
     try:
+        tipo = request.form.get('tipo_usuario', 'PERSONAL')
+        
+        # Definición de Comisiones según el Cerebro
+        comision = 0.0
+        if tipo == 'TECNICO': comision = 1.5
+        elif tipo == 'JURIDICO': comision = 3.0
+        
         nuevo = Usuario(
             nombre=request.form['nombre'],
             cedula=request.form['cedula'],
             password=request.form['password'],
+            tipo_usuario=tipo,
+            actividad_economica=request.form.get('actividad_economica'),
+            rif_juridico=request.form.get('rif_juridico'),
+            comision_rate=comision,
             banco=request.form['banco'],
             telefono_pago=request.form['telefono_pago'],
             cedula_pago=request.form['cedula_pago'],
@@ -89,8 +95,8 @@ def register():
         db.session.add(nuevo)
         db.session.commit()
         return redirect(url_for('login_page'))
-    except:
-        return "Error: Datos incorrectos o usuario ya existe."
+    except Exception as e:
+        return f"Error en registro: {str(e)}"
 
 @app.route('/dashboard')
 def dashboard():
@@ -99,76 +105,55 @@ def dashboard():
     movs = Movimiento.query.filter_by(user_id=u.id).order_by(Movimiento.fecha.desc()).limit(10).all()
     return render_template('user/dashboard.html', u=u, movimientos=movs)
 
-# --- CORAZÓN DE WILL-PAY: COBRO AUTOMÁTICO ---
+# --- PROCESAMIENTO DE COBRO ---
 @app.route('/procesar_cobro')
 def procesar_cobro():
     if 'user_id' not in session: return redirect(url_for('login_page'))
-    
     datos_qr = request.args.get('datos')
     u_cobrador = Usuario.query.get(session['user_id'])
     
     try:
         data = json.loads(datos_qr)
         u_pagador = Usuario.query.get(data['id'])
-        
-        # MONTO DE PRUEBA (Fijo para verificar el flujo)
         monto = 10.00 
 
         if u_pagador.saldo >= monto:
-            # RESTA Y SUMA
             u_pagador.saldo -= monto
             u_cobrador.saldo += monto
             
-            # GENERAR CORRELATIVO WP-XXXXXX
             ultimo_mov = Movimiento.query.order_by(Movimiento.id.desc()).first()
             nuevo_id = (ultimo_mov.id + 1) if ultimo_mov else 1
             correlativo = f"WP-{nuevo_id:06d}"
             
-            # REGISTRAR MOVIMIENTO (Pagador)
-            mov_pago = Movimiento(
-                user_id=u_pagador.id,
-                tipo=f"PAGO ENVIADO A {u_cobrador.nombre} ({correlativo})",
-                monto=monto,
-                status='COMPLETADO'
-            )
-            # REGISTRAR MOVIMIENTO (Cobrador)
-            mov_cobro = Movimiento(
-                user_id=u_cobrador.id,
-                tipo=f"COBRO RECIBIDO DE {u_pagador.nombre} ({correlativo})",
-                monto=monto,
-                status='COMPLETADO'
-            )
+            mov_pago = Movimiento(user_id=u_pagador.id, tipo=f"PAGO ENVIADO ({correlativo})", monto=monto)
+            mov_cobro = Movimiento(user_id=u_cobrador.id, tipo=f"COBRO RECIBIDO ({correlativo})", monto=monto)
             
             db.session.add(mov_pago)
             db.session.add(mov_cobro)
             db.session.commit()
             
-            # MOSTRAR COMPROBANTE (Ubicado en templates/user/comprobante.html)
-            return render_template('user/comprobante.html', 
-                                 c=correlativo, 
-                                 pagador=u_pagador, 
-                                 cobrador=u_cobrador, 
-                                 monto=monto,
-                                 fecha=datetime.now())
+            return render_template('user/comprobante.html', c=correlativo, pagador=u_pagador, cobrador=u_cobrador, monto=monto, fecha=datetime.now())
         else:
-            return "Saldo insuficiente en la cuenta del pagador."
+            return "Saldo insuficiente."
     except Exception as e:
-        return f"Error en lectura de ADN: {str(e)}"
+        return f"Error: {str(e)}"
 
-# --- PANEL MAESTRO ---
+# --- PANEL MAESTRO (EL BÚNKER) ---
 @app.route('/admin_panel')
 def admin_panel():
     if 'user_id' not in session: return redirect(url_for('login_page'))
     u = Usuario.query.get(session['user_id'])
-    if u.cedula != '13496133': return "Acceso prohibido."
+    if not u or u.cedula != '13496133': return "Acceso prohibido."
 
     usuarios = Usuario.query.all()
-    # Aquí ya van los nuevos campos: tipo_usuario, comision_rate, etc.
-    return render_template('ceo/panel_maestro.html', u=u, usuarios=usuarios, ...)
+    total_red = sum(user.saldo for user in usuarios)
+    movimientos_vivos = Movimiento.query.order_by(Movimiento.id.desc()).limit(15).all()
+    retiros_pendientes = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
 
     return render_template('ceo/panel_maestro.html', 
                            u=u, usuarios=usuarios, total_red=total_red, 
-                           movimientos=movimientos_vivos, retiros_pendientes=retiros_pendientes)
+                           movimientos=movimientos_vivos, 
+                           retiros_pendientes=retiros_pendientes)
 
 @app.route('/logout')
 def logout():
