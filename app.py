@@ -161,18 +161,7 @@ def procesar_cobro():
         return f"Error: {str(e)}"
 
 # --- PANEL MAESTRO (EL BÚNKER) ---
-@app.route('/admin_panel')
-def admin_panel():
-    if 'user_id' not in session: return redirect(url_for('login_page'))
-    u = Usuario.query.get(session['user_id'])
-    if not u or u.cedula != '13496133': return "Acceso prohibido."
 
-    usuarios = Usuario.query.all()
-    total_red = sum(user.saldo for user in usuarios)
-    movimientos_vivos = Movimiento.query.order_by(Movimiento.id.desc()).limit(15).all()
-    retiros_pendientes = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
-
-    return render_template('ceo/panel_maestro.html', 
                            u=u, 
                            usuarios=usuarios, 
                            total_red=total_red, 
