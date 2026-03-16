@@ -99,14 +99,7 @@ def registro_page():
         except Exception as e:
             return f"Error en registro: {str(e)}"
     return render_template('auth/registro.html')
-            )
-            db.session.add(nuevo)
-            db.session.commit()
-            return redirect(url_for('login_page'))
-        except Exception as e:
-            return f"Error en registro: {str(e)}"
-    return render_template('auth/registro.html')
-
+   
 @app.route('/terminos')
 def terminos():
     return render_template('auth/terminos.html')
