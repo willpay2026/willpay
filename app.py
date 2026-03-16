@@ -14,6 +14,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # --- MODELOS ESTRATÉGICOS ---
+# --- MODELO USUARIO ACTUALIZADO PARA EL LEGADO ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
@@ -26,9 +27,21 @@ class Usuario(db.Model):
     rif_juridico = db.Column(db.String(20)) 
     comision_rate = db.Column(db.Float, default=0.0) 
     
+    # Datos de pago para Retiros
     banco = db.Column(db.String(50))
     telefono_pago = db.Column(db.String(20))
     cedula_pago = db.Column(db.String(20))
+
+    # --- MANDO CEO: SUICHES DE CONTROL ---
+    auto_aprobacion = db.Column(db.Boolean, default=False) # Cargas de Saldo
+    auto_retiros = db.Column(db.Boolean, default=False)    # Retiros (Dices que los quieres manual, pero aquí está el suiche)
+    
+    # --- PUESTOS ESTRATÉGICOS: LOS 5 SOCIOS (%) ---
+    socio1_rate = db.Column(db.Float, default=0.0)
+    socio2_rate = db.Column(db.Float, default=0.0)
+    socio3_rate = db.Column(db.Float, default=0.0)
+    socio4_rate = db.Column(db.Float, default=0.0)
+    socio5_rate = db.Column(db.Float, default=0.0)
 
 class Movimiento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
