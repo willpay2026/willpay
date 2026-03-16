@@ -206,6 +206,31 @@ def usuarios_adn():
     todos_los_usuarios = Usuario.query.order_by(Usuario.nombre).all()
     return render_template('ceo/usuarios_adn.html', usuarios=todos_los_usuarios)
 
+# ... (línea 194) return render_template('ceo/usuarios_adn.html', usuarios=todos_los_usuarios)
+
+@app.route('/admin/update_config', methods=['POST'])
+def update_config():
+    if 'user_id' not in session: return jsonify({"error": "No login"}), 401
+    u = Usuario.query.get(session['user_id'])
+    if not u or u.cedula != '13496133': return jsonify({"error": "No CEO"}), 403
+
+    data = request.get_json()
+    field = data.get('field')
+    value = data.get('value')
+
+    mapping = {
+        'socio1': 'socio1_rate', 'socio2': 'socio2_rate',
+        'socio3': 'socio3_rate', 'socio4': 'socio4_rate',
+        'socio5': 'socio5_rate', 'auto_cargas': 'auto_aprobacion',
+        'auto_retiros': 'auto_retiros'
+    }
+
+    if field in mapping:
+        setattr(u, mapping[field], value)
+        db.session.commit()
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error"}), 400
+
 @app.route('/logout')
 def logout():
     session.clear()
