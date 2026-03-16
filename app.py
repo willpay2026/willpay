@@ -139,5 +139,57 @@ def logout():
     session.clear()
     return redirect(url_for('login_page'))
 
+@app.route('/procesar_cobro')
+def procesar_cobro():
+    import json, random
+    from datetime import datetime
+    
+    # 1. Recibimos los datos del QR
+    datos_qr = request.args.get('datos')
+    u_cobrador = Usuario.query.filter_by(cedula=session['cedula']).first()
+    
+    try:
+        data = json.loads(datos_qr)
+        u_pagador = Usuario.query.get(data['id'])
+        
+        # MONTO FIJO DE PRUEBA (Luego lo haremos dinámico)
+        monto = 10.00 
+
+        if u_pagador.saldo >= monto:
+            # 2. LA MAGIA: Resta y Suma
+            u_pagador.saldo -= monto
+            u_cobrador.saldo += monto
+            
+            # 3. GENERAR CORRELATIVO WP-XXXXXX (Auditoría Seria)
+            ultimo_mov = Movimiento.query.order_by(Movimiento.id.desc()).first()
+            nuevo_id = (ultimo_mov.id + 1) if ultimo_mov else 1
+            correlativo = f"WP-{nuevo_id:06d}"
+            
+            # 4. REGISTRAR MOVIMIENTO
+            nuevo_mov = Movimiento(
+                user_id=u_pagador.id,
+                tipo=f"PAGO A {u_cobrador.nombre} ({correlativo})",
+                monto=monto,
+                status='COMPLETADO'
+            )
+            db.session.add(nuevo_mov)
+            db.session.commit()
+            
+            # 5. GUARDAR ADN (Simulado para el ticket)
+            return render_template('comprobante.html', 
+                                 c=correlativo, 
+                                 pagador=u_pagador, 
+                                 cobrador=u_cobrador, 
+                                 monto=monto,
+                                 fecha=datetime.now())
+        else:
+            return "Saldo insuficiente"
+    except:
+        return "Error en lectura de ADN"
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    import os
+    # Render nos da el puerto en una variable de entorno, esto lo captura:
+    port = int(os.environ.get("PORT", 10000))
+    # '0.0.0.0' abre el Búnker a internet, si no, Render no lo ve
+    app.run(host='0.0.0.0', port=port)
