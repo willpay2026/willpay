@@ -220,6 +220,22 @@ def logout():
     session.clear()
     return redirect(url_for('login_page'))
 
+@app.route('/admin_panel')
+def admin_panel():
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    
+    # Aquí buscamos tus datos de jefe
+    u = Usuario.query.get(session['user_id'])
+    
+    # Seguridad: solo tú entras aquí
+    if u.cedula != '13496133':
+        return redirect(url_for('dashboard'))
+        
+    usuarios = Usuario.query.all()
+    # Por ahora usamos una plantilla simple para que no te dé error
+    return render_template('admin/panel.html', u=u, usuarios=usuarios)
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
