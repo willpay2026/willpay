@@ -117,38 +117,16 @@ def login():
     cedula = request.form['cedula']
     password = request.form['password']
     user = Usuario.query.filter_by(cedula=cedula, password=password).first()
+    
     if user:
         session['user_id'] = user.id
+        # SI ES TU CÉDULA, AL BÚNKER DE UNA VEZ
+        if user.cedula == '13496133':
+            return redirect(url_for('admin_panel'))
         return redirect(url_for('dashboard'))
+    
     return "Credenciales incorrectas. <a href='/acceso'>Volver</a>"
-
-@app.route('/register', methods=['POST'])
-def register():
-    try:
-        tipo = request.form.get('tipo_usuario', 'PERSONAL')
-        comision = 0.0
-        if tipo == 'TECNICO': comision = 1.5
-        elif tipo == 'JURIDICO': comision = 3.0
-        
-        nuevo = Usuario(
-            nombre=request.form['nombre'],
-            cedula=request.form['cedula'],
-            password=request.form['password'],
-            tipo_usuario=tipo,
-            actividad_economica=request.form.get('actividad_economica'),
-            rif_juridico=request.form.get('rif_juridico'),
-            comision_rate=comision,
-            banco=request.form['banco'],
-            telefono_pago=request.form['telefono_pago'],
-            cedula_pago=request.form['cedula_pago'],
-            saldo=0.0
-        )
-        db.session.add(nuevo)
-        db.session.commit()
-        return redirect(url_for('login_page'))
-    except Exception as e:
-        return f"Error en registro: {str(e)}"
-
+           
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login_page'))
