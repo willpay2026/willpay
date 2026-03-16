@@ -43,7 +43,39 @@
         </label>
     </div>
 </div>
-
+</label>
+    </div>
+</div> <div class="form-card">
+    <div class="form-title">📊 ACTIVIDAD EN VIVO</div>
+    <div class="table-responsive">
+        <table class="table" style="color: white; font-size: 12px;">
+            <thead>
+                <tr>
+                    <th>FECHA</th>
+                    <th>USUARIO</th>
+                    <th>TIPO</th>
+                    <th>MONTO</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimientos %}
+                <tr style="border-bottom: 1px solid #222;">
+                    <td style="color: #666;">{{ m.fecha.strftime('%H:%M') }}</td>
+                    <td>{{ m.usuario.nombre }}</td>
+                    <td style="font-size: 10px;">{{ m.tipo }}</td>
+                    <td style="color: #d4af37; font-weight: bold;">{{ "{:,.2f}".format(m.monto) }} Bs.</td>
+                    <td>
+                        <span style="padding: 2px 5px; border-radius: 4px; font-size: 9px; background: {% if m.status == 'COMPLETADO' %}#1b5e20{% else %}#4a148c{% endif %};">
+                            {{ m.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 <style>
     .socio-box { background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; }
     .socio-label { font-size: 10px; color: #888; margin-bottom: 5px; }
