@@ -13,7 +13,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- MODELOS ESTRATÉGICOS (CON SEGMENTACIÓN DE COMISIONES) ---
+# --- MODELOS ESTRATÉGICOS ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
@@ -21,11 +21,10 @@ class Usuario(db.Model):
     password = db.Column(db.String(100))
     saldo = db.Column(db.Float, default=0.0)
     
-    # Neuronas de Identidad
-    tipo_usuario = db.Column(db.String(50)) # Personal, Tecnico o Juridico
-    actividad_economica = db.Column(db.String(100)) # Oficio o Nombre del Negocio
-    rif_juridico = db.Column(db.String(20)) # Para empresas
-    comision_rate = db.Column(db.Float, default=0.0) # Porcentaje de comisión
+    tipo_usuario = db.Column(db.String(50)) 
+    actividad_economica = db.Column(db.String(100)) 
+    rif_juridico = db.Column(db.String(20)) 
+    comision_rate = db.Column(db.Float, default=0.0) 
     
     banco = db.Column(db.String(50))
     telefono_pago = db.Column(db.String(20))
@@ -41,7 +40,6 @@ class Movimiento(db.Model):
     usuario = db.relationship('Usuario', backref='movimientos')
 
 with app.app_context():
-    # Limpieza para actualizar columnas (Borrar estas líneas tras el primer despliegue exitoso)
     db.drop_all() 
     db.create_all()
 
@@ -77,8 +75,6 @@ def login():
 def register():
     try:
         tipo = request.form.get('tipo_usuario', 'PERSONAL')
-        
-        # Definición de Comisiones según el Cerebro
         comision = 0.0
         if tipo == 'TECNICO': comision = 1.5
         elif tipo == 'JURIDICO': comision = 3.0
@@ -166,14 +162,6 @@ def logout():
     session.clear()
     return redirect(url_for('login_page'))
 
-usuarios = Usuario.query.all()
-    total_red = sum(user.saldo for user in usuarios)
-    movimientos_vivos = Movimiento.query.order_by(Movimiento.id.desc()).limit(15).all()
-    retiros_pendientes = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
-
-    return render_template('ceo/panel_maestro.html', 
-                           u=u, 
-                           usuarios=usuarios, 
-                           total_red=total_red, 
-                           movimientos=movimientos_vivos, 
-                           retiros_pendientes=retiros_pendientes)
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
