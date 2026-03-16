@@ -51,11 +51,10 @@ class Movimiento(db.Model):
     status = db.Column(db.String(20), default='COMPLETADO')
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     usuario = db.relationship('Usuario', backref='movimientos')
-
 with app.app_context():
-    # db.drop_all()  <-- ESTE ES EL QUE MATA LOS DATOS, DÉJALO COMENTADO
-    db.create_all()  # Este solo crea lo que falta, no borra nada.
-    
+    db.drop_all()   # <-- ESTA ES LA QUE LIMPIA TODO LO VIEJO
+    db.create_all() # <-- ESTA CREA LAS TABLAS NUEVAS
+
 # --- RUTAS DE NAVEGACIÓN ---
 @app.route('/')
 def index():
