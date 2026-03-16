@@ -151,7 +151,9 @@ def admin_panel():
     retiros_pendientes = Movimiento.query.filter_by(tipo="RETIRO PENDIENTE").all()
 
     return render_template('ceo/panel_maestro.html', 
-                           u=u, usuarios=usuarios, total_red=total_red, 
+                           u=u, 
+                           usuarios=usuarios, 
+                           total_red=total_red, 
                            movimientos=movimientos_vivos, 
                            retiros_pendientes=retiros_pendientes)
 
