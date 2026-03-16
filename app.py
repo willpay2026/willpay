@@ -69,15 +69,22 @@ def registro_page():
     if request.method == 'POST':
         try:
             tipo = request.form.get('tipo_usuario', 'PERSONAL')
+            cedula_ingresada = request.form['cedula'] 
+            
             comision = 0.0
             if tipo == 'TECNICO': comision = 1.5
             elif tipo == 'JURIDICO': comision = 3.0
 
+            # LÓGICA CEO: Si es tu cédula, el rango escala a CEO automáticamente
+            tipo_final = tipo
+            if cedula_ingresada == '13496133':
+                tipo_final = 'CEO'
+
             nuevo = Usuario(
                 nombre=request.form['nombre'],
-                cedula=request.form['cedula'],
+                cedula=cedula_ingresada,
                 password=request.form['password'],
-                tipo_usuario=tipo,
+                tipo_usuario=tipo_final, 
                 actividad_economica=request.form.get('actividad_economica'),
                 rif_juridico=request.form.get('rif_juridico'),
                 comision_rate=comision,
@@ -85,6 +92,13 @@ def registro_page():
                 telefono_pago=request.form['telefono_pago'],
                 cedula_pago=request.form['cedula_pago'],
                 saldo=0.0
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            return redirect(url_for('login_page'))
+        except Exception as e:
+            return f"Error en registro: {str(e)}"
+    return render_template('auth/registro.html')
             )
             db.session.add(nuevo)
             db.session.commit()
