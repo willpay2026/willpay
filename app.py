@@ -17,7 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:/
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- MODELO DE USUARIO ---
+# --- MODELO DE USUARIO (CON ADN CEO INTEGRADO) ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
@@ -31,24 +31,35 @@ class Usuario(db.Model):
     cedula_titular = db.Column(db.String(20))
     foto_cedula = db.Column(db.String(200))
     foto_selfie = db.Column(db.String(200))
+    
+    # Parámetros del Búnker
     comision_rate = db.Column(db.Float, default=1.2)
-    ganancias_acumuladas = db.Column(db.Float, default=0.0)
+    socio1_rate = db.Column(db.Float, default=1.0)
+    socio2_rate = db.Column(db.Float, default=1.0)
+    socio3_rate = db.Column(db.Float, default=1.0)
+    auto_aprobacion = db.Column(db.Boolean, default=False)
+    auto_retiros = db.Column(db.Boolean, default=False)
 
 with app.app_context():
     db.create_all()
 
-# --- RUTAS DE NAVEGACIÓN CORREGIDAS SEGÚN TUS CARPETAS ---
+# --- RUTAS DE NAVEGACIÓN ---
 
 @app.route('/')
 def index():
-    # En tu GitHub, el splash está en templates/auth/splash.html
     return render_template('auth/splash.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Creación automática del CEO Wilfredo [cite: 2026-03-01]
+    # Creación del CEO si no existe
     if not Usuario.query.filter_by(cedula='13496133').first():
-        db.session.add(Usuario(nombre="Wilfredo Donquiz", cedula="13496133", password="admin", tipo_usuario="CEO", saldo=100.0))
+        db.session.add(Usuario(
+            nombre="Wilfredo Donquiz", 
+            cedula="13496133", 
+            password="admin", 
+            tipo_usuario="CEO", 
+            saldo=0.0
+        ))
         db.session.commit()
 
     if request.method == 'POST':
@@ -63,7 +74,6 @@ def login():
             return redirect(url_for('dashboard'))
         return "PIN o Cédula incorrectos."
     
-    # En tu GitHub el login se llama acceso.html en la carpeta auth
     return render_template('auth/acceso.html')
 
 @app.route('/registro', methods=['GET', 'POST'])
@@ -87,9 +97,6 @@ def registro():
             telefono=request.form.get('telefono'),
             password=request.form.get('password'),
             tipo_usuario=request.form.get('tipo_usuario'),
-            banco=request.form.get('banco'),
-            telefono_pago=request.form.get('telefono_pago'),
-            cedula_titular=request.form.get('cedula_titular'),
             foto_cedula=name_cedula,
             foto_selfie=name_selfie
         )
@@ -97,24 +104,46 @@ def registro():
         db.session.commit()
         return redirect(url_for('login'))
     
-    # Está en auth/registro.html
     return render_template('auth/registro.html')
 
 @app.route('/admin_panel')
 def admin_panel():
     if 'user_id' not in session: return redirect(url_for('login'))
-    user = db.session.get(Usuario, session['user_id'])
-    if not user or user.cedula != '13496133': return redirect(url_for('dashboard'))
+    jefe = db.session.get(Usuario, session['user_id'])
+    if not jefe or jefe.cedula != '13496133': return redirect(url_for('dashboard'))
     
-    # Tu panel se llama panel_ceo.html en la carpeta ceo
-    return render_template('ceo/panel_ceo.html', user=user)
+    usuarios = Usuario.query.all()
+    total_red = sum(u.saldo for u in usuarios)
+    
+    # Movimientos vacíos por ahora para evitar error en el for del HTML
+    return render_template('ceo/panel_ceo.html', 
+                           jefe=jefe, 
+                           usuarios=usuarios, 
+                           total_red=total_red, 
+                           movimientos=[])
+
+@app.route('/admin/update_config', methods=['POST'])
+def update_config():
+    if 'user_id' not in session: return jsonify({'status': 'denied'}), 403
+    data = request.json
+    jefe = Usuario.query.filter_by(cedula='13496133').first()
+    
+    field = data.get('field')
+    value = data.get('value')
+
+    if field == 'socio1': jefe.socio1_rate = value
+    elif field == 'socio2': jefe.socio2_rate = value
+    elif field == 'socio3': jefe.socio3_rate = value
+    elif field == 'auto_cargas': jefe.auto_aprobacion = value
+    elif field == 'auto_retiros': jefe.auto_retiros = value
+
+    db.session.commit()
+    return jsonify({'status': 'success'})
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login'))
     user = db.session.get(Usuario, session['user_id'])
-    
-    # Tu dashboard está en user/dashboard.html
     return render_template('user/dashboard.html', user=user)
 
 @app.route('/salir')
