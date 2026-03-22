@@ -54,14 +54,34 @@ with app.app_context():
 with app.app_context():
     db.create_all()
 
-# --- RUTAS DE ACCESO ---
-@app.route('/login', methods=['POST'])
+# --- RUTAS DE ACCESO (ADN WILL-PAY) ---
+@app.route('/')
+def index():
+    # Puerta de entrada principal: Si no hay sesión, va al login
+    return render_template('login.html')
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    user = Usuario.query.filter_by(cedula=request.form['cedula'], password=request.form['password']).first()
-    if user:
-        session['user_id'] = user.id
-        return redirect(url_for('admin_panel' if user.cedula == '13496133' else 'dashboard'))
-    return "Credenciales incorrectas."
+    if request.method == 'POST':
+        cedula = request.form.get('cedula')
+        password = request.form.get('password')
+        user = Usuario.query.filter_by(cedula=cedula, password=password).first()
+        
+        if user:
+            session['user_id'] = user.id
+            # Redirección inteligente: Wilfredo al Búnker, usuarios al Dashboard
+            if user.cedula == '13496133':
+                return redirect(url_for('admin_panel'))
+            return redirect(url_for('dashboard'))
+            
+        return "Credenciales incorrectas. Inténtalo de nuevo."
+    
+    # Si entran por GET (escribiendo la URL), mostrar el formulario
+    return render_template('login.html')
+
+@app.route('/login_page')
+def login_page():
+    return render_template('login.html')
 
 # --- MOTOR DE TRANSFERENCIAS (PAGAR.HTML) ---
 @app.route('/procesar_pago', methods=['POST'])
