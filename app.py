@@ -58,19 +58,37 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # --- AUTO-CREACIÓN DEL CEO (Solo para Wilfredo) ---
-    ceo_check = Usuario.query.filter_by(cedula='13496133').first()
-    if not ceo_check:
-        nuevo_ceo = Usuario(
-            nombre="Wilfredo Donquiz",
-            cedula="13496133",
-            password="admin",  # Cambia esto después por seguridad
-            saldo=100000.0,
-            tipo_usuario="CEO",
-            comision_rate=1.2
-        )
-        db.session.add(nuevo_ceo)
-        db.session.commit()
+    # --- ESTO CREA TU USUARIO SI NO EXISTE ---
+    with app.app_context():
+        ceo = Usuario.query.filter_by(cedula='13496133').first()
+        if not ceo:
+            nuevo_ceo = Usuario(
+                nombre="Wilfredo Donquiz",
+                cedula="13496133",
+                password="admin", 
+                saldo=100000.0,
+                tipo_usuario="CEO"
+            )
+            db.session.add(nuevo_ceo)
+            db.session.commit()
+    # ------------------------------------------
+
+    if request.method == 'POST':
+        cedula = request.form.get('cedula')
+        password = request.form.get('password')
+        user = Usuario.query.filter_by(cedula=cedula, password=password).first()
+        if user:
+            session['user_id'] = user.id
+            return redirect(url_for('dashboard'))
+        return "Credenciales incorrectas."
+    return render_template('login.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    user = Usuario.query.get(session['user_id'])
+    # Pasamos el usuario al HTML para que veas tu nombre y saldo [cite: 2026-03-01]
+    return render_template('dashboard.html', user=user)
     # --------------------------------------------------
 
     if request.method == 'POST':
