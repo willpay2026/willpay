@@ -1,140 +1,104 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func
 import os
 from datetime import datetime
 import random
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'willpay_ultra_secret_2026'
 
-# --- CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL RENDER) ---
+# --- CONFIGURACIÓN DE CARPETA DE AUDITORÍA ---
+UPLOAD_FOLDER = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# --- CONFIGURACIÓN DE BASE DE DATOS ---
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///willpay.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- MODELOS (ADN DIGITAL WILL-PAY) ---
+# --- MODELO DE USUARIO LEGAL ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
     cedula = db.Column(db.String(20), unique=True)
     telefono = db.Column(db.String(20))
-    password = db.Column(db.String(100)) # Este será tu PIN de 6 números
+    password = db.Column(db.String(100)) # PIN de 6 dígitos
     saldo = db.Column(db.Float, default=0.0)
-    tipo_usuario = db.Column(db.String(50)) # Perfil Económico
+    tipo_usuario = db.Column(db.String(50))
     
-    # DATOS PARA RETIRO (PAGO MÓVIL)
+    # DATOS PAGO MÓVIL
     banco = db.Column(db.String(100))
     telefono_pago = db.Column(db.String(20))
     cedula_titular = db.Column(db.String(20))
     
-    # AUDITORÍA VISUAL (Nombres de archivo)
+    # EXPEDIENTE VISUAL
     foto_cedula = db.Column(db.String(200))
     foto_selfie = db.Column(db.String(200))
     
     comision_rate = db.Column(db.Float, default=1.2)
     ganancias_acumuladas = db.Column(db.Float, default=0.0)
 
-class Movimiento(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
-    tipo = db.Column(db.String(100)) 
-    monto = db.Column(db.Float)
-    referencia = db.Column(db.String(50), unique=True) # Correlativo WP-XXXXXXX
-    motivo = db.Column(db.String(200), default="PAGO DE SERVICIO") # AUDITORÍA
-    emisor_nombre = db.Column(db.String(100)) 
-    receptor_nombre = db.Column(db.String(100)) 
-    status = db.Column(db.String(20), default='PENDIENTE') 
-    fecha = db.Column(db.DateTime, default=datetime.utcnow)
-    usuario = db.relationship('Usuario', backref='movimientos')
-
-# --- INICIALIZACIÓN (RESET FORZADO) ---
 with app.app_context():
-    db.drop_all() # <--- ESTO BORRA LAS TABLAS VIEJAS
-    db.create_all() # <--- ESTO LAS CREA CON TODAS LAS COLUMNAS NUEVAS
-    print("Búnker Will-Pay: Base de Datos RESETEADA Y ACTUALIZADA ✅")
+    db.create_all()
 
-# --- RUTAS DE ACCESO ---
+# --- RUTAS ---
 @app.route('/')
 def index():
-    return render_template('login.html')
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # AUTO-CREACIÓN DEL CEO SI NO EXISTE [cite: 2026-03-01]
-    ceo = Usuario.query.filter_by(cedula='13496133').first()
-    if not ceo:
-        nuevo_ceo = Usuario(
-            nombre="Wilfredo Donquiz",
-            cedula="13496133",
-            password="admin", 
-            saldo=100.0,
-            tipo_usuario="CEO"
-        )
-        db.session.add(nuevo_ceo)
+    # Auto-creación del CEO Wilfredo [cite: 2026-03-01]
+    if not Usuario.query.filter_by(cedula='13496133').first():
+        db.session.add(Usuario(nombre="Wilfredo Donquiz", cedula="13496133", password="admin", tipo_usuario="CEO", saldo=100.0))
         db.session.commit()
 
     if request.method == 'POST':
-        cedula = request.form.get('cedula')
-        password = request.form.get('password')
-        user = Usuario.query.filter_by(cedula=cedula, password=password).first()
+        user = Usuario.query.filter_by(cedula=request.form['cedula'], password=request.form['password']).first()
         if user:
             session['user_id'] = user.id
             return redirect(url_for('dashboard'))
         return "Credenciales incorrectas."
     return render_template('login.html')
 
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        # Guardar fotos físicamente
+        f_cedula = request.files.get('foto_cedula')
+        f_selfie = request.files.get('foto_selfie')
+        
+        name_cedula = secure_filename(f"{request.form['cedula']}_ID.jpg") if f_cedula else None
+        name_selfie = secure_filename(f"{request.form['cedula']}_SELFIE.jpg") if f_selfie else None
+        
+        if f_cedula: f_cedula.save(os.path.join(app.config['UPLOAD_FOLDER'], name_cedula))
+        if f_selfie: f_selfie.save(os.path.join(app.config['UPLOAD_FOLDER'], name_selfie))
+
+        nuevo = Usuario(
+            nombre=request.form['nombre'],
+            cedula=request.form['cedula'],
+            telefono=request.form['telefono'],
+            password=request.form['password'],
+            tipo_usuario=request.form['tipo_usuario'],
+            banco=request.form['banco'],
+            telefono_pago=request.form['telefono_pago'],
+            cedula_titular=request.form['cedula_titular'],
+            foto_cedula=name_cedula,
+            foto_selfie=name_selfie
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template('registro.html')
+
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login'))
     user = Usuario.query.get(session['user_id'])
-    # Se pasa el usuario al HTML para mostrar nombre y saldo real [cite: 2026-03-01]
     return render_template('dashboard.html', user=user)
 
-# --- MOTOR DE TRANSFERENCIAS ---
-@app.route('/procesar_pago', methods=['POST'])
-def procesar_pago():
-    if 'user_id' not in session: return redirect(url_for('login'))
-    
-    emisor = Usuario.query.get(session['user_id'])
-    ced_rec = request.form['cedula_receptor']
-    monto = float(request.form['monto'])
-    concepto = request.form.get('motivo', 'TRANSFERENCIA WILL-PAY')
-    
-    receptor = Usuario.query.filter_by(cedula=ced_rec).first()
-
-    if receptor and emisor.saldo >= monto and emisor.cedula != ced_rec:
-        emisor.saldo -= monto
-        receptor.saldo += monto
-        
-        ref_auditoria = f"WP-{random.randint(1000000, 9999999)}"
-        
-        pago = Movimiento(
-            user_id=emisor.id, 
-            tipo="PAGO REALIZADO", 
-            monto=monto, 
-            referencia=ref_auditoria,
-            motivo=concepto,
-            emisor_nombre=emisor.nombre,
-            receptor_nombre=receptor.nombre,
-            status='COMPLETADO'
-        )
-        
-        # COMISIÓN CEO (El Legado) [cite: 2026-02-24]
-        ceo = Usuario.query.filter_by(cedula='13496133').first()
-        if ceo:
-            comision = monto * (ceo.comision_rate / 100)
-            ceo.ganancias_acumuladas += comision
-        
-        db.session.add(pago)
-        db.session.commit()
-        
-        return f"Pago Exitoso. Ref: {ref_auditoria}"
-    
-    return "Error: Saldo insuficiente o receptor no encontrado."
-
-# --- INICIO DEL SERVIDOR ---
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
