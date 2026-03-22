@@ -8,13 +8,13 @@ import random
 app = Flask(__name__)
 app.secret_key = 'willpay_ultra_secret_2026'
 
-# Configuración de base de datos
+# --- CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL RENDER) ---
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///willpay.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- MODELOS (ADN DIGITAL) ---
+# --- MODELOS (ADN DIGITAL WILL-PAY) ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
@@ -46,18 +46,14 @@ class Movimiento(db.Model):
 
 # --- TRUCO DE RESETEO PARA POSTGRESQL (RENDER GRATIS) ---
 with app.app_context():
-    # SI EL SITIO NO ABRE, DESCOMENTA LA LÍNEA DE ABAJO (QUITA EL #) Y HAZ DEPLOY
+    # Solo descomenta db.drop_all() si necesitas borrar todo y empezar de cero
     # db.drop_all() 
     db.create_all()
     print("Búnker Will-Pay: Base de Datos Sincronizada ✅")
 
-with app.app_context():
-    db.create_all()
-
-# --- RUTAS DE ACCESO (ADN WILL-PAY) ---
+# --- RUTAS DE ACCESO ---
 @app.route('/')
 def index():
-    # Puerta de entrada principal: Si no hay sesión, va al login
     return render_template('login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -69,41 +65,34 @@ def login():
         
         if user:
             session['user_id'] = user.id
-            # Redirección inteligente: Wilfredo al Búnker, usuarios al Dashboard
+            # Redirección: Wilfredo al Búnker Maestro, otros al Dashboard [cite: 2026-03-01]
             if user.cedula == '13496133':
                 return redirect(url_for('admin_panel'))
             return redirect(url_for('dashboard'))
-            
-        return "Credenciales incorrectas. Inténtalo de nuevo."
-    
-    # Si entran por GET (escribiendo la URL), mostrar el formulario
-    return render_template('login.html')
-
-@app.route('/login_page')
-def login_page():
+        return "Credenciales incorrectas."
     return render_template('login.html')
 
 # --- MOTOR DE TRANSFERENCIAS (PAGAR.HTML) ---
 @app.route('/procesar_pago', methods=['POST'])
 def procesar_pago():
-    if 'user_id' not in session: return redirect(url_for('login_page'))
+    if 'user_id' not in session: return redirect(url_for('login'))
     
     emisor = Usuario.query.get(session['user_id'])
     ced_rec = request.form['cedula_receptor']
     monto = float(request.form['monto'])
-    concepto = request.form.get('motivo', 'TRANSFERENCIA WILL-PAY') # Captura el Motivo
+    concepto = request.form.get('motivo', 'TRANSFERENCIA WILL-PAY')
     
     receptor = Usuario.query.filter_by(cedula=ced_rec).first()
 
     if receptor and emisor.saldo >= monto and emisor.cedula != ced_rec:
-        # Ejecutar movimiento de saldo
+        # 1. Ejecutar movimiento
         emisor.saldo -= monto
         receptor.saldo += monto
         
-        # Generar Correlativo Único WP-XXXXXXXX
+        # 2. Generar Correlativo Único
         ref_auditoria = f"WP-{random.randint(1000000, 9999999)}"
         
-        # Registro del Pago con todos los datos de auditoría
+        # 3. Registro con auditoría completa
         pago = Movimiento(
             user_id=emisor.id, 
             tipo="PAGO REALIZADO", 
@@ -115,10 +104,20 @@ def procesar_pago():
             status='COMPLETADO'
         )
         
-        # COMISIÓN CEO (El Legado) [cite: 2026-02-24, WhatsApp Image 2026-03-10 at 1
+        # 4. COMISIÓN CEO (El Legado) [cite: 2026-02-24]
+        ceo = Usuario.query.filter_by(cedula='13496133').first()
+        if ceo:
+            comision = monto * (ceo.comision_rate / 100)
+            ceo.ganancias_acumuladas += comision
+        
+        db.session.add(pago)
+        db.session.commit()
+        
+        return f"Pago Exitoso. Ref: {ref_auditoria}" # Aquí irá tu ticket visual
+    
+    return "Error: Saldo insuficiente o receptor no encontrado."
 
+# --- INICIO DEL SERVIDOR ---
 if __name__ == '__main__':
-    # Render asigna un puerto dinámico, debemos capturarlo así:
     port = int(os.environ.get("PORT", 10000))
-    # Es CRÍTICO usar host='0.0.0.0' para que sea público
     app.run(host='0.0.0.0', port=port)
