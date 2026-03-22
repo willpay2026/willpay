@@ -21,34 +21,35 @@ class Usuario(db.Model):
     cedula = db.Column(db.String(20), unique=True) # CEO ID: 13496133
     password = db.Column(db.String(100))
     saldo = db.Column(db.Float, default=0.0)
-    
-    # Perfil y Ganancias (Legado Wilyanny)
-    tipo_usuario = db.Column(db.String(50)) # PERSONAL, TECNICO, JURIDICO, CEO
+    tipo_usuario = db.Column(db.String(50)) 
     actividad_economica = db.Column(db.String(100)) 
     comision_rate = db.Column(db.Float, default=1.2) 
     ganancias_acumuladas = db.Column(db.Float, default=0.0) 
-    
-    # Datos de Pago Móvil CEO
     banco = db.Column(db.String(50), default="BANESCO")
     telefono_pago = db.Column(db.String(20), default="04126602555")
     cedula_pago = db.Column(db.String(20), default="13496133")
-
-    # Interruptores del Búnker
     auto_aprobacion = db.Column(db.Boolean, default=False) 
     auto_retiros = db.Column(db.Boolean, default=False)    
 
 class Movimiento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
-    tipo = db.Column(db.String(100)) # RECARGA, PAGO, RETIRO
+    tipo = db.Column(db.String(100)) 
     monto = db.Column(db.Float)
-    referencia = db.Column(db.String(50), unique=True) # Correlativo único
-    motivo = db.Column(db.String(200), default="PAGO DE SERVICIO") # MOTIVO DE AUDITORÍA
-    emisor_nombre = db.Column(db.String(100)) # Para el comprobante
-    receptor_nombre = db.Column(db.String(100)) # Para el comprobante
+    referencia = db.Column(db.String(50), unique=True) # Correlativo WP-XXXXXXX
+    motivo = db.Column(db.String(200), default="PAGO DE SERVICIO") # AUDITORÍA
+    emisor_nombre = db.Column(db.String(100)) 
+    receptor_nombre = db.Column(db.String(100)) 
     status = db.Column(db.String(20), default='PENDIENTE') 
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     usuario = db.relationship('Usuario', backref='movimientos')
+
+# --- TRUCO DE RESETEO PARA POSTGRESQL (RENDER GRATIS) ---
+with app.app_context():
+    # SI EL SITIO NO ABRE, DESCOMENTA LA LÍNEA DE ABAJO (QUITA EL #) Y HAZ DEPLOY
+    # db.drop_all() 
+    db.create_all()
+    print("Búnker Will-Pay: Base de Datos Sincronizada ✅")
 
 with app.app_context():
     db.create_all()
