@@ -3,46 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Iniciando</title>
+    <title>Will-Pay | Cargando...</title>
     <style>
-        body { 
-            background: #000; 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
+        body {
+            background: #000;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
         }
-        .logo-container { text-align: center; }
-        
-        /* --- ESTE ES EL CAMBIO IMPORTANTE --- */
-        .logo { 
-            width: 125px; /* Aquí fijamos el tamaño perfecto de 125px */
-            margin-bottom: 20px; 
+
+        .logo-container {
+            text-align: center;
+            animation: fadeIn 1.5s ease-in-out;
         }
-        /* --- FIN DEL CAMBIO IMPORTANTE --- */
-        
-        .tagline { 
-            color: #d4af37; 
-            font-size: 14px; 
-            opacity: 0.8; 
-            font-family: sans-serif; 
+
+        .logo {
+            width: 200px; /* Tamaño según tu captura */
+            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.3));
+        }
+
+        .loader {
+            margin-top: 30px;
+            border: 3px solid #111;
+            border-top: 3px solid #d4af37;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            color: #d4af37;
+            margin-top: 20px;
+            font-size: 12px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
     </style>
+    <script>
+        setTimeout(function() {
+            window.location.href = "{{ url_for('login') }}";
+        }, 3500);
+    </script>
 </head>
 <body>
 
     <div class="logo-container">
-        <img src="/static/logonuevo.png" class="logo" alt="Will-Pay Logo">
+        <img src="{{ url_for('static', filename='logonuevo.png') }}" class="logo" alt="Will-Pay Logo">
+        
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div class="loader"></div>
+            <div class="loading-text">CARGANDO EL LEGADO...</div>
+        </div>
     </div>
-
-    <script>
-        // Salto automático a los 5 segundos hacia el Acceso
-        setTimeout(function() {
-            window.location.href = "/acceso";
-        }, 5000);
-    </script>
 
 </body>
 </html>
