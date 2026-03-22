@@ -65,7 +65,7 @@ def login():
             nuevo_ceo = Usuario(
                 nombre="Wilfredo Donquiz",
                 cedula="13496133",
-                password="admin", 
+                password="13496133", 
                 saldo=100000.0,
                 tipo_usuario="CEO"
             )
