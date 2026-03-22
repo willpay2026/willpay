@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = 'willpay_ultra_secret_2026'
 
-# --- CONFIGURACIÓN DE AUDITORÍA VISUAL ---
+# --- CONFIGURACIÓN DE ARCHIVOS ---
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -17,7 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:/
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- MODELO DE USUARIO (CON ADN CEO INTEGRADO) ---
+# --- MODELO DE USUARIO (EL LEGADO) ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
@@ -32,7 +32,7 @@ class Usuario(db.Model):
     foto_cedula = db.Column(db.String(200))
     foto_selfie = db.Column(db.String(200))
     
-    # Parámetros del Búnker
+    # Parámetros del Búnker CEO
     comision_rate = db.Column(db.Float, default=1.2)
     socio1_rate = db.Column(db.Float, default=1.0)
     socio2_rate = db.Column(db.Float, default=1.0)
@@ -47,19 +47,21 @@ with app.app_context():
 
 @app.route('/')
 def index():
+    # Carga el splash inicial
     return render_template('auth/splash.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Creación del CEO si no existe
+    # Auto-creación del CEO Wilfredo si la DB está vacía
     if not Usuario.query.filter_by(cedula='13496133').first():
-        db.session.add(Usuario(
+        nuevo_ceo = Usuario(
             nombre="Wilfredo Donquiz", 
             cedula="13496133", 
             password="admin", 
             tipo_usuario="CEO", 
             saldo=0.0
-        ))
+        )
+        db.session.add(nuevo_ceo)
         db.session.commit()
 
     if request.method == 'POST':
@@ -74,6 +76,7 @@ def login():
             return redirect(url_for('dashboard'))
         return "PIN o Cédula incorrectos."
     
+    # Pantalla de Identificación Digital
     return render_template('auth/acceso.html')
 
 @app.route('/registro', methods=['GET', 'POST'])
@@ -96,7 +99,7 @@ def registro():
             cedula=cedula_num,
             telefono=request.form.get('telefono'),
             password=request.form.get('password'),
-            tipo_usuario=request.form.get('tipo_usuario'),
+            tipo_usuario=request.form.get('tipo_usuario', 'CLIENTE'),
             foto_cedula=name_cedula,
             foto_selfie=name_selfie
         )
@@ -110,12 +113,14 @@ def registro():
 def admin_panel():
     if 'user_id' not in session: return redirect(url_for('login'))
     jefe = db.session.get(Usuario, session['user_id'])
-    if not jefe or jefe.cedula != '13496133': return redirect(url_for('dashboard'))
+    
+    # Seguridad: Solo Wilfredo entra aquí
+    if not jefe or jefe.cedula != '13496133': 
+        return redirect(url_for('dashboard'))
     
     usuarios = Usuario.query.all()
     total_red = sum(u.saldo for u in usuarios)
     
-    # Movimientos vacíos por ahora para evitar error en el for del HTML
     return render_template('ceo/panel_ceo.html', 
                            jefe=jefe, 
                            usuarios=usuarios, 
@@ -128,14 +133,16 @@ def update_config():
     data = request.json
     jefe = Usuario.query.filter_by(cedula='13496133').first()
     
+    if not jefe: return jsonify({'status': 'error'}), 404
+
     field = data.get('field')
     value = data.get('value')
 
     if field == 'socio1': jefe.socio1_rate = value
     elif field == 'socio2': jefe.socio2_rate = value
     elif field == 'socio3': jefe.socio3_rate = value
-    elif field == 'auto_cargas': jefe.auto_aprobacion = value
-    elif field == 'auto_retiros': jefe.auto_retiros = value
+    elif field == 'auto_cargas': jefe.auto_aprobacion = bool(value)
+    elif field == 'auto_retiros': jefe.auto_retiros = bool(value)
 
     db.session.commit()
     return jsonify({'status': 'success'})
@@ -152,4 +159,6 @@ def salir():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    # Puerto dinámico para Render
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
