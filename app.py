@@ -58,6 +58,21 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # --- AUTO-CREACIÓN DEL CEO (Solo para Wilfredo) ---
+    ceo_check = Usuario.query.filter_by(cedula='13496133').first()
+    if not ceo_check:
+        nuevo_ceo = Usuario(
+            nombre="Wilfredo Donquiz",
+            cedula="13496133",
+            password="admin",  # Cambia esto después por seguridad
+            saldo=100000.0,
+            tipo_usuario="CEO",
+            comision_rate=1.2
+        )
+        db.session.add(nuevo_ceo)
+        db.session.commit()
+    # --------------------------------------------------
+
     if request.method == 'POST':
         cedula = request.form.get('cedula')
         password = request.form.get('password')
@@ -65,12 +80,17 @@ def login():
         
         if user:
             session['user_id'] = user.id
-            # Redirección: Wilfredo al Búnker Maestro, otros al Dashboard [cite: 2026-03-01]
-            if user.cedula == '13496133':
-                return redirect(url_for('admin_panel'))
+            # Redirigimos siempre a 'dashboard' para evitar errores de ruta inexistente
             return redirect(url_for('dashboard'))
         return "Credenciales incorrectas."
+    
     return render_template('login.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    user = Usuario.query.get(session['user_id'])
+    return render_template('dashboard.html', user=user)
 
 # --- MOTOR DE TRANSFERENCIAS (PAGAR.HTML) ---
 @app.route('/procesar_pago', methods=['POST'])
