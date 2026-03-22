@@ -95,3 +95,8 @@ def procesar_pago():
         )
         
         # COMISIÓN CEO (El Legado) [cite: 2026-02-24, WhatsApp Image 2026-03-10 at 1
+
+if __name__ == '__main__':
+    # Render usa la variable de entorno PORT, si no existe usa el 10000
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
