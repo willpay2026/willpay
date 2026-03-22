@@ -2,101 +2,81 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Registro</title>
+    <title>Will-Pay | Registro Legal</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 400px; text-align: left; }
-        .logo { width: 125px; display: block; margin: 0 auto 20px auto; }
-        h2 { color: #d4af37; text-align: center; font-size: 18px; text-transform: uppercase; margin-bottom: 25px; }
-        
-        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
-        input, select { 
-            width: 100%; padding: 12px; margin-bottom: 20px; 
-            background: #111; color: #fff; border: 1px solid #333; 
-            border-radius: 8px; box-sizing: border-box; 
-        }
-        
-        /* Estilo para carga de archivos (Auditoría Visual) */
-        .file-box { background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 20px; }
-        .file-label { font-size: 13px; color: #fff; font-weight: bold; margin-bottom: 5px; display: block; }
-        
-        .section-title { color: #d4af37; font-size: 12px; font-weight: bold; margin: 10px 0; border-bottom: 1px solid #222; padding-bottom: 5px; text-transform: uppercase; }
-        
-        .btn-finalizar { 
-            background: #d4af37; color: #000; font-weight: bold; border: none; 
-            padding: 18px; width: 100%; border-radius: 10px; cursor: pointer; 
-            margin-top: 10px; font-size: 14px; text-transform: uppercase;
-        }
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .container { max-width: 450px; margin: auto; background: #0a0a0a; padding: 25px; border-radius: 20px; border: 1px solid #d4af37; }
+        .logo { text-align: center; margin-bottom: 20px; }
+        h2 { color: #d4af37; text-align: center; text-transform: uppercase; font-size: 1.2rem; }
+        label { color: #d4af37; font-weight: bold; font-size: 0.85rem; display: block; margin-top: 15px; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #333; background: #151515; color: #fff; box-sizing: border-box; }
+        .file-box { border: 1px dashed #444; padding: 15px; margin-top: 10px; border-radius: 10px; background: #111; }
+        .btn-finalizar { background: #d4af37; color: #000; width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 1rem; }
+        .footer-links { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #888; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <img src="/static/logonuevo.png" class="logo" alt="Will-Pay">
+        <div class="logo">
+            <h1 style="color:#d4af37; margin:0;">Will-Pay</h1>
+            <p style="font-size: 0.7rem; color:#888;">Tu Billetera Digital de Confianza</p>
+        </div>
+        
         <h2>Registro de Usuario</h2>
 
         <form action="/registro" method="POST" enctype="multipart/form-data">
-            
             <label>Nombre Completo (Como en Cédula)</label>
-            <input type="text" name="nombre" required placeholder="Ej: Wilfredo Donquiz">
+            <input type="text" name="nombre" placeholder="Nombre y Apellido" required>
 
             <label>Cédula / RIF</label>
-            <input type="text" name="cedula" required placeholder="V-12345678">
+            <input type="text" name="cedula" placeholder="V-12345678" required>
+
+            <label>Teléfono</label>
+            <input type="text" name="telefono" value="04126602555" required>
 
             <label>Tipo de Usuario / Perfil Económico</label>
-            <select name="tipo_usuario" required style="background: #1a1a1a; color: #d4af37; font-weight: bold;">
-                <option value="PERSONAL">Usuario Personal (1.2% Comisión)</option>
-                <option value="TECNICO">Servicio Técnico / Oficios (1.8% Comisión)</option>
-                <option value="JURIDICO">Comercio / Empresa / RIF (3.0% Comisión)</option>
+            <select name="tipo_usuario">
+                <option>Usuario Personal (1.2% Comisión)</option>
+                <option>Comercio / Aliado (1.0% Comisión)</option>
             </select>
 
-            <label>Actividad Económica (Breve descripción)</label>
-            <input type="text" name="actividad_economica" placeholder="Ej: Venta de Repuestos, Freelance, etc.">
+            <label>Crea tu PIN de Seguridad (6 números)</label>
+            <input type="password" name="password" maxlength="6" placeholder="******" required>
 
-            <label>PIN de Seguridad (6 números)</label>
-            <input type="password" name="password" maxlength="6" required placeholder="******">
+            <h3 style="color:#d4af37; border-bottom:1px solid #333; margin-top:30px; padding-bottom:5px; font-size:0.9rem;">DATOS PARA RETIRO (PAGO MÓVIL)</h3>
 
-            <div class="section-title">DATOS PARA RETIRO (PAGO MÓVIL)</div>
-            
             <label>Banco</label>
-            <select name="banco" required>
-                <option value="" disabled selected>Selecciona tu Banco</option>
-                <option value="BANESCO">BANESCO</option>
-                <option value="MERCANTIL">MERCANTIL</option>
-                <option value="PROVINCIAL">PROVINCIAL</option>
-                <option value="VENEZUELA">VENEZUELA</option>
-                <option value="BANCAMIGA">BANCAMIGA</option>
+            <select name="banco">
+                <option>Selecciona tu Banco</option>
+                <option value="0102">Banco de Venezuela</option>
+                <option value="0134">Banesco</option>
+                <option value="0105">Mercantil</option>
             </select>
 
             <label>Teléfono Pago Móvil</label>
-            <input type="text" name="telefono_pago" required placeholder="04120000000">
+            <input type="text" name="telefono_pago" placeholder="04XX-XXXXXXX">
 
             <label>Cédula del Titular (Pago Móvil)</label>
-            <input type="text" name="cedula_pago" required placeholder="V-12345678">
-
-            <div class="section-title">AUDITORÍA VISUAL</div>
+            <input type="text" name="cedula_titular" placeholder="V-XXXXXXXX">
 
             <div class="file-box">
-                <span class="file-label">Foto de Cédula</span>
-                <input type="file" name="foto_cedula" style="margin-bottom: 0;">
+                <label>Foto de Cédula (Auditoría Visual)</label>
+                <input type="file" name="foto_cedula" accept="image/*">
             </div>
 
             <div class="file-box">
-                <span class="file-label">Foto Selfie con Cédula</span>
-                <input type="file" name="foto_selfie" style="margin-bottom: 0;">
+                <label>Foto Selfie</label>
+                <input type="file" name="foto_selfie" accept="image/*">
             </div>
 
-            <p style="text-align: center; font-size: 11px; color: #666;">
-                Al registrarte, aceptas nuestros 
-                <a href="/terminos" style="color: #d4af37; text-decoration: underline;">Términos y Condiciones</a>
-            </p>
-
-            <button type="submit" class="btn-finalizar">Finalizar Registro y Generar Expediente</button>
-            
-            <a href="/acceso" style="color: #555; display: block; text-align: center; margin-top: 25px; text-decoration: none; font-size: 12px;">Volver al Acceso</a>
+            <button type="submit" class="btn-finalizar">FINALIZAR REGISTRO Y GENERAR EXPEDIENTE</button>
         </form>
-    </div>
 
+        <div class="footer-links">
+            Al registrarte, aceptas nuestros <a href="#" style="color:#d4af37;">Términos y Condiciones</a>
+            <br><br>
+            <a href="/login" style="color:#d4af37;">Volver al Acceso</a>
+        </div>
+    </div>
 </body>
 </html>
