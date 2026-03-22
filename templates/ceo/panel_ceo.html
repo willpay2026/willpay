@@ -2,32 +2,34 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay | Búnker CEO</title>
     <style>
         body { background: #000; color: #fff; font-family: 'Arial', sans-serif; margin: 0; padding: 0; }
-        .panic-bar { background: red; color: white; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .panic-bar { background: red; color: white; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; font-size: 12px; cursor: pointer; }
         .header { text-align: center; padding: 20px; }
         .logo { width: 80px; }
         .ceo-welcome { color: #d4af37; font-size: 18px; margin-top: 10px; text-transform: uppercase; letter-spacing: 2px; }
         
-        /* Contenedores Principales */
+        /* Grid de Control */
         .main-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; padding: 20px; }
+        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+        
         .card { background: #0a0a0a; border: 1px solid #333; border-radius: 10px; padding: 20px; position: relative; }
         .card-gold { border: 2px solid #d4af37; }
         
-        /* Tasas de Comisión */
-        .tasa-row { display: flex; justify-content: space-around; margin-bottom: 20px; }
-        .tasa-box { text-align: center; border: 1px solid #d4af37; padding: 10px; border-radius: 5px; min-width: 100px; }
-        .tasa-label { font-size: 10px; color: #d4af37; text-transform: uppercase; }
-        .tasa-value { font-size: 18px; font-weight: bold; display: block; }
-        .tasa-input { background: transparent; border: none; color: #d4af37; width: 40px; text-align: center; font-size: 18px; }
+        /* Tasas de Socios */
+        .tasa-row { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; padding: 0 20px; }
+        .tasa-box { text-align: center; border: 1px solid #d4af37; padding: 10px; border-radius: 5px; min-width: 100px; flex: 1; }
+        .tasa-label { font-size: 10px; color: #d4af37; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .tasa-input { background: transparent; border: none; color: #d4af37; width: 50px; text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid #444; }
 
-        /* Saldo y Estadísticas */
-        .saldo-big { font-size: 48px; font-weight: bold; text-align: center; margin: 20px 0; }
-        .stat-line { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #222; }
+        /* Estadísticas */
+        .saldo-big { font-size: 48px; font-weight: bold; text-align: center; margin: 20px 0; color: #fff; }
+        .stat-line { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #222; font-size: 14px; }
         .neto { color: #00ff00; font-weight: bold; }
 
-        /* Switches de Automatización */
+        /* Switches de Poder */
         .switch-container { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -36,85 +38,119 @@
         input:checked + .slider { background-color: #d4af37; }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* Tabla de Actividad */
-        .tabla-actividad { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-        .tabla-actividad th { color: #d4af37; text-align: left; padding: 10px; border-bottom: 1px solid #333; }
+        /* Tabla de Auditoría */
+        .tabla-wrapper { overflow-x: auto; padding: 0 20px; }
+        .tabla-actividad { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; min-width: 600px; }
+        .tabla-actividad th { color: #d4af37; text-align: left; padding: 10px; border-bottom: 1px solid #333; text-transform: uppercase; }
         .tabla-actividad td { padding: 10px; border-bottom: 1px solid #111; }
         
-        .btn-gold { background: #d4af37; color: #000; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-link { color: #d4af37; text-decoration: none; border: 1px solid #d4af37; padding: 5px 10px; border-radius: 4px; font-size: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="panic-bar">🚨 BOTÓN DE PÁNICO: MANTENIMIENTO EMERGENCIA</div>
+    <div class="panic-bar" onclick="alert('MODO MANTENIMIENTO ACTIVADO - RED CONGELADA')">🚨 MANTENIMIENTO DE EMERGENCIA (PANIC BUTTON)</div>
 
     <div class="header">
         <img src="/static/logonuevo.png" class="logo">
-        <div style="color: #d4af37; font-size: 10px;">ID DNA CEO-0001 - FUNDADOR</div>
-        <div class="ceo-welcome">BIENVENIDO CEO WILFREDO DONQUIZ</div>
+        <div style="color: #d4af37; font-size: 10px; margin-top: 5px;">ID DNA CEO-0001 - WILFREDO DONQUIZ</div>
+        <div class="ceo-welcome">PANEL DE CONTROL MAESTRO</div>
     </div>
 
     <div class="tasa-row">
         <div class="tasa-box">
-            <span class="tasa-label">% PAGOS</span>
-            <input type="text" class="tasa-input" value="3.0" onchange="actualizarTasa('pagos', this.value)">%
+            <span class="tasa-label">SOCIO 1 %</span>
+            <input type="number" class="tasa-input" value="{{ jefe.socio1_rate }}" onchange="updateConfig('socio1', this.value)">
         </div>
         <div class="tasa-box">
-            <span class="tasa-label">% RETIROS</span>
-            <input type="text" class="tasa-input" value="2.0" onchange="actualizarTasa('retiros', this.value)">%
+            <span class="tasa-label">SOCIO 2 %</span>
+            <input type="number" class="tasa-input" value="{{ jefe.socio2_rate }}" onchange="updateConfig('socio2', this.value)">
         </div>
         <div class="tasa-box">
-            <span class="tasa-label">% ACT. ECON.</span>
-            <input type="text" class="tasa-input" value="1.5" onchange="actualizarTasa('act_econ', this.value)">%
+            <span class="tasa-label">SOCIO 3 %</span>
+            <input type="number" class="tasa-input" value="{{ jefe.socio3_rate }}" onchange="updateConfig('socio3', this.value)">
         </div>
     </div>
 
     <div class="main-grid">
         <div class="card card-gold">
-            <div class="tasa-label" style="text-align: center;">SALDO EN Bs.</div>
-            <div class="saldo-big">0.000,00</div>
-            <div style="color: #666; font-size: 10px; text-align: center;">CAPITAL TOTAL EN BÚNKER</div>
+            <div class="tasa-label" style="text-align: center;">CAPITAL TOTAL CIRCULANTE (RED)</div>
+            <div class="saldo-big">Bs. {{ "{:,.2f}".format(total_red) }}</div>
+            <div style="text-align: center;">
+                <a href="/admin/usuarios_adn" class="btn-link">VER ADN DE USUARIOS ({{ usuarios|length }})</a>
+            </div>
         </div>
 
         <div>
             <div class="card" style="margin-bottom: 20px;">
-                <div class="stat-line"><span>DINERO DEPOSITADO</span> <span>Bs. 0,00</span></div>
-                <div class="stat-line"><span>EN TRANSACCIÓN</span> <span>Bs. 0,00</span></div>
-                <div class="stat-line neto"><span>NETO GANANCIAS (LEGADO)</span> <span>Bs. 0,00</span></div>
+                <div class="stat-line"><span>USUARIOS ACTIVOS</span> <span>{{ usuarios|length }}</span></div>
+                <div class="stat-line neto"><span>COMISIONES ACUMULADAS</span> <span>Bs. {{ "{:,.2f}".format(jefe.saldo) }}</span></div>
             </div>
             
             <div class="card">
-                <div class="tasa-label">⚙️ AUTOMATIZACIÓN</div>
+                <div class="tasa-label">⚙️ SUICHES DE AUTOMATIZACIÓN</div>
                 <div class="switch-container">
-                    <span>Auto-Aprobación Saldo</span>
-                    <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                    <span>Auto-Aprobación Cargas</span>
+                    <label class="switch">
+                        <input type="checkbox" {% if jefe.auto_aprobacion %}checked{% endif %} onchange="updateConfig('auto_cargas', this.checked)">
+                        <span class="slider"></span>
+                    </label>
                 </div>
                 <div class="switch-container">
-                    <span>Auto-Aprobación Retiro</span>
-                    <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                    <span>Auto-Aprobación Retiros</span>
+                    <label class="switch">
+                        <input type="checkbox" {% if jefe.auto_retiros %}checked{% endif %} onchange="updateConfig('auto_retiros', this.checked)">
+                        <span class="slider"></span>
+                    </label>
                 </div>
             </div>
         </div>
     </div>
 
-    <div style="padding: 20px;">
-        <div class="tasa-label">📊 ACTIVIDAD EN VIVO (10 en 10)</div>
+    <div class="tabla-wrapper">
+        <div class="tasa-label" style="padding-left: 10px;">📊 AUDITORÍA ADN - ÚLTIMOS 20 MOVIMIENTOS</div>
         <table class="tabla-actividad">
             <thead>
                 <tr>
-                    <th>USUARIO ID</th>
-                    <th>TELÉFONO</th>
-                    <th>ACT. ECON.</th>
-                    <th>FECHA/HORA</th>
-                    <th>SALDO</th>
-                    <th>MOTIVO</th>
-                    <th>ACCIÓN</th>
+                    <th>FECHA</th>
+                    <th>USUARIO</th>
+                    <th>TIPO</th>
+                    <th>MONTO</th>
+                    <th>STATUS</th>
                 </tr>
             </thead>
             <tbody>
-                </tbody>
+                {% for m in movimientos %}
+                <tr>
+                    <td>{{ m.fecha.strftime('%d/%m %H:%M') }}</td>
+                    <td>{{ m.usuario.nombre }} ({{ m.usuario.cedula }})</td>
+                    <td>{{ m.tipo }}</td>
+                    <td style="color: #d4af37; font-weight: bold;">Bs. {{ "%.2f"|format(m.monto) }}</td>
+                    <td><span style="color: {% if m.status == 'COMPLETADO' %}#0f0{% else %}#f00{% endif %}">{{ m.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
+
+    <script>
+        function updateConfig(field, value) {
+            // Si es un checkbox, enviamos booleano, si no, float
+            const finalValue = (typeof value === 'boolean') ? value : parseFloat(value);
+            
+            fetch('/admin/update_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ field: field, value: finalValue })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    console.log('Búnker actualizado: ' + field);
+                }
+            });
+        }
+    </script>
 
 </body>
 </html>
