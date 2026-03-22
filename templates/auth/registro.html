@@ -21,7 +21,7 @@
         .file-box { background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 20px; }
         .file-label { font-size: 13px; color: #fff; font-weight: bold; margin-bottom: 5px; display: block; }
         
-        .section-title { color: #d4af37; font-size: 12px; font-weight: bold; margin: 10px 0; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        .section-title { color: #d4af37; font-size: 12px; font-weight: bold; margin: 10px 0; border-bottom: 1px solid #222; padding-bottom: 5px; text-transform: uppercase; }
         
         .btn-finalizar { 
             background: #d4af37; color: #000; font-weight: bold; border: none; 
@@ -36,26 +36,26 @@
         <img src="/static/logonuevo.png" class="logo" alt="Will-Pay">
         <h2>Registro de Usuario</h2>
 
-        <form action="/register" method="POST" enctype="multipart/form-data">
+        <form action="/registro" method="POST" enctype="multipart/form-data">
             
             <label>Nombre Completo (Como en Cédula)</label>
-            <input type="text" name="nombre" required>
+            <input type="text" name="nombre" required placeholder="Ej: Wilfredo Donquiz">
 
             <label>Cédula / RIF</label>
-            <input type="text" name="cedula" required>
-
-            <label>Teléfono</label>
-            <input type="text" name="telefono" required>
+            <input type="text" name="cedula" required placeholder="V-12345678">
 
             <label>Tipo de Usuario / Perfil Económico</label>
-<select name="actividad" class="form-control" required style="background: #1a1a1a; color: gold; border: 1px solid #333; padding: 10px; border-radius: 5px; width: 100%;">
-    <option value="PERSONAL">Usuario Personal (1.2% Comisión)</option>
-    <option value="TECNICO">Servicio Técnico / Oficios (1.8% Comisión)</option>
-    <option value="JURIDICO">Comercio / Empresa / RIF (3.0% Comisión)</option>
-</select>
+            <select name="tipo_usuario" required style="background: #1a1a1a; color: #d4af37; font-weight: bold;">
+                <option value="PERSONAL">Usuario Personal (1.2% Comisión)</option>
+                <option value="TECNICO">Servicio Técnico / Oficios (1.8% Comisión)</option>
+                <option value="JURIDICO">Comercio / Empresa / RIF (3.0% Comisión)</option>
+            </select>
 
-            <label>Crea tu PIN de Seguridad (6 números)</label>
-            <input type="password" name="password" maxlength="6" required>
+            <label>Actividad Económica (Breve descripción)</label>
+            <input type="text" name="actividad_economica" placeholder="Ej: Venta de Repuestos, Freelance, etc.">
+
+            <label>PIN de Seguridad (6 números)</label>
+            <input type="password" name="password" maxlength="6" required placeholder="******">
 
             <div class="section-title">DATOS PARA RETIRO (PAGO MÓVIL)</div>
             
@@ -70,22 +70,24 @@
             </select>
 
             <label>Teléfono Pago Móvil</label>
-            <input type="text" name="telefono_pago" required>
+            <input type="text" name="telefono_pago" required placeholder="04120000000">
 
             <label>Cédula del Titular (Pago Móvil)</label>
-            <input type="text" name="cedula_pago" required>
+            <input type="text" name="cedula_pago" required placeholder="V-12345678">
+
+            <div class="section-title">AUDITORÍA VISUAL</div>
 
             <div class="file-box">
-                <span class="file-label">Foto de Cédula (Auditoría Visual)</span>
+                <span class="file-label">Foto de Cédula</span>
                 <input type="file" name="foto_cedula" style="margin-bottom: 0;">
             </div>
 
             <div class="file-box">
-                <span class="file-label">Foto Selfie</span>
+                <span class="file-label">Foto Selfie con Cédula</span>
                 <input type="file" name="foto_selfie" style="margin-bottom: 0;">
             </div>
 
-            <p style="text-align: center; font-size: 12px; color: #888;">
+            <p style="text-align: center; font-size: 11px; color: #666;">
                 Al registrarte, aceptas nuestros 
                 <a href="/terminos" style="color: #d4af37; text-decoration: underline;">Términos y Condiciones</a>
             </p>
