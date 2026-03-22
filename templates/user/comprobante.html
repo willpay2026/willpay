@@ -5,35 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Will-Pay | Auditoría</title>
     <style>
-        body { background-color: #1a1a1a; display: flex; justify-content: center; padding: 20px; font-family: monospace; }
-        .ticket { background-color: #fff; width: 100%; max-width: 300px; padding: 15px; border-radius: 10px; color: #000; text-align: center; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        body { background-color: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; font-family: monospace; margin: 0; }
+        .ticket { background-color: #fff; width: 100%; max-width: 300px; padding: 15px; border-radius: 10px; color: #000; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         .linea { border-top: 1px dashed #000; margin: 10px 0; }
-        .status-badge { color: #28a745; font-weight: bold; margin: 10px 0; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px;}
-        .monto-neto { font-size: 24px; font-weight: bold; margin: 15px 0; }
-        .btn-fin { background-color: #000; color: #fff; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .status-badge { color: #28a745; font-weight: bold; margin: 10px 0; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; border: 1px solid #28a745; border-radius: 5px; padding: 5px; }
+        .monto-neto { font-size: 26px; font-weight: bold; margin: 15px 0; }
+        .btn-fin { background-color: #000; color: #fff; width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; text-transform: uppercase; font-size: 14px; }
+        .btn-fin:active { transform: scale(0.95); }
     </style>
 </head>
 <body onload="reproducirBeep()">
-    <audio id="beep-sound" src="/static/beep.mp3" preload="auto"></audio>
+    <audio id="beep-sound" src="{{ url_for('static', filename='beep-09.mp3') }}" preload="auto"></audio>
+    
     <div class="ticket">
-        <img src="/static/logo_willpay.png" style="width: 50px;">
-        <div style="font-size: 10px; font-weight: bold;">COMPROBANTE ELECTRÓNICO</div>
+        <img src="{{ url_for('static', filename='logonuevo.png') }}" style="width: 60px; margin-bottom: 5px;">
+        <div style="font-size: 10px; font-weight: bold; letter-spacing: 1px;">COMPROBANTE ELECTRÓNICO</div>
+        <div style="font-size: 8px; color: #555;">WILL-PAY VENEZUELA 2026</div>
+        
         <div class="linea"></div>
-        <div style="text-align: left; font-size: 10px; text-transform: uppercase;">
-            <p>Nro. OPERACIÓN: {{ tx.referencia }}</p>
-            <p>FECHA: {{ tx.fecha.strftime('%d/%m/%Y, %H:%M:%S') }}</p>
-            <p>CLIENTE: {{ tx.emisor_nombre }}</p>
-            <p>COMERCIO: {{ tx.receptor_nombre }}</p>
-            <div class="status-badge">ESTATUS: CERTIFICADO ✅</div>
+        
+        <div style="text-align: left; font-size: 10px; text-transform: uppercase; line-height: 1.6;">
+            <p><strong>Nro. OPERACIÓN:</strong> #{{ tx.referencia }}</p>
+            <p><strong>FECHA:</strong> {{ tx.fecha.strftime('%d/%m/%Y, %H:%M:%S') }}</p>
+            <p><strong>DE:</strong> {{ tx.emisor_nombre }}</p>
+            <p><strong>PARA:</strong> {{ tx.receptor_nombre }}</p>
+            <div class="status-badge">PAGO CERTIFICADO ✅</div>
         </div>
+        
         <div class="linea"></div>
-        <div class="monto-neto">Bs. {{ "%.2f"|format(tx.monto) }}</div>
+        
+        <div style="font-size: 9px; color: #888;">MONTO TOTAL</div>
+        <div class="monto-neto">Bs. {{ "{:,.2f}".format(tx.monto) }}</div>
+        
+        <div class="linea"></div>
+        <div style="font-size: 8px; color: #888; font-style: italic;">"Simple idea, simple código. Legacy for Wilyanny"</div>
+        
         <button class="btn-fin" onclick="location.href='/dashboard'">FINALIZAR</button>
     </div>
+
+    <div style="margin-top: 20px; color: #444; font-size: 10px;">ID OPERACIÓN: {{ tx.id_unico }}</div>
+
     <script>
         function reproducirBeep() {
             var beep = document.getElementById("beep-sound");
-            beep.play().catch(e => console.log("Audio bloqueado:", e));
+            // Intentar reproducir el sonido de éxito al cargar
+            beep.play().catch(e => console.log("Audio en espera de interacción:", e));
         }
     </script>
 </body>
