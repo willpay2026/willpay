@@ -41,11 +41,10 @@ class Usuario(db.Model):
     auto_retiros = db.Column(db.Boolean, default=False)
 
 with app.app_context():
-    # Esto borra TODO y lo crea de nuevo con los campos de los socios
-    # ¡Cuidado! Se borrarán los usuarios de prueba que hayas creado
+    # CUIDADO: Esto borra los datos actuales para poder crear las nuevas columnas
     db.drop_all() 
     db.create_all()
-    print("Base de datos reseteada con éxito.")
+    print("Base de datos actualizada con éxito: Columnas de Socios Creadas.")
 
 # --- RUTAS DE NAVEGACIÓN ---
 
