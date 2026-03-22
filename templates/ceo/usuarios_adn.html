@@ -19,25 +19,28 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            transition: transform 0.2s;
         }
+        .user-folder:active { transform: scale(0.98); background: #1a1a1a; }
 
-        .user-info { flex-grow: 1; }
-        .user-name { font-size: 16px; font-weight: bold; color: #fff; text-transform: uppercase; }
-        .user-detail { font-size: 11px; color: #888; margin-top: 4px; }
+        .user-info { flex-grow: 1; padding-left: 15px; }
+        .user-name { font-size: 14px; font-weight: bold; color: #fff; text-transform: uppercase; }
+        .user-detail { font-size: 10px; color: #888; margin-top: 4px; }
         
         .user-badge {
             background: #1a1a1a;
             border: 1px solid #d4af37;
             color: #d4af37;
-            padding: 4px 8px;
-            border-radius: 5px;
-            font-size: 10px;
+            padding: 3px 7px;
+            border-radius: 4px;
+            font-size: 9px;
             font-weight: bold;
+            text-transform: uppercase;
         }
 
-        .saldo-box { text-align: right; min-width: 100px; }
-        .saldo-label { font-size: 9px; color: #aaa; text-transform: uppercase; }
-        .saldo-val { font-size: 14px; font-weight: bold; color: #00ff00; }
+        .saldo-box { text-align: right; min-width: 110px; }
+        .saldo-label { font-size: 8px; color: #aaa; text-transform: uppercase; margin-bottom: 2px; }
+        .saldo-val { font-size: 13px; font-weight: bold; color: #00ff00; }
 
         .btn-back {
             display: block;
@@ -45,23 +48,24 @@
             padding: 15px;
             background: transparent;
             border: 1px solid #444;
-            color: #888;
+            color: #d4af37;
             text-align: center;
             text-decoration: none;
             border-radius: 10px;
             margin-top: 20px;
             font-size: 12px;
             font-weight: bold;
+            box-sizing: border-box;
         }
 
-        .folder-icon { font-size: 24px; margin-right: 15px; }
+        .folder-icon { font-size: 24px; color: #d4af37; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="title">📁 EXPEDIENTES ADN DIGITAL</div>
-        <p style="font-size: 10px; color: #555;">AUDITORÍA MAESTRA - WILL-PAY</p>
+        <p style="font-size: 10px; color: #555;">AUDITORÍA DE RED - TOTAL USUARIOS: {{ usuarios|length }}</p>
     </div>
 
     {% for user in usuarios %}
@@ -69,26 +73,30 @@
         <div class="folder-icon">📂</div>
         <div class="user-info">
             <div class="user-name">{{ user.nombre }}</div>
-            <div class="user-detail">V-{{ user.cedula }} | TEL: {{ user.telefono_pago }}</div>
+            <div class="user-detail">V-{{ user.cedula }} | TLF: {{ user.telefono_pago or 'N/A' }}</div>
             <div style="margin-top: 8px;">
                 <span class="user-badge">{{ user.tipo_usuario }}</span>
+                {% if user.actividad_economica %}
+                <span style="font-size: 9px; color: #555; margin-left: 5px;">• {{ user.actividad_economica }}</span>
+                {% endif %}
             </div>
         </div>
         <div class="saldo-box">
-            <div class="saldo-label">SALDO DISPONIBLE</div>
-            <div class="saldo-val">Bs. {{ "%.2f"|format(user.saldo) }}</div>
+            <div class="saldo-label">SALDO EN CUENTA</div>
+            <div class="saldo-val">Bs. {{ "{:,.2f}".format(user.saldo) }}</div>
         </div>
     </div>
     {% else %}
     <div style="text-align: center; color: #444; margin-top: 50px;">
-        No hay expedientes registrados todavía.
+        <p>No hay expedientes registrados todavía.</p>
     </div>
     {% endfor %}
 
-    <a href="/admin_panel" class="btn-back">VOLVER AL BÚNKER CEO</a>
+    <a href="{{ url_for('admin_panel') }}" class="btn-back">VOLVER AL BÚNKER CEO</a>
 
-    <div style="text-align: center; margin-top: 30px; font-size: 10px; color: #222;">
-        ACCESO EXCLUSIVO: WILFREDO DONQUIZ
+    <div style="text-align: center; margin-top: 30px; font-size: 10px; color: #333;">
+        ACCESO RESTRINGIDO - DNA: WILFREDO DONQUIZ<br>
+        WILL-PAY VENEZUELA 2026
     </div>
 
 </body>
