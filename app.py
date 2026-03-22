@@ -18,18 +18,23 @@ db = SQLAlchemy(app)
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
-    cedula = db.Column(db.String(20), unique=True) # CEO ID: 13496133
-    password = db.Column(db.String(100))
+    cedula = db.Column(db.String(20), unique=True)
+    telefono = db.Column(db.String(20))
+    password = db.Column(db.String(100)) # Este será tu PIN de 6 números
     saldo = db.Column(db.Float, default=0.0)
-    tipo_usuario = db.Column(db.String(50)) 
-    actividad_economica = db.Column(db.String(100)) 
-    comision_rate = db.Column(db.Float, default=1.2) 
-    ganancias_acumuladas = db.Column(db.Float, default=0.0) 
-    banco = db.Column(db.String(50), default="BANESCO")
-    telefono_pago = db.Column(db.String(20), default="04126602555")
-    cedula_pago = db.Column(db.String(20), default="13496133")
-    auto_aprobacion = db.Column(db.Boolean, default=False) 
-    auto_retiros = db.Column(db.Boolean, default=False)    
+    tipo_usuario = db.Column(db.String(50)) # Perfil Económico
+    
+    # DATOS PARA RETIRO (PAGO MÓVIL)
+    banco = db.Column(db.String(100))
+    telefono_pago = db.Column(db.String(20))
+    cedula_titular = db.Column(db.String(20))
+    
+    # AUDITORÍA VISUAL (Nombres de archivo)
+    foto_cedula = db.Column(db.String(200))
+    foto_selfie = db.Column(db.String(200))
+    
+    comision_rate = db.Column(db.Float, default=1.2)
+    ganancias_acumuladas = db.Column(db.Float, default=0.0)
 
 class Movimiento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
