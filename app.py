@@ -89,5 +89,6 @@ def registro():
         f_selfie = request.files.get('foto_selfie')
         cedula_num = request.form['cedula']
         
+      # Busca estas líneas (alrededor de la 90-95)
         name_cedula = secure_filename(f"{cedula_num}_ID.jpg") if f_cedula else None
-        name_selfie = secure_filename(f
+        name_selfie = secure_filename(f"{cedula_num}_SELFIE.jpg") if f_selfie else None
