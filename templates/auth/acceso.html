@@ -23,19 +23,20 @@
         
         h2 { color: #d4af37; font-size: 18px; letter-spacing: 1px; margin-bottom: 30px; text-transform: uppercase; }
         
-        .label-text { color: #555; font-size: 16px; margin-bottom: 15px; font-weight: bold; }
+        .label-text { color: #555; font-size: 14px; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; }
         
         input { 
             width: 100%; 
             padding: 18px; 
             margin-bottom: 15px; 
-            background: #e8f0fe; /* El tono claro que se ve en la imagen */
+            background: #e8f0fe; /* El tono claro de tu diseño */
             color: #000; 
             border: none; 
             border-radius: 12px; 
             box-sizing: border-box; 
             text-align: center;
             font-size: 16px;
+            font-weight: bold;
         }
         
         .btn-login { 
@@ -50,32 +51,34 @@
             font-size: 18px; 
             margin-top: 10px;
             text-transform: uppercase;
+            transition: 0.3s;
         }
+        .btn-login:active { transform: scale(0.95); opacity: 0.8; }
         
-        .footer-link { color: #d4af37; text-decoration: none; font-size: 15px; margin-top: 30px; display: block; }
+        .footer-link { color: #d4af37; text-decoration: none; font-size: 14px; margin-top: 30px; display: block; }
         
-        .credits { color: #d4af37; font-size: 14px; margin-top: 80px; opacity: 0.8; }
+        .credits { color: #d4af37; font-size: 12px; margin-top: 60px; opacity: 0.6; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <img src="/static/logonuevo.png" class="logo">
+        <img src="/static/logonuevo.png" class="logo" alt="Will-Pay">
         
         <h2>ACCESO AL PANEL</h2>
 
-        <div class="label-text">Nombre y Apellido</div>
+        <div class="label-text">Identificación Digital</div>
 
         <form action="/login" method="POST">
-            <input type="text" name="cedula" placeholder="Número de Telf" required>
-            <input type="password" name="password" placeholder="PIN" required>
+            <input type="text" name="cedula" placeholder="Cédula o RIF" required>
+            <input type="password" name="password" placeholder="PIN de 6 dígitos" required>
             
             <button type="submit" class="btn-login">ENTRAR</button>
         </form>
 
         <a href="/registro" class="footer-link">¿No tienes cuenta? Regístrate aquí</a>
 
-        <div class="credits">Creado por Wildon C.A</div>
+        <div class="credits">PRODUCTO ORIGINAL DE WILDON C.A</div>
     </div>
 
 </body>
