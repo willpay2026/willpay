@@ -12,25 +12,30 @@ UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# --- BASE DE DATOS ---
+# --- CONFIGURACIÓN DE BASE DE DATOS ---
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///willpay.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- MODELO DE USUARIO ---
+# --- MODELO DE USUARIO (EL LEGADO) ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
     cedula = db.Column(db.String(20), unique=True)
     telefono = db.Column(db.String(20))
-    password = db.Column(db.String(100))
+    password = db.Column(db.String(100)) # PIN de Seguridad
     saldo = db.Column(db.Float, default=0.0)
     tipo_usuario = db.Column(db.String(50))
+    
+    # Datos Pago Móvil
     banco = db.Column(db.String(100))
     telefono_pago = db.Column(db.String(20))
     cedula_titular = db.Column(db.String(20))
+    
+    # Expediente Visual
     foto_cedula = db.Column(db.String(200))
     foto_selfie = db.Column(db.String(200))
+    
     comision_rate = db.Column(db.Float, default=1.2)
     ganancias_acumuladas = db.Column(db.Float, default=0.0)
 
@@ -41,14 +46,22 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    # Carga el Splash Screen (index.html)
+    # 1. SPLASH SCREEN (Carga index.html)
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # Creación automática del CEO Wilfredo [cite: 2026-03-01]
-    if not Usuario.query.filter_by(cedula='13496133').first():
-        db.session.add(Usuario(nombre="Wilfredo Donquiz", cedula="13496133", password="admin", tipo_usuario="CEO", saldo=100.0))
+    ceo = Usuario.query.filter_by(cedula='13496133').first()
+    if not ceo:
+        nuevo_ceo = Usuario(
+            nombre="Wilfredo Donquiz", 
+            cedula="13496133", 
+            password="admin", 
+            tipo_usuario="CEO", 
+            saldo=100.0
+        )
+        db.session.add(nuevo_ceo)
         db.session.commit()
 
     if request.method == 'POST':
@@ -58,10 +71,12 @@ def login():
         
         if user:
             session['user_id'] = user.id
+            # Redirección según rango
             if user.cedula == '13496133':
                 return redirect(url_for('admin_panel'))
             return redirect(url_for('dashboard'))
         return "PIN o Cédula incorrectos."
+    
     return render_template('login.html')
 
 @app.route('/registro', methods=['GET', 'POST'])
@@ -71,7 +86,7 @@ def registro():
         f_selfie = request.files.get('foto_selfie')
         cedula_num = request.form.get('cedula')
         
-        # AQUÍ ESTABA EL ERROR (Línea 93 corregida)
+        # Nombres de archivos seguros (CORREGIDO)
         name_cedula = secure_filename(f"{cedula_num}_ID.jpg") if f_cedula else None
         name_selfie = secure_filename(f"{cedula_num}_SELFIE.jpg") if f_selfie else None
         
@@ -95,6 +110,7 @@ def registro():
         db.session.add(nuevo)
         db.session.commit()
         return redirect(url_for('login'))
+    
     return render_template('registro.html')
 
 @app.route('/admin_panel')
@@ -109,6 +125,11 @@ def dashboard():
     if 'user_id' not in session: return redirect(url_for('login'))
     user = Usuario.query.get(session['user_id'])
     return render_template('dashboard.html', user=user)
+
+@app.route('/salir')
+def salir():
+    session.clear()
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
