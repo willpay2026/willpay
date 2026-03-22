@@ -65,8 +65,8 @@ def login():
             nuevo_ceo = Usuario(
                 nombre="Wilfredo Donquiz",
                 cedula="13496133",
-                password="13496133", 
-                saldo=100000.0,
+                password="sdmin", 
+                saldo=100.0,
                 tipo_usuario="CEO"
             )
             db.session.add(nuevo_ceo)
