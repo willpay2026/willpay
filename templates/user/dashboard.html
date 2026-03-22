@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Búnker</title>
+    <title>Will-Pay | Bóveda</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
@@ -23,13 +23,13 @@
     </style>
 </head>
 <body>
-    <audio id="beep" src="/static/beep.mp3" preload="auto"></audio>
+    <audio id="beep" src="/static/beep-09.mp3" preload="auto"></audio>
 
     <img src="/static/logonuevo.png" style="width: 80px; margin-bottom: 20px;">
     
     <div class="boveda">
         <p style="font-size: 11px; color: #888; margin: 0;">SALDO DISPONIBLE</p>
-        <h2 style="font-size: 34px; margin: 10px 0;">Bs. {{ "%.2f"|format(u.saldo) }}</h2>
+        <h2 style="font-size: 34px; margin: 10px 0;">Bs. {{ "%.2f"|format(cliente.saldo) }}</h2>
         
         <button class="btn" style="background:var(--verde); color:black; width:100%; margin-bottom:10px" onclick="location.href='/recargar'">➕ RECARGAR SALDO</button>
         
@@ -55,7 +55,7 @@
         <div class="modal-content">
             <h3 style="color:var(--dorado)">MI CÓDIGO DE PAGO</h3>
             <div id="qrcode" style="background:white; padding:10px; display:inline-block; border-radius:10px; margin:10px 0;"></div>
-            <p style="font-size:12px;">{{ u.nombre }}</p>
+            <p style="font-size:12px;">{{ cliente.nombre }}</p>
             <button class="btn btn-cobrar" style="width:100%" onclick="cerrarModales()">CERRAR</button>
         </div>
     </div>
@@ -68,15 +68,17 @@
         </div>
     </div>
 
-    <div id="modalRetirar" class="modal"><div class="modal-content">
-        <h3 style="color:var(--dorado)">SOLICITAR RETIRO</h3>
-        <p style="font-size:11px; color:#888;">Se enviará a: {{ u.banco }}<br>{{ u.telefono_pago }}</p>
-        <form action="/solicitar_retiro" method="POST">
-            <input type="number" name="monto" placeholder="Monto Bs." required step="0.01" max="{{ u.saldo }}">
-            <button type="submit" class="btn btn-pagar" style="width:100%">CONFIRMAR RETIRO</button>
-        </form>
-        <p onclick="cerrarModales()" style="cursor:pointer; color:#555; margin-top:15px;">Cancelar</p>
-    </div></div>
+    <div id="modalRetirar" class="modal">
+        <div class="modal-content">
+            <h3 style="color:var(--dorado)">SOLICITAR RETIRO</h3>
+            <p style="font-size:11px; color:#888;">Se enviará a: {{ cliente.banco }}<br>{{ cliente.telefono_pago }}</p>
+            <form action="/solicitar_retiro" method="POST">
+                <input type="number" name="monto" placeholder="Monto Bs." required step="0.01" max="{{ cliente.saldo }}">
+                <button type="submit" class="btn btn-pagar" style="width:100%">CONFIRMAR RETIRO</button>
+            </form>
+            <p onclick="cerrarModales()" style="cursor:pointer; color:#555; margin-top:15px;">Cancelar</p>
+        </div>
+    </div>
 
     <script>
         let html5QrCode;
@@ -84,16 +86,17 @@
         function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function cerrarModales() { 
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            if(html5QrCode) detenerCamara();
+            if(html5QrCode) {
+                html5QrCode.stop().catch(err => console.log(err));
+            }
         }
 
-        // LÓGICA DE PAGO: GENERA EL QR CON TUS DATOS
         function generarQR() {
             document.getElementById('qrcode').innerHTML = "";
             const datos = JSON.stringify({
-                id: "{{ u.id }}",
-                nombre: "{{ u.nombre }}",
-                cedula: "{{ u.cedula }}"
+                id: "{{ cliente.id }}",
+                nombre: "{{ cliente.nombre }}",
+                cedula: "{{ cliente.cedula }}"
             });
             new QRCode(document.getElementById("qrcode"), {
                 text: datos,
@@ -103,7 +106,6 @@
             abrirModal('modalPagar');
         }
 
-        // LÓGICA DE COBRO: AUTOMÁTICA Y CON BEEP
         function activarCamara() {
             abrirModal('modalCobrar');
             html5QrCode = new Html5Qrcode("reader");
@@ -111,10 +113,12 @@
                 { facingMode: "environment" }, 
                 { fps: 10, qrbox: 250 },
                 qrCodeMessage => {
-                    document.getElementById('beep').play(); // ¡BEEP!
-                    detenerCamara();
-                    // ENVIAR AL CEREBRO PARA COBRO AUTOMÁTICO
-                    window.location.href = "/procesar_cobro?datos=" + encodeURIComponent(qrCodeMessage);
+                    const audio = document.getElementById('beep');
+                    audio.play().catch(e => console.log("Error audio:", e));
+                    
+                    html5QrCode.stop().then(() => {
+                        window.location.href = "/procesar_cobro?datos=" + encodeURIComponent(qrCodeMessage);
+                    });
                 }
             ).catch(err => console.error(err));
         }
@@ -124,6 +128,8 @@
                 html5QrCode.stop().then(() => {
                     cerrarModales();
                 });
+            } else {
+                cerrarModales();
             }
         }
     </script>
