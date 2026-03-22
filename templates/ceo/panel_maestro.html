@@ -3,62 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay CEO | Búnker de Control</title>
+    <title>Will-Pay | Búnker CEO</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #0a0a0a; color: white; font-family: 'Segoe UI', sans-serif; }
+        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; }
         .oro-text { color: #D4AF37; }
-        .oro-btn { background: #D4AF37; color: black; font-weight: bold; border: none; }
-        .card-bunker { background: #151515; border: 1px solid #222; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
-        .badge-reserva { background: rgba(212, 175, 55, 0.1); color: #D4AF37; border: 1px dashed #D4AF37; padding: 5px; }
-        input.form-control { background: #222; border: 1px solid #333; color: white; }
+        .oro-border { border: 2px solid #D4AF37; border-radius: 20px; }
+        
+        /* Recuadros de Porcentajes */
+        .stat-box { background: #0a0a0a; border: 1px solid #D4AF37; border-radius: 10px; padding: 5px; text-align: center; }
+        .stat-label { font-size: 10px; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; }
+        .stat-value { color: #D4AF37; font-size: 14px; font-weight: bold; border: 1px solid #D4AF37; border-radius: 5px; display: inline-block; padding: 2px 10px; }
+
+        /* Contenedores Principales */
+        .card-panel { background: #0a0a0a; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .saldo-box { padding: 40px 20px; position: relative; }
+        .saldo-label { color: #D4AF37; font-weight: bold; letter-spacing: 2px; font-size: 12px; }
+        .saldo-main { font-size: 3.5rem; font-weight: 800; margin: 10px 0; }
+        
+        /* Dinero Depositado y Ganancias */
+        .dinero-info { border-left: 5px solid #D4AF37; background: #0a0a0a; padding: 15px; margin-bottom: 15px; border-radius: 0 10px 10px 0; }
+        .ganancia-info { border-left: 5px solid #00ff00; background: #0a0a0a; padding: 15px; margin-bottom: 15px; border-radius: 0 10px 10px 0; }
+        .label-sm { font-size: 11px; font-weight: bold; margin-bottom: 10px; display: block; }
+        .neto-txt { color: #00ff00; }
+
+        /* Inputs y Botones */
+        input.form-control { background: #111; border: 1px solid #333; color: white; padding: 12px; margin-bottom: 15px; }
+        .btn-cargar { background: #D4AF37; color: black; font-weight: 800; border: none; padding: 15px; border-radius: 10px; text-transform: uppercase; width: 100%; }
+
+        /* Switches de Automatización */
+        .form-check-input:checked { background-color: #D4AF37; border-color: #D4AF37; }
+        .form-switch .form-check-input { width: 3em; height: 1.5em; background-color: #333; }
+        .auto-label { font-size: 14px; font-weight: 500; }
+
+        /* Tabla de Actividad */
+        .table-header { color: #D4AF37; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .pagination-btn { background: #222; color: white; border: none; padding: 8px 15px; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body class="p-3">
-    <div class="container">
+
+    <div class="container" style="max-width: 450px;">
         <div class="text-center mb-4">
-            <h1 class="oro-text mt-2">Will-Pay</h1>
-            <p class="oro-text small">ID DNA CEO-0001 - FUNDADOR</p>
-            <h2 class="fw-bold">BIENVENIDO CEO<br>WILFREDO DONQUIZ</h2>
+            <img src="/static/logonuevo.png" style="width: 100px;">
+            <div style="font-size: 12px; margin-top: 5px;">Tu Billetera Digital de Confianza</div>
+            <p class="oro-text small mt-3 fw-bold">ID DNA CEO-0001 - FUNDADOR</p>
+            <h2 class="fw-bold h4">BIENVENIDO CEO<br>WILFREDO DONQUIZ</h2>
         </div>
 
-        <div class="card-bunker text-center" style="border: 2px solid #D4AF37;">
-            <p class="oro-text mb-1">SALDO EN Bs.</p>
-            <h1 style="font-size: 3.5rem;">{{ "%.2f"|format(u.saldo) }}</h1>
-            <p class="text-secondary small">CAPITAL TOTAL EN BÚNKER</p>
-        </div>
+        <hr style="border-color: #D4AF37; opacity: 0.5;">
 
-        <div class="card-bunker">
-            <h5 class="oro-text mb-3">⚡ RECARGA DIRECTA (BANESCO)</h5>
-            <div class="bg-black p-3 rounded mb-3 border border-secondary small">
-                Pago Móvil: 04126602555 | CI: 13496133
+        <div class="row g-2 mb-4">
+            <div class="col-4">
+                <div class="stat-box">
+                    <div class="stat-label">% PAGOS</div>
+                    <div class="stat-value">0.0%</div>
+                </div>
             </div>
+            <div class="col-4">
+                <div class="stat-box">
+                    <div class="stat-label">% RETIROS</div>
+                    <div class="stat-value">0.0%</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="stat-box">
+                    <div class="stat-label">% ACT. ECON.</div>
+                    <div class="stat-value">0.0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-panel oro-border text-center saldo-box">
+            <div class="saldo-label">SALDO EN Bs.</div>
+            <div class="saldo-main">{{ "{:,.2f}".format(u.saldo) }}</div>
+            <div class="text-secondary small">CAPITAL TOTAL EN BÚNKER</div>
+        </div>
+
+        <div class="dinero-info">
+            <span class="label-sm">DINERO DEPOSITADO</span>
+            <h4 class="fw-bold mb-0">Bs. 0,00</h4>
+        </div>
+
+        <div class="dinero-info" style="border-left-color: #D4AF37;">
+            <span class="label-sm text-uppercase">En Transacción</span>
+            <h4 class="fw-bold mb-0">Bs. 0,00</h4>
+        </div>
+
+        <div class="ganancia-info">
+            <span class="label-sm neto-txt">NETO GANANCIAS (LEGADO)</span>
+            <h4 class="fw-bold mb-0">Bs. 0,00</h4>
+        </div>
+
+        <div class="card-panel" style="background: #111;">
+            <h6 class="oro-text fw-bold mb-3"><i class="fas fa-bolt"></i> ⚡ RECARGA DIRECTA</h6>
             <form action="/procesar_recarga" method="POST">
-                <input type="text" name="telefono" class="form-control mb-2" placeholder="Número de Teléfono">
-                <input type="number" name="monto" class="form-control mb-3" placeholder="Monto en Bs." step="0.01">
-                <button type="submit" class="btn oro-btn w-100 py-3">CARGAR SALDO</button>
+                <input type="text" name="telefono" class="form-control" placeholder="Número de Teléfono">
+                <input type="number" name="monto" class="form-control" placeholder="Monto en Bs.">
+                <button type="submit" class="btn-cargar">CARGAR SALDO</button>
             </form>
         </div>
 
-        <div class="card-bunker">
-            <h5 class="oro-text mb-3">📊 ACTIVIDAD EN VIVO (SOCIOS)</h5>
-            <table class="table table-dark table-hover small">
-                <thead><tr class="oro-text"><th>USUARIO</th><th>TELÉFONO</th><th>SALDO</th></tr></thead>
-                <tbody>
-                    {% for socio in usuarios %}
-                    <tr>
-                        <td>{{ socio.nombre }}</td>
-                        <td>{{ socio.telefono_pago }}</td>
-                        <td class="oro-text">Bs. {{ socio.saldo }}</td>
+        <div class="card-panel" style="background: #111;">
+            <h6 class="oro-text fw-bold mb-4">⚙️ AUTOMATIZACIÓN</h6>
+            <div class="d-flex justify-content-between align-items: center; mb-3">
+                <span class="auto-label">Auto-Aprobación Saldo</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox">
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items: center;">
+                <span class="auto-label">Auto-Aprobación Retiro</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox">
+                </div>
+            </div>
+            <div class="text-center text-secondary small mt-3" style="font-size: 9px;">VINCULADO AL BÚNKER EN RENDER</div>
+        </div>
+
+        <div class="mb-5">
+            <h6 class="fw-bold mb-4">📊 ACTIVIDAD EN VIVO (10 en 10)</h6>
+            <table class="table table-dark table-borderless align-middle">
+                <thead>
+                    <tr class="table-header">
+                        <th>USUARIO ID</th>
+                        <th>TELÉFONO</th>
+                        <th>ACT. ECON.</th>
+                        <th>FECHA/H</th>
                     </tr>
-                    {% endfor %}
-                    {% for i in range(5) %}
-                    <tr class="opacity-25"><td colspan="2"><i>Espacio Reservado Partner</i></td><td><span class="badge-reserva">RESERVADO</span></td></tr>
-                    {% endfor %}
+                </thead>
+                <tbody>
+                    <tr class="small text-secondary"><td colspan="4" class="text-center py-4">No hay actividad reciente</td></tr>
                 </tbody>
             </table>
+            <div class="d-flex justify-content-center gap-2 mt-3">
+                <button class="pagination-btn">ANTERIOR</button>
+                <div class="py-2">Página 1</div>
+                <button class="pagination-btn">SIGUIENTE</button>
+            </div>
         </div>
-        <p class="text-center text-secondary small mt-4">Legado para Wilyanny Donquiz</p>
+
+        <p class="text-center text-secondary small" style="opacity: 0.5;">Legado para Wilyanny Donquiz</p>
     </div>
+
 </body>
 </html>
