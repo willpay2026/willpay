@@ -84,11 +84,36 @@ def login():
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
-        # Guardar Expediente Visual
+        # 1. Obtener archivos y datos
         f_cedula = request.files.get('foto_cedula')
         f_selfie = request.files.get('foto_selfie')
-        cedula_num = request.form['cedula']
+        cedula_num = request.form.get('cedula') # Usamos .get para evitar errores
         
-      # Busca estas líneas (alrededor de la 90-95)
+        # 2. Generar nombres seguros (AQUÍ ESTABA EL ERROR)
         name_cedula = secure_filename(f"{cedula_num}_ID.jpg") if f_cedula else None
         name_selfie = secure_filename(f"{cedula_num}_SELFIE.jpg") if f_selfie else None
+        
+        # 3. Guardar físicamente en la carpeta uploads
+        if f_cedula and name_cedula:
+            f_cedula.save(os.path.join(app.config['UPLOAD_FOLDER'], name_cedula))
+        if f_selfie and name_selfie:
+            f_selfie.save(os.path.join(app.config['UPLOAD_FOLDER'], name_selfie))
+
+        # 4. Crear el expediente en la base de datos
+        nuevo = Usuario(
+            nombre=request.form.get('nombre'),
+            cedula=cedula_num,
+            telefono=request.form.get('telefono'),
+            password=request.form.get('password'),
+            tipo_usuario=request.form.get('tipo_usuario'),
+            banco=request.form.get('banco'),
+            telefono_pago=request.form.get('telefono_pago'),
+            cedula_titular=request.form.get('cedula_titular'),
+            foto_cedula=name_cedula,
+            foto_selfie=name_selfie
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        return redirect(url_for('login'))
+    
+    return render_template('registro.html')
