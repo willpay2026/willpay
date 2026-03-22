@@ -44,10 +44,11 @@ class Movimiento(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     usuario = db.relationship('Usuario', backref='movimientos')
 
-# --- INICIALIZACIÓN ---
+# --- INICIALIZACIÓN (RESET FORZADO) ---
 with app.app_context():
-    db.create_all()
-    print("Búnker Will-Pay: Base de Datos Sincronizada ✅")
+    db.drop_all() # <--- ESTO BORRA LAS TABLAS VIEJAS
+    db.create_all() # <--- ESTO LAS CREA CON TODAS LAS COLUMNAS NUEVAS
+    print("Búnker Will-Pay: Base de Datos RESETEADA Y ACTUALIZADA ✅")
 
 # --- RUTAS DE ACCESO ---
 @app.route('/')
