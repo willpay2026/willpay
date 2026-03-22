@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Will-Pay | Búnker CEO</title>
+    <style>
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .header { border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border-left: 5px solid #d4af37; margin-bottom: 20px; }
+        .balance { font-size: 2.5rem; color: #d4af37; font-weight: bold; }
+        .btn-pay { background: #d4af37; color: #000; padding: 15px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; color: #d4af37; border-bottom: 1px solid #333; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #222; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Will-Pay <span style="font-size: 0.8rem; color: #888;">CEO Panel</span></h1>
+            <a href="/login" style="color: #d4af37; text-decoration: none;">Cerrar Sesión</a>
+        </div>
+
+        <div class="card">
+            <p>Estado de Ganancias Acumuladas</p>
+            <div class="balance">$ 0.00</div>
+            <p style="color: #888;">Titular: Wilfredo Donquiz (ID: 13496133)</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="/pagar" class="btn-pay">REGISTRAR NUEVO PAGO</a>
+        </div>
+
+        <h3>Historial de Auditoría WP</h3>
+        <div class="card" style="border-left: 5px solid #444;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Emisor/Receptor</th>
+                        <th>Referencia</th>
+                        <th>Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #555; padding: 20px;">Esperando sincronización de transacciones...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
