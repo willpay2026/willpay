@@ -44,10 +44,8 @@ class Movimiento(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     usuario = db.relationship('Usuario', backref='movimientos')
 
-# --- TRUCO DE RESETEO PARA POSTGRESQL (RENDER GRATIS) ---
+# --- INICIALIZACIÓN ---
 with app.app_context():
-    # Solo descomenta db.drop_all() si necesitas borrar todo y empezar de cero
-    # db.drop_all() 
     db.create_all()
     print("Búnker Will-Pay: Base de Datos Sincronizada ✅")
 
@@ -58,20 +56,18 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # --- ESTO CREA TU USUARIO SI NO EXISTE ---
-    with app.app_context():
-        ceo = Usuario.query.filter_by(cedula='13496133').first()
-        if not ceo:
-            nuevo_ceo = Usuario(
-                nombre="Wilfredo Donquiz",
-                cedula="13496133",
-                password="sdmin", 
-                saldo=100.0,
-                tipo_usuario="CEO"
-            )
-            db.session.add(nuevo_ceo)
-            db.session.commit()
-    # ------------------------------------------
+    # AUTO-CREACIÓN DEL CEO SI NO EXISTE [cite: 2026-03-01]
+    ceo = Usuario.query.filter_by(cedula='13496133').first()
+    if not ceo:
+        nuevo_ceo = Usuario(
+            nombre="Wilfredo Donquiz",
+            cedula="13496133",
+            password="admin", 
+            saldo=100.0,
+            tipo_usuario="CEO"
+        )
+        db.session.add(nuevo_ceo)
+        db.session.commit()
 
     if request.method == 'POST':
         cedula = request.form.get('cedula')
@@ -87,30 +83,10 @@ def login():
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login'))
     user = Usuario.query.get(session['user_id'])
-    # Pasamos el usuario al HTML para que veas tu nombre y saldo [cite: 2026-03-01]
-    return render_template('dashboard.html', user=user)
-    # --------------------------------------------------
-
-    if request.method == 'POST':
-        cedula = request.form.get('cedula')
-        password = request.form.get('password')
-        user = Usuario.query.filter_by(cedula=cedula, password=password).first()
-        
-        if user:
-            session['user_id'] = user.id
-            # Redirigimos siempre a 'dashboard' para evitar errores de ruta inexistente
-            return redirect(url_for('dashboard'))
-        return "Credenciales incorrectas."
-    
-    return render_template('login.html')
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session: return redirect(url_for('login'))
-    user = Usuario.query.get(session['user_id'])
+    # Se pasa el usuario al HTML para mostrar nombre y saldo real [cite: 2026-03-01]
     return render_template('dashboard.html', user=user)
 
-# --- MOTOR DE TRANSFERENCIAS (PAGAR.HTML) ---
+# --- MOTOR DE TRANSFERENCIAS ---
 @app.route('/procesar_pago', methods=['POST'])
 def procesar_pago():
     if 'user_id' not in session: return redirect(url_for('login'))
@@ -123,14 +99,11 @@ def procesar_pago():
     receptor = Usuario.query.filter_by(cedula=ced_rec).first()
 
     if receptor and emisor.saldo >= monto and emisor.cedula != ced_rec:
-        # 1. Ejecutar movimiento
         emisor.saldo -= monto
         receptor.saldo += monto
         
-        # 2. Generar Correlativo Único
         ref_auditoria = f"WP-{random.randint(1000000, 9999999)}"
         
-        # 3. Registro con auditoría completa
         pago = Movimiento(
             user_id=emisor.id, 
             tipo="PAGO REALIZADO", 
@@ -142,7 +115,7 @@ def procesar_pago():
             status='COMPLETADO'
         )
         
-        # 4. COMISIÓN CEO (El Legado) [cite: 2026-02-24]
+        # COMISIÓN CEO (El Legado) [cite: 2026-02-24]
         ceo = Usuario.query.filter_by(cedula='13496133').first()
         if ceo:
             comision = monto * (ceo.comision_rate / 100)
@@ -151,7 +124,7 @@ def procesar_pago():
         db.session.add(pago)
         db.session.commit()
         
-        return f"Pago Exitoso. Ref: {ref_auditoria}" # Aquí irá tu ticket visual
+        return f"Pago Exitoso. Ref: {ref_auditoria}"
     
     return "Error: Saldo insuficiente o receptor no encontrado."
 
