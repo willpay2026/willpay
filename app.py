@@ -17,7 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:/
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- MODELO DE USUARIO (EL LEGADO) ---
+# --- MODELO DE USUARIO ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
@@ -32,7 +32,7 @@ class Usuario(db.Model):
     foto_cedula = db.Column(db.String(200))
     foto_selfie = db.Column(db.String(200))
     
-    # Parámetros del Búnker CEO
+    # Columnas nuevas que causan el error si no se resetea la DB
     comision_rate = db.Column(db.Float, default=1.2)
     socio1_rate = db.Column(db.Float, default=1.0)
     socio2_rate = db.Column(db.Float, default=1.0)
@@ -40,31 +40,30 @@ class Usuario(db.Model):
     auto_aprobacion = db.Column(db.Boolean, default=False)
     auto_retiros = db.Column(db.Boolean, default=False)
 
+# --- RESET MAESTRO DE BASE DE DATOS ---
 with app.app_context():
-    # CUIDADO: Esto borra los datos actuales para poder crear las nuevas columnas
-    db.drop_all() 
-    db.create_all()
-    print("Base de datos actualizada con éxito: Columnas de Socios Creadas.")
+    print("Iniciando limpieza de base de datos...")
+    db.drop_all() # Esto elimina las tablas viejas de Render
+    db.create_all() # Esto crea las tablas nuevas con todas las columnas
+    print("Base de datos reconstruida con éxito.")
 
-# --- RUTAS DE NAVEGACIÓN ---
+# --- RUTAS ---
 
 @app.route('/')
 def index():
-    # Carga el splash inicial
     return render_template('auth/splash.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Auto-creación del CEO Wilfredo si la DB está vacía
+    # Creamos al CEO de nuevo porque el drop_all borró todo
     if not Usuario.query.filter_by(cedula='13496133').first():
-        nuevo_ceo = Usuario(
+        db.session.add(Usuario(
             nombre="Wilfredo Donquiz", 
             cedula="13496133", 
             password="admin", 
             tipo_usuario="CEO", 
-            saldo=0.0
-        )
-        db.session.add(nuevo_ceo)
+            saldo=100.0
+        ))
         db.session.commit()
 
     if request.method == 'POST':
@@ -79,76 +78,17 @@ def login():
             return redirect(url_for('dashboard'))
         return "PIN o Cédula incorrectos."
     
-    # Pantalla de Identificación Digital
     return render_template('auth/acceso.html')
-
-@app.route('/registro', methods=['GET', 'POST'])
-def registro():
-    if request.method == 'POST':
-        f_cedula = request.files.get('foto_cedula')
-        f_selfie = request.files.get('foto_selfie')
-        cedula_num = request.form.get('cedula')
-        
-        name_cedula = secure_filename(f"{cedula_num}_ID.jpg") if f_cedula else None
-        name_selfie = secure_filename(f"{cedula_num}_SELFIE.jpg") if f_selfie else None
-        
-        if f_cedula and name_cedula:
-            f_cedula.save(os.path.join(app.config['UPLOAD_FOLDER'], name_cedula))
-        if f_selfie and name_selfie:
-            f_selfie.save(os.path.join(app.config['UPLOAD_FOLDER'], name_selfie))
-
-        nuevo = Usuario(
-            nombre=request.form.get('nombre'),
-            cedula=cedula_num,
-            telefono=request.form.get('telefono'),
-            password=request.form.get('password'),
-            tipo_usuario=request.form.get('tipo_usuario', 'CLIENTE'),
-            foto_cedula=name_cedula,
-            foto_selfie=name_selfie
-        )
-        db.session.add(nuevo)
-        db.session.commit()
-        return redirect(url_for('login'))
-    
-    return render_template('auth/registro.html')
 
 @app.route('/admin_panel')
 def admin_panel():
     if 'user_id' not in session: return redirect(url_for('login'))
     jefe = db.session.get(Usuario, session['user_id'])
-    
-    # Seguridad: Solo Wilfredo entra aquí
-    if not jefe or jefe.cedula != '13496133': 
-        return redirect(url_for('dashboard'))
+    if not jefe or jefe.cedula != '13496133': return redirect(url_for('dashboard'))
     
     usuarios = Usuario.query.all()
     total_red = sum(u.saldo for u in usuarios)
-    
-    return render_template('ceo/panel_ceo.html', 
-                           jefe=jefe, 
-                           usuarios=usuarios, 
-                           total_red=total_red, 
-                           movimientos=[])
-
-@app.route('/admin/update_config', methods=['POST'])
-def update_config():
-    if 'user_id' not in session: return jsonify({'status': 'denied'}), 403
-    data = request.json
-    jefe = Usuario.query.filter_by(cedula='13496133').first()
-    
-    if not jefe: return jsonify({'status': 'error'}), 404
-
-    field = data.get('field')
-    value = data.get('value')
-
-    if field == 'socio1': jefe.socio1_rate = value
-    elif field == 'socio2': jefe.socio2_rate = value
-    elif field == 'socio3': jefe.socio3_rate = value
-    elif field == 'auto_cargas': jefe.auto_aprobacion = bool(value)
-    elif field == 'auto_retiros': jefe.auto_retiros = bool(value)
-
-    db.session.commit()
-    return jsonify({'status': 'success'})
+    return render_template('ceo/panel_ceo.html', jefe=jefe, usuarios=usuarios, total_red=total_red, movimientos=[])
 
 @app.route('/dashboard')
 def dashboard():
@@ -162,6 +102,5 @@ def salir():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # Puerto dinámico para Render
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
