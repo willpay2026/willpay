@@ -41,6 +41,12 @@ class Usuario(db.Model):
     auto_aprobacion = db.Column(db.Boolean, default=False)
     auto_retiros = db.Column(db.Boolean, default=False)
 
+with app.app_context():
+    print("Forzando reset de base de datos...")
+    db.drop_all()
+    db.create_all()
+    print("¡Base de datos nueva creada con éxito!")
+
 # --- RUTAS ---
 
 @app.route('/')
