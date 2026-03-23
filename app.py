@@ -13,11 +13,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # --- CONFIGURACIÓN DE BASE DE DATOS ---
+# Usamos DATABASE_URL de Render
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///willpay.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- MODELO DE USUARIO ---
+# --- MODELO DE USUARIO (CON TODOS LOS CAMPOS NUEVOS) ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
@@ -32,20 +33,13 @@ class Usuario(db.Model):
     foto_cedula = db.Column(db.String(200))
     foto_selfie = db.Column(db.String(200))
     
-    # Columnas nuevas que causan el error si no se resetea la DB
+    # Estos son los campos que causan el error
     comision_rate = db.Column(db.Float, default=1.2)
     socio1_rate = db.Column(db.Float, default=1.0)
     socio2_rate = db.Column(db.Float, default=1.0)
     socio3_rate = db.Column(db.Float, default=1.0)
     auto_aprobacion = db.Column(db.Boolean, default=False)
     auto_retiros = db.Column(db.Boolean, default=False)
-
-# --- RESET MAESTRO DE BASE DE DATOS ---
-with app.app_context():
-    print("Iniciando limpieza de base de datos...")
-    db.drop_all() # Esto elimina las tablas viejas de Render
-    db.create_all() # Esto crea las tablas nuevas con todas las columnas
-    print("Base de datos reconstruida con éxito.")
 
 # --- RUTAS ---
 
@@ -55,14 +49,14 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Creamos al CEO de nuevo porque el drop_all borró todo
+    # RE-CREACIÓN DEL CEO (Si no existe tras el reset)
     if not Usuario.query.filter_by(cedula='13496133').first():
         db.session.add(Usuario(
             nombre="Wilfredo Donquiz", 
             cedula="13496133", 
             password="admin", 
             tipo_usuario="CEO", 
-            saldo=100.0
+            saldo=0.0
         ))
         db.session.commit()
 
@@ -96,11 +90,13 @@ def dashboard():
     user = db.session.get(Usuario, session['user_id'])
     return render_template('user/dashboard.html', user=user)
 
-@app.route('/salir')
-def salir():
-    session.clear()
-    return redirect(url_for('index'))
-
+# --- INICIO DEL SISTEMA CON RESET FORZADO ---
 if __name__ == '__main__':
+    with app.app_context():
+        # ESTO ES LO QUE ARREGLA EL ERROR:
+        db.drop_all() 
+        db.create_all()
+        print("🔥 BASE DE DATOS RESETEADA: COLUMNAS NUEVAS LISTAS 🔥")
+    
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
