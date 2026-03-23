@@ -13,13 +13,15 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # --- CONFIGURACIÓN DE BASE DE DATOS ---
-# Usamos DATABASE_URL de Render
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///willpay.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- MODELO DE USUARIO (CON TODOS LOS CAMPOS NUEVOS) ---
+# --- MODELO DE USUARIO (VERSION 2) ---
 class Usuario(db.Model):
+    # Cambiamos el nombre de la tabla para forzar a Render a crear una nueva
+    __tablename__ = 'usuario_v2' 
+    
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
     cedula = db.Column(db.String(20), unique=True)
@@ -33,7 +35,7 @@ class Usuario(db.Model):
     foto_cedula = db.Column(db.String(200))
     foto_selfie = db.Column(db.String(200))
     
-    # Estos son los campos que causan el error
+    # Campos de comisiones y socios
     comision_rate = db.Column(db.Float, default=1.2)
     socio1_rate = db.Column(db.Float, default=1.0)
     socio2_rate = db.Column(db.Float, default=1.0)
@@ -41,11 +43,23 @@ class Usuario(db.Model):
     auto_aprobacion = db.Column(db.Boolean, default=False)
     auto_retiros = db.Column(db.Boolean, default=False)
 
+# --- RESET AUTOMÁTICO AL ARRANCAR ---
 with app.app_context():
-    print("Forzando reset de base de datos...")
-    db.drop_all()
-    db.create_all()
-    print("¡Base de datos nueva creada con éxito!")
+    print("🚀 Creando nueva estructura de datos (v2)...")
+    db.create_all() 
+    
+    # Creamos tu usuario CEO en la tabla nueva
+    if not Usuario.query.filter_by(cedula='13496133').first():
+        admin = Usuario(
+            nombre="Wilfredo Donquiz", 
+            cedula="13496133", 
+            password="admin", 
+            tipo_usuario="CEO", 
+            saldo=100.0 # Te puse un regalito de saldo para probar
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("✅ CEO Registrado en v2.")
 
 # --- RUTAS ---
 
@@ -55,27 +69,19 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # RE-CREACIÓN DEL CEO (Si no existe tras el reset)
-    if not Usuario.query.filter_by(cedula='13496133').first():
-        db.session.add(Usuario(
-            nombre="Wilfredo Donquiz", 
-            cedula="13496133", 
-            password="admin", 
-            tipo_usuario="CEO", 
-            saldo=0.0
-        ))
-        db.session.commit()
-
     if request.method == 'POST':
         cedula = request.form.get('cedula')
         password = request.form.get('password')
+        
+        # Buscamos en la tabla nueva
         user = Usuario.query.filter_by(cedula=cedula, password=password).first()
         
         if user:
             session['user_id'] = user.id
-            if user.cedula == '13496133':
+            if user.tipo_usuario == 'CEO':
                 return redirect(url_for('admin_panel'))
             return redirect(url_for('dashboard'))
+        
         return "PIN o Cédula incorrectos."
     
     return render_template('auth/acceso.html')
@@ -84,7 +90,7 @@ def login():
 def admin_panel():
     if 'user_id' not in session: return redirect(url_for('login'))
     jefe = db.session.get(Usuario, session['user_id'])
-    if not jefe or jefe.cedula != '13496133': return redirect(url_for('dashboard'))
+    if not jefe or jefe.tipo_usuario != 'CEO': return redirect(url_for('dashboard'))
     
     usuarios = Usuario.query.all()
     total_red = sum(u.saldo for u in usuarios)
@@ -96,13 +102,11 @@ def dashboard():
     user = db.session.get(Usuario, session['user_id'])
     return render_template('user/dashboard.html', user=user)
 
-# --- INICIO DEL SISTEMA CON RESET FORZADO ---
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
-    with app.app_context():
-        # ESTO ES LO QUE ARREGLA EL ERROR:
-        db.drop_all() 
-        db.create_all()
-        print("🔥 BASE DE DATOS RESETEADA: COLUMNAS NUEVAS LISTAS 🔥")
-    
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
