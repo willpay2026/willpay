@@ -108,5 +108,5 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    # Esto es solo para cuando corres en tu PC
+    app.run(debug=True)
