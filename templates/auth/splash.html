@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #000; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        .logo-container { text-align: center; }
-        h1 { color: #D4AF37; font-size: 3.5rem; letter-spacing: 12px; margin: 0; text-shadow: 0 0 30px rgba(212,175,55,0.4); animation: zoom 2s ease-out; }
-        .bar-container { width: 180px; height: 2px; background: #1a1a1a; margin: 30px auto; border-radius: 10px; position: relative; overflow: hidden; }
-        .progress { width: 0%; height: 100%; background: linear-gradient(90deg, transparent, #D4AF37); position: absolute; animation: fill 2.5s forwards; }
-        @keyframes fill { to { width: 100%; } }
-        @keyframes zoom { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        body { background:#000; margin:0; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; overflow:hidden; }
+        .logo-box { text-align:center; }
+        h1 { color:#d4af37; font-size:3.5rem; letter-spacing:10px; margin:0; }
+        .loader { width:180px; height:2px; background:#111; margin:25px auto; overflow:hidden; }
+        .bar { width:0%; height:100%; background:#d4af37; animation:load 2.5s forwards; }
+        @keyframes load { to { width:100%; } }
     </style>
 </head>
 <body>
-    <div class="logo-container">
+    <div class="logo-box">
         <h1>WILL-PAY</h1>
-        <div style="color: #444; font-size: 0.7rem; letter-spacing: 4px; margin-top: 10px;">VENEZUELA REVOLUTION</div>
-        <div class="bar-container"><div class="progress"></div></div>
+        <p style="color:#555; letter-spacing:3px; font-size:0.7rem;">SISTEMA FINANCIERO DIGITAL</p>
+        <div class="loader"><div class="bar"></div></div>
     </div>
     <script>
-        setTimeout(() => { window.location.href = "/login"; }, 3000);
+        // REDIRECCIÓN AUTOMÁTICA AL ACCESO
+        setTimeout(() => { window.location.href = "{{ url_for('login') }}"; }, 3000);
     </script>
 </body>
 </html>
