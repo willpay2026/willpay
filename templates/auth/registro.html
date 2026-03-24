@@ -6,77 +6,52 @@
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; }
         .container { max-width: 450px; margin: auto; background: #0a0a0a; padding: 25px; border-radius: 20px; border: 1px solid #d4af37; }
-        .logo { text-align: center; margin-bottom: 20px; }
         h2 { color: #d4af37; text-align: center; text-transform: uppercase; font-size: 1.2rem; }
         label { color: #d4af37; font-weight: bold; font-size: 0.85rem; display: block; margin-top: 15px; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #333; background: #151515; color: #fff; box-sizing: border-box; }
         .file-box { border: 1px dashed #444; padding: 15px; margin-top: 10px; border-radius: 10px; background: #111; }
         .btn-finalizar { background: #d4af37; color: #000; width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 1rem; }
-        .footer-links { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #888; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">
-            <h1 style="color:#d4af37; margin:0;">Will-Pay</h1>
-            <p style="font-size: 0.7rem; color:#888;">Tu Billetera Digital de Confianza</p>
-        </div>
-        
+        <h1 style="color:#d4af37; text-align:center; margin:0;">Will-Pay</h1>
         <h2>Registro de Usuario</h2>
-
         <form action="/registro" method="POST" enctype="multipart/form-data">
-            <label>Nombre Completo (Como en Cédula)</label>
-            <input type="text" name="nombre" placeholder="Nombre y Apellido" required>
-
+            <label>Nombre Completo</label>
+            <input type="text" name="nombre" required>
             <label>Cédula / RIF</label>
-            <input type="text" name="cedula" placeholder="V-12345678" required>
-
+            <input type="text" name="cedula" required>
             <label>Teléfono</label>
-            <input type="text" name="telefono" value="04126602555" required>
-
-            <label>Tipo de Usuario / Perfil Económico</label>
+            <input type="text" name="telefono" value="04126602555">
+            <label>Perfil Económico</label>
             <select name="tipo_usuario">
-                <option>Usuario Personal (1.2% Comisión)</option>
-                <option>Comercio / Aliado (1.0% Comisión)</option>
+                <option value="Personal">Usuario Personal (1.2% Comisión)</option>
+                <option value="Comercio">Comercio / Aliado (1.0% Comisión)</option>
             </select>
+            <label>PIN (6 números)</label>
+            <input type="password" name="password" maxlength="6" required>
 
-            <label>Crea tu PIN de Seguridad (6 números)</label>
-            <input type="password" name="password" maxlength="6" placeholder="******" required>
-
-            <h3 style="color:#d4af37; border-bottom:1px solid #333; margin-top:30px; padding-bottom:5px; font-size:0.9rem;">DATOS PARA RETIRO (PAGO MÓVIL)</h3>
-
+            <h3 style="color:#d4af37; margin-top:25px; font-size:0.9rem;">DATOS BANCARIOS (RETIROS)</h3>
             <label>Banco</label>
             <select name="banco">
-                <option>Selecciona tu Banco</option>
                 <option value="0102">Banco de Venezuela</option>
                 <option value="0134">Banesco</option>
                 <option value="0105">Mercantil</option>
             </select>
-
-            <label>Teléfono Pago Móvil</label>
-            <input type="text" name="telefono_pago" placeholder="04XX-XXXXXXX">
-
-            <label>Cédula del Titular (Pago Móvil)</label>
-            <input type="text" name="cedula_titular" placeholder="V-XXXXXXXX">
+            <input type="text" name="telefono_pago" placeholder="Teléfono Pago Móvil">
+            <input type="text" name="cedula_titular" placeholder="Cédula del Titular">
 
             <div class="file-box">
-                <label>Foto de Cédula (Auditoría Visual)</label>
-                <input type="file" name="foto_cedula" accept="image/*">
+                <label>Foto de Cédula</label>
+                <input type="file" name="foto_cedula" accept="image/*" required>
             </div>
-
             <div class="file-box">
                 <label>Foto Selfie</label>
-                <input type="file" name="foto_selfie" accept="image/*">
+                <input type="file" name="foto_selfie" accept="image/*" required>
             </div>
-
-            <button type="submit" class="btn-finalizar">FINALIZAR REGISTRO Y GENERAR EXPEDIENTE</button>
+            <button type="submit" class="btn-finalizar">FINALIZAR Y GENERAR EXPEDIENTE</button>
         </form>
-
-        <div class="footer-links">
-            Al registrarte, aceptas nuestros <a href="#" style="color:#d4af37;">Términos y Condiciones</a>
-            <br><br>
-            <a href="/login" style="color:#d4af37;">Volver al Acceso</a>
-        </div>
     </div>
 </body>
 </html>
