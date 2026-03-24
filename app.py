@@ -1,112 +1,90 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
-from datetime import datetime
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'willpay_ultra_secret_2026'
 
-# --- CONFIGURACIÓN DE ARCHIVOS ---
+# --- CONFIGURACIÓN DE CARPETAS ---
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# --- CONFIGURACIÓN DE BASE DE DATOS ---
+# --- BASE DE DATOS ---
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///willpay.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- MODELO DE USUARIO (VERSION 2) ---
+# --- MODELO DE USUARIO ---
 class Usuario(db.Model):
-    # Cambiamos el nombre de la tabla para forzar a Render a crear una nueva
-    __tablename__ = 'usuario_v2' 
-    
+    __tablename__ = 'usuario_v2'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
     cedula = db.Column(db.String(20), unique=True)
-    telefono = db.Column(db.String(20))
     password = db.Column(db.String(100)) 
     saldo = db.Column(db.Float, default=0.0)
-    tipo_usuario = db.Column(db.String(50))
-    banco = db.Column(db.String(100))
-    telefono_pago = db.Column(db.String(20))
-    cedula_titular = db.Column(db.String(20))
+    tipo_usuario = db.Column(db.String(50), default='CLIENTE')
     foto_cedula = db.Column(db.String(200))
     foto_selfie = db.Column(db.String(200))
-    
-    # Campos de comisiones y socios
-    comision_rate = db.Column(db.Float, default=1.2)
-    socio1_rate = db.Column(db.Float, default=1.0)
-    socio2_rate = db.Column(db.Float, default=1.0)
-    socio3_rate = db.Column(db.Float, default=1.0)
-    auto_aprobacion = db.Column(db.Boolean, default=False)
-    auto_retiros = db.Column(db.Boolean, default=False)
 
-# --- RESET AUTOMÁTICO AL ARRANCAR ---
+# Crear tablas y usuario administrador
 with app.app_context():
-    print("🚀 Creando nueva estructura de datos (v2)...")
-    db.create_all() 
-    
-    # Creamos tu usuario CEO en la tabla nueva
+    db.create_all()
     if not Usuario.query.filter_by(cedula='13496133').first():
-        admin = Usuario(
-            nombre="Wilfredo Donquiz", 
-            cedula="13496133", 
-            password="admin", 
-            tipo_usuario="CEO", 
-            saldo=100.0 # Te puse un regalito de saldo para probar
-        )
+        admin = Usuario(nombre="Wilfredo Donquiz", cedula="13496133", password="admin", tipo_usuario="CEO", saldo=100.0)
         db.session.add(admin)
         db.session.commit()
-        print("✅ CEO Registrado en v2.")
 
-# --- RUTAS ---
+# --- RUTAS DE LA SECUENCIA ---
 
 @app.route('/')
 def index():
+    # PASO 1: SPLASH
     return render_template('auth/splash.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # PASO 2: ACCESO
     if request.method == 'POST':
         cedula = request.form.get('cedula')
         password = request.form.get('password')
-        
-        # Buscamos en la tabla nueva
         user = Usuario.query.filter_by(cedula=cedula, password=password).first()
-        
         if user:
             session['user_id'] = user.id
-            if user.tipo_usuario == 'CEO':
-                return redirect(url_for('admin_panel'))
-            return redirect(url_for('dashboard'))
-        
-        return "PIN o Cédula incorrectos."
-    
+            return redirect(url_for('admin_panel' if user.tipo_usuario == 'CEO' else 'dashboard'))
+        return "Datos incorrectos"
     return render_template('auth/acceso.html')
 
-@app.route('/admin_panel')
-def admin_panel():
-    if 'user_id' not in session: return redirect(url_for('login'))
-    jefe = db.session.get(Usuario, session['user_id'])
-    if not jefe or jefe.tipo_usuario != 'CEO': return redirect(url_for('dashboard'))
-    
-    usuarios = Usuario.query.all()
-    total_red = sum(u.saldo for u in usuarios)
-    return render_template('ceo/panel_ceo.html', jefe=jefe, usuarios=usuarios, total_red=total_red, movimientos=[])
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    # PASO 3: REGISTRO
+    if request.method == 'POST':
+        # Guardar fotos y crear usuario
+        f_cedula = request.files.get('foto_cedula')
+        f_selfie = request.files.get('foto_selfie')
+        
+        nuevo_user = Usuario(
+            nombre=request.form.get('nombre'),
+            cedula=request.form.get('cedula'),
+            password=request.form.get('password'),
+            foto_cedula=secure_filename(f_cedula.filename) if f_cedula else None,
+            foto_selfie=secure_filename(f_selfie.filename) if f_selfie else None
+        )
+        
+        if f_cedula: f_cedula.save(os.path.join(app.config['UPLOAD_FOLDER'], nuevo_user.foto_cedula))
+        if f_selfie: f_selfie.save(os.path.join(app.config['UPLOAD_FOLDER'], nuevo_user.foto_selfie))
+        
+        db.session.add(nuevo_user)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template('auth/registro.html')
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login'))
     user = db.session.get(Usuario, session['user_id'])
-    return render_template('user/dashboard.html', user=user)
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('index'))
+    return f"Bienvenido {user.nombre}, tu saldo es {user.saldo}"
 
 if __name__ == '__main__':
-    # Esto es solo para cuando corres en tu PC
     app.run(debug=True)
