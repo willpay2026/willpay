@@ -1,92 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Will-Pay | Acceso</title>
     <style>
-        body { 
-            background: #000; 
-            color: #fff; 
-            font-family: sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            margin: 0; 
-        }
-        /* Contenedor con el borde dorado de tu diseño */
-        .container { 
-            width: 90%; 
-            max-width: 350px; 
-            text-align: center; 
-            border: 2px solid #d4af37; 
-            padding: 40px 20px; 
-            border-radius: 25px;
-        }
-        
-        .logo { width: 150px; margin-bottom: 10px; }
-        
-        h2 { color: #d4af37; font-size: 18px; letter-spacing: 1px; margin-bottom: 30px; text-transform: uppercase; }
-        
-        .label-text { color: #d4af37; font-size: 14px; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; }
-        
-        input { 
-            width: 100%; 
-            padding: 18px; 
-            margin-bottom: 15px; 
-            background: #e8f0fe; /* El tono de las capturas */
-            color: #000; 
-            border: none; 
-            border-radius: 12px; 
-            box-sizing: border-box; 
-            text-align: center;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        
-        .btn-login { 
-            background: #d4af37; 
-            color: #000; 
-            border: none; 
-            padding: 18px; 
-            width: 100%; 
-            border-radius: 12px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 18px; 
-            margin-top: 10px;
-            text-transform: uppercase;
-            transition: 0.3s;
-        }
-        .btn-login:active { transform: scale(0.95); opacity: 0.8; }
-        
-        .footer-link { color: #888; text-decoration: none; font-size: 14px; margin-top: 30px; display: block; }
-        
-        .credits { color: #d4af37; font-size: 10px; margin-top: 40px; opacity: 0.5; letter-spacing: 1px; }
+        body { background:#0a0a0a; color:#fff; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
+        .login-card { background:#111; padding:40px; border-radius:25px; border:1px solid #d4af37; width:320px; text-align:center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        input { width:100%; padding:14px; margin:10px 0; background:#000; border:1px solid #333; color:white; border-radius:10px; box-sizing:border-box; }
+        button { width:100%; padding:16px; background:#d4af37; border:none; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:15px; }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <img src="{{ url_for('static', filename='logonuevo.png') }}" class="logo" alt="Will-Pay">
-        
-        <h2>ACCESO AL PANEL</h2>
-
-        <div class="label-text">Identificación Digital</div>
-
+    <div class="login-card">
+        <h2 style="color:#d4af37; letter-spacing:2px;">ACCESO</h2>
         <form action="/login" method="POST">
-            <input type="text" name="cedula" placeholder="Cédula o RIF" required>
+            <input type="text" name="cedula" placeholder="Cédula de Identidad" required>
             <input type="password" name="password" placeholder="PIN de Seguridad" required>
-            
-            <button type="submit" class="btn-login">ENTRAR SEGURO</button>
+            <button type="submit">ENTRAR AL SISTEMA</button>
         </form>
-
-        <a href="/registro" class="footer-link">¿No tienes cuenta? Regístrate aquí</a>
-
-        <div class="credits">PRODUCTO ORIGINAL DE WILDON C.A</div>
+        <p style="font-size:0.8rem; margin-top:20px;">
+            ¿No tienes cuenta? <br>
+            <a href="{{ url_for('registro') }}" style="color:#d4af37; text-decoration:none; font-weight:bold;">REGÍSTRATE AQUÍ (KYC)</a>
+        </p>
     </div>
-
 </body>
 </html>
